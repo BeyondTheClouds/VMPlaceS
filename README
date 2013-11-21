@@ -1,0 +1,11 @@
+This is the traditional README
+
+Added JARs:
+	simgrid (version 3.6.2)
+	entropy (version 2.1.0 with Flavien's minor modifications)
+	trove (version 2.1.0)
+
+DVMS dependencies/issues: 
+	All threads have been converted into SG Process types
+	All synchronization mechanisms have been commented (cf. SGSynchronization class)
+	python generate.py 500 2 20 8 23000 > dvms_deploy.xml

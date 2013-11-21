@@ -1,0 +1,21 @@
+// class_name:vcpu_or_ecu:ramsize:net_bw:mig_speed:memory_intensity
+// vcpu, number of vcpu/ecu
+// ramsize is in MBytes
+// net_bw is in MBytes
+// mig_speed, the bandwith allocated by the hypervisor for the migration operation (default kvm value is 32MB)
+// memory intensity (how the workload updates the memory pages, it corresponds to a percentage of the bandwidth allocated by the hypervizor for migration operations
+m1.small:1:2048:125:125:10
+m1.small:1:2048:125:125:20
+m1.small:1:2048:125:125:30
+m1.small:1:2048:125:125:40
+m1.small:1:2048:125:125:50
+m1.small:1:2048:125:125:60
+m1.small:1:2048:125:125:70
+m1.small:1:2048:125:125:80
+//m1.medium:2:4096:125:125:20
+//m1.medium:2:4096:125:125:40
+//m1.medium:2:4096:125:125:60
+//m1.medium:2:4096:125:125:80
+//m1.large:4:8192:125:125:30
+//m1.large:4:8192:125:125:60
+//m1.xlarge:8:16384:125:125:50

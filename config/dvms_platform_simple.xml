@@ -1,0 +1,11 @@
+<?xml version='1.0'?>
+ <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
+ <platform version="3">
+ <AS  id="AS0"  routing="Full">
+	<host id="nodeInject" power="137333000"/>
+	<host id="node0" power="137333000"/>
+ 	<host id="node1" power="137333000"/>
+	<link id="link1" bandwidth="125000000" latency="0.000100"/>
+   <route src="node0" dst="node1"><link_ctn id="link1"/></route>
+  </AS>
+  </platform>
