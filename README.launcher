@@ -1,0 +1,13 @@
+To launch the simulator, please add the following information in the configuration launcher (eclipse/intellij)
+
+VM Options: 
+-Xmx4G -d64 -Dlogback.configurationFile=config/logback.xml
+
+Program arguments: 
+./config/cluster_platform.xml ./config/generated_deploy.xml  --cfg=cpu/optim:Full --cfg=tracing:1  --cfg=tracing/filename:simu.trace --cfg=tracing/platform:1
+
+Under MAC OS X: 
+DYLD_LIBRARY_PATH /usr/local/lib (considering that simgrid has been installed on the node with the default installation path) 
+
+Logs (if exists): 
+./logs/console.log
