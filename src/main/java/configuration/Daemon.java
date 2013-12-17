@@ -28,7 +28,7 @@ public class Daemon extends Process {
                 suspend(); // Suspend the process
             }
             currentTask = new Task(this.getHost().getName()+"-daemon-"+(i++), this.getHost().getSpeed()*100, 0);
-            currentTask.setBound(load);
+            //currentTask.setBound(load);
         }
     }
 

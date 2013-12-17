@@ -168,7 +168,7 @@ public class ConfigurationManager {
 				*/
                 // Placement pour la validation du modele (temporaire)
                 int i = 0;
-                while (i <10 && nodeMemCons[nodeIndex] + vms.getFirst().getMemoryConsumption() <= node.getMemoryCapacity()){
+                while (i <6 && nodeMemCons[nodeIndex] + vms.getFirst().getMemoryConsumption() <= node.getMemoryCapacity()){
 					i++;
                     vm = vms.removeFirst();
 					cfg.setRunOn(vm, node);
@@ -450,6 +450,13 @@ public class ConfigurationManager {
                 vms[i] = new XVM(Host.getByName(currentConfig.getLocation(avm).getName()),avm.getName(),
                         vmClass.getNbOfCPUs(), vmClass.getMemSize(), vmClass.getNetBW(), null, -1, vmClass.getMigNetBW(), vmClass.getMemIntensity());
 
+                Msg.info(String.format("vm: %s, %d, %d, %s",
+                        vms[i].getName(),
+                        vmClass.getMemSize(),
+                        vmClass.getNbOfCPUs(),
+                        "NO IPs defined"
+                ));
+                Msg.info("vm " + vms[i].getName() + " is " + vmClass.getName() + ", dp is " + vmClass.getMemIntensity());
                 vms[i].start();     // When the VM starts, its load equals 0
             } catch (Exception e) {
                 e.printStackTrace();

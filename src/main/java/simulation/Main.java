@@ -28,6 +28,8 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.util.StatusPrinter;
 
 import java.util.Date;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 // Entropy related import
 
@@ -75,6 +77,18 @@ public class Main {
 	
 	/* **** SIMULATOR LAUNCHER **** */
 	public static void main(String[] args) throws NativeException {
+
+
+        JarFile jf = null;
+        try {
+            jf = new JarFile("sg-injector.jar");
+        } catch (IOException e) {
+            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+        }
+        ZipEntry manifest = jf.getEntry("META-INF/MANIFEST.MF");
+        long manifestTime = manifest.getTime();  //in standard millis
+        System.out.println("Compilation time: "+new Date(manifestTime));
+
        /* Init. internal values */
 		Msg.init(args);
 		
