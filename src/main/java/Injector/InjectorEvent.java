@@ -1,4 +1,4 @@
-package simulation;
+package Injector;
 
 /**
  * Created with IntelliJ IDEA.

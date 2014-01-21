@@ -30,7 +30,7 @@ public class SimulatorProperties extends Properties {
 	public final static String NB_OF_CPUS = "nodes.cpunumber";	
 	public final static String CPU_CAPACITY = "nodes.cpucapacity";	
 	public final static String MEMORY_TOTAL = "nodes.memorytotal";
-	
+    public final static String NET_CAPACITY = "nodes.netbw";
 	//Keys related to VMs
 	public final static String NB_OF_VMS = "vm.number";		
 	public final static String NB_OF_VCPUS = "vm.vcpunumber";	
@@ -73,6 +73,7 @@ public class SimulatorProperties extends Properties {
 	public final static int DEFAULT_NB_OF_NODES = 50;
 	public final static int DEFAULT_NB_OF_CPUS = 4;
 	public final static int DEFAULT_CPU_CAPACITY = 8000;
+    public final static int DEFAULT_NET_CAPACITY = 125;
 	public final static int DEFAULT_MEMORY_TOTAL = 8192;
 	
 	//Default values related to VMs
@@ -108,10 +109,7 @@ public class SimulatorProperties extends Properties {
 	private static final String DEFAULT_SIMU_ALGO = "entropy";
 
 
-	
-	
-	
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Constructors
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -190,7 +188,10 @@ public class SimulatorProperties extends Properties {
 	public static int getCPUCapacity(){
 		return getPropertyAsInt(CPU_CAPACITY, DEFAULT_CPU_CAPACITY);
 	}
-	
+
+    public static int getNetCapacity() {
+        return getPropertyAsInt(NET_CAPACITY, DEFAULT_NET_CAPACITY);
+    }
 	public static int getMemoryTotal(){
 		return getPropertyAsInt(MEMORY_TOTAL, DEFAULT_MEMORY_TOTAL);
 	}
@@ -341,9 +342,9 @@ public class SimulatorProperties extends Properties {
 		System.out.println("wait for user input: " + SimulatorProperties.getWaitForUserInput());
 		System.out.println("worker nodes file: " + SimulatorProperties.getWorkerNodesFile());
 		System.out.println("script to create vms: " + SimulatorProperties.getScriptCreateVMs());
-		System.out.println("script to inject load: " + SimulatorProperties.getScriptInjectLoad());
+		System.out.println("script to inject getCPUDemand: " + SimulatorProperties.getScriptInjectLoad());
 	}
 
-	
+
 
 }

@@ -1,20 +1,9 @@
 package scheduling.hubis;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
 
 
-import org.xml.sax.SAXException;
-
-import scheduling.AbstractScheduler;
-import scheduling.AbstractScheduler.ComputingState;
+import scheduling.entropy.AbstractScheduler;
 
 import entropy.configuration.Configuration;
 import entropy.configuration.ManagedElementSet;
@@ -24,18 +13,6 @@ import entropy.configuration.VirtualMachine;
 import entropy.plan.TimedReconfigurationPlan;
 
 import entropy.plan.action.Migration;
-import entropy.PropertiesHelper;
-import entropy.execution.Dependencies;
-import entropy.execution.TimedExecutionGraph;
-import entropy.execution.TimedReconfigurationExecuter;
-import entropy.execution.driver.DriverFactory;
-import entropy.plan.PlanException;
-import entropy.plan.action.Action;
-import entropy.plan.choco.ChocoCustomRP;
-import entropy.plan.durationEvaluator.MockDurationEvaluator;
-import entropy.vjob.DefaultVJob;
-import entropy.vjob.VJob;
-
 
 
 //An implementation of scheduler which is based on the dynamic consolidation algorithm of Entropy

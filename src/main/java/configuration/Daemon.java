@@ -4,7 +4,7 @@ package configuration;
 
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import simulation.Main;
+import simulation.SimulatorManager;
 
 public class Daemon extends Process {
 	private Task currentTask;
@@ -13,11 +13,12 @@ public class Daemon extends Process {
 		super(host,"Daemon");
         this.load = load ;
         currentTask = new Task(this.getHost().getName()+"-daemon-0", this.getHost().getSpeed()*100, 0);
-        //   currentTask.setBound(load);
+        //   currentTask.setBound(getCPUDemand);
     }
     public void main(String[] args) throws MsgException {
         int i = 1;
-        while(!Main.isEndOfInjection()) {
+
+        while(!SimulatorManager.isEndOfInjection()) {
             // TODO the binding is not yet available
             try {
                 currentTask.execute();
@@ -28,7 +29,7 @@ public class Daemon extends Process {
                 suspend(); // Suspend the process
             }
             currentTask = new Task(this.getHost().getName()+"-daemon-"+(i++), this.getHost().getSpeed()*100, 0);
-            //currentTask.setBound(load);
+            //currentTask.setBound(getCPUDemand);
         }
     }
 

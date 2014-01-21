@@ -15,7 +15,7 @@ if largv == 2:
 		sys.stdout.write("<?xml version='1.0'?>\n"
 		"<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
 		"<platform version=\"3\">\n"
-		"  <process host=\"node0\" function=\"simulation.Injector\"> </process>\n"
+		"  <process host=\"node0\" function=\"Injector.Injector\"> </process>\n"
 		"  <process host=\"node0\" function=\"simulation.CentralizedResolver\"> </process>\n"
 		"</platform>")
 
@@ -29,7 +29,7 @@ elif largv == 6:
 	sys.stdout.write("<?xml version='1.0'?>\n"
 	"<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
 	"<platform version=\"3\">\n"
-	"  <process host=\"node0\" function=\"simulation.Injector\"> </process>\n")
+	"  <process host=\"node0\" function=\"Injector.Injector\"> </process>\n")
 
 	for i in range(1, nb_nodes):
 

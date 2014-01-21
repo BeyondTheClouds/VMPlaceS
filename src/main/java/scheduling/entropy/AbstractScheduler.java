@@ -1,21 +1,12 @@
-package scheduling;
+package scheduling.entropy;
 
 import entropy.configuration.Configuration;
 import entropy.plan.TimedReconfigurationPlan;
+import scheduling.Scheduler;
 
 //An abstract scheduler
-public abstract class AbstractScheduler {
-	public enum ComputingState {
-		NO_RECONFIGURATION_NEEDED("NO_RECONFIGURATION_NEEDED"), VMPP_FAILED("VMPP_FAILED"), VMRP_FAILED("VMRP_FAILED"), VMRP_SUCCESS("VMRP_SUCCESS");
-		private String name;
-		
-		private ComputingState(String name){
-			this.name = name;
-		}
-		public String toString(){
-			return name;
-		}
-	};
+public abstract class AbstractScheduler implements Scheduler {
+
 	
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////

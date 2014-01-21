@@ -7,27 +7,20 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+import configuration.XHost;
+import configuration.XVM;
+import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
-import scheduling.AbstractScheduler;
 import scheduling.EntropyProperties;
+import scheduling.Scheduler;
 import simulation.CentralizedResolver;
-import simulation.Main;
 
-
-import configuration.ConfigurationManager;
-import configuration.SimulatorProperties;
 import dvms.log.Logger;
 
-import entropy.PropertiesHelper;
-import entropy.configuration.Configuration;
-import entropy.configuration.SimpleManagedElementSet;
-import entropy.configuration.VirtualMachine;
 import entropy.execution.Dependencies;
 import entropy.execution.TimedExecutionGraph;
-import entropy.execution.TimedReconfigurationExecuter;
-import entropy.execution.driver.DriverFactory;
 import entropy.plan.PlanException;
 import entropy.plan.action.Action;
 import entropy.plan.action.Migration;
@@ -36,11 +29,12 @@ import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
 
-public class Entropy2RP extends AbstractScheduler {
+public class Entropy2RP extends AbstractScheduler implements Scheduler {
 	
 	private ChocoCustomRP planner;//Entropy2.1
 //	private ChocoCustomPowerRP planner;//Entropy2.0
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
+
 
     public Entropy2RP(Configuration initialConfiguration, int loopID) {
 		super(initialConfiguration);
@@ -67,7 +61,7 @@ public class Entropy2RP extends AbstractScheduler {
 	
 	@Override
 	public ComputingState computeReconfigurationPlan() {
-		ComputingState res = ComputingState.VMRP_SUCCESS; 
+		ComputingState res = ComputingState.SUCCESS;
 		
 		// All VMs are encapsulated into the same vjob for the moment - Adrien, Nov 18 2011
 		List<VJob> vjobs = new ArrayList<VJob>();
@@ -95,7 +89,7 @@ public class Entropy2RP extends AbstractScheduler {
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 		} catch (PlanException e) {
 			e.printStackTrace();
-			res = ComputingState.VMRP_FAILED ; 
+			res = ComputingState.RECONFIGURATION_FAILED ;
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 			reconfigurationPlan = null;
 		}
@@ -254,11 +248,29 @@ public class Entropy2RP extends AbstractScheduler {
             private void instantiateAndStart(Action a) throws InterruptedException{
                 if(a instanceof Migration){
                     Migration migration = (Migration)a;
-                    CentralizedResolver.incMig();
-                    ConfigurationManager.relocateVM(Main.getCurrentConfig(), migration.getVirtualMachine().getName(), migration.getDestination().getName());
+                    CentralizedResolver.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
                 } else{
                     Logger.log("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
 			}
 		}
 
+
+
+ // Create configuration for Entropy
+    public static Object ExtractConfiguration(Collection<XHost> xhosts) {
+        Configuration currConf = new SimpleConfiguration();
+
+        // Add nodes
+        for (XHost tmpH:xhosts){
+                Node tmpENode = new SimpleNode(tmpH.getName(), tmpH.getNbCores(), tmpH.getCPUCapacity(), tmpH.getMemSize());
+                currConf.addOnline(tmpENode);
+                for(XVM tmpVM:tmpH.getRunnings()) {
+                    currConf.setRunOn(new SimpleVirtualMachine(tmpVM.getName(), (int) tmpVM.getCore(), 0,
+                            tmpVM.getMemSize(), (int)tmpVM.getCPUDemand(), tmpVM.getMemSize()),
+                            tmpENode);
+                }
+        }
+
+        return currConf;
+    }
 }

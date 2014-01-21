@@ -1,34 +1,20 @@
 package simulation;
-import static entropy.configuration.Configurations.State.Runnings;
-import static entropy.configuration.Configurations.State.Sleepings;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.EnumSet;
+import java.util.Random;
 
-
-import configuration.XSimpleConfiguration;
-import org.simgrid.msg.Host;
-import org.simgrid.msg.HostNotFoundException;
-import org.simgrid.msg.Msg;
-import org.simgrid.msg.MsgException;
-import org.simgrid.msg.NativeException;
+import configuration.SimulatorProperties;
+import configuration.XHost;
+import configuration.XVM;
+import entropy.configuration.*;
+import org.simgrid.msg.*;
 
 import org.simgrid.msg.Process;
 import org.simgrid.trace.Trace;
 
-import configuration.ConfigurationManager;
-
-import scheduling.AbstractScheduler;
 import scheduling.EntropyProperties;
-import scheduling.AbstractScheduler.ComputingState;
+import scheduling.Scheduler.ComputingState;
+import scheduling.Scheduler;
 import scheduling.entropy.Entropy2RP;
-import entropy.configuration.Configurations;
-import entropy.configuration.Node;
-
 
 
 public class CentralizedResolver extends Process {
@@ -44,69 +30,63 @@ public class CentralizedResolver extends Process {
 	 * @param args
 	 */
     public void main(String[] args) throws MsgException{
-        main2(args);
+       main2(args);
     }
     public void main2(String[] args) throws MsgException{
         double period = EntropyProperties.getEntropyPeriodicity();
 		int numberOfCrash = 0;
 
-		Trace.hostSetState(ConfigurationManager.getServiceNodeName(), "SERVICE", "free");
+		Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
 
         long previousDuration = 0;
 
-        while(!Main.isEndOfInjection()) {
+        while(!SimulatorManager.isEndOfInjection()) {
 
             long wait = ((long)(period*1000)) - previousDuration;
             if (wait > 0)
                 Process.sleep(wait); // instead of waitFor that takes into account only seconds
 
-            XSimpleConfiguration currConf = Main.getCurrentConfig();
 			/* Compute and apply the plan */
-			AbstractScheduler scheduler;
-			long beginTimeOfIteration;
+			Scheduler scheduler;
+			long beginTimeOfCompute;
 			long endTimeOfCompute;
 			long computationTime;
 			ComputingState computingState;
             double reconfigurationTime = 0;
 
 			/* Tracing code */
-			Trace.hostSetState(ConfigurationManager.getServiceNodeName(), "SERVICE", "compute");
-			for (Node node: currConf.getAllNodes()){
-				if(!currConf.isViable(node))
-					Trace.hostPushState(node.getName(), "PM", "violation-det");
-				Trace.hostSetState(node.getName(), "SERVICE", "booked");
-
+			Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "compute");
+		    int i;
+            for (XHost h:SimulatorManager.getSGHosts()){
+				if(!h.isViable())
+					Trace.hostPushState(h.getName(), "PM", "violation-det");
+				Trace.hostSetState(h.getName(), "SERVICE", "booked");
             }
 
 			Msg.info("Launching scheduler (loopId = "+loopID+") - start to compute");
 
-			//Measure iteration length
-			beginTimeOfIteration = System.currentTimeMillis();
-			scheduler = new Entropy2RP(currConf.cloneSorted(), loopID ++);
-			
-			computingState = scheduler.computeReconfigurationPlan();		
+			scheduler = new Entropy2RP((Configuration)Entropy2RP.ExtractConfiguration(SimulatorManager.getSGHosts()), loopID ++);
+
+            beginTimeOfCompute = System.currentTimeMillis();
+			computingState = scheduler.computeReconfigurationPlan();
 			endTimeOfCompute = System.currentTimeMillis();
-			computationTime = (endTimeOfCompute - beginTimeOfIteration);
+			computationTime = (endTimeOfCompute - beginTimeOfCompute);
 
             Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
 
 			Msg.info("Computation time (in ms):" + computationTime);
             previousDuration = computationTime ;
 
-			String STATUS = "VMRP_SUCCESS";
-			int numberOfNodesUsed = Configurations.usedNodes(Main.getCurrentConfig(), EnumSet.of(Runnings, Sleepings)).size();			
-			
-			
 			if(computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)){
 				Msg.info("Configuration remains unchanged");
-				Trace.hostSetState(ConfigurationManager.getServiceNodeName(), "SERVICE", "free");
-			} else if(computingState.equals(ComputingState.VMRP_SUCCESS)){
+				Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
+			} else if(computingState.equals(ComputingState.SUCCESS)){
 				int cost = scheduler.getReconfigurationPlanCost();
+
 				/* Tracing code */
-				Trace.hostSetState(ConfigurationManager.getServiceNodeName(), "SERVICE", "reconfigure");
 				// TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
-				for (Node tmpNode: currConf.getAllNodes())
-					Trace.hostSetState(tmpNode.getName(), "SERVICE", "reconfigure"); 
+				for (XHost h: SimulatorManager.getSGHosts())
+					Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
 
 				Msg.info("Starting reconfiguration");
                 double startReconfigurationTime =  Msg.getClock() * 1000;
@@ -115,110 +95,86 @@ public class CentralizedResolver extends Process {
                 reconfigurationTime = endReconfigurationTime - startReconfigurationTime;
                 Msg.info("Reconfiguration time (in ms): "+ reconfigurationTime);
                 previousDuration += reconfigurationTime ;
-				/* Tracing code */
-			   // the following code is now directly performed in relocateVM() invocation
-			   /*
-			    for (Node tmpNode: currConf.getAllNodes()){
-					if(!ConfigurationManager.isViable(currConf, tmpNode))
-						Trace.hostSetState(tmpNode.getName(), "PM", "violation-out"); 
-					else
-						Trace.hostSetState(tmpNode.getName(), "PM", "normal"); 
-				}
-			    */
-				
-				Msg.info("Number of nodes used: " + numberOfNodesUsed);
-				Trace.hostSetState(ConfigurationManager.getServiceNodeName(), "SERVICE", "free");
+
+				Msg.info("Number of nodes used: " + SimulatorManager.getNbOfActiveHosts()) ;
 
 			} else { 
 				System.err.println("The resolver does not find any solutions - EXIT");
-				Trace.hostSetState(ConfigurationManager.getServiceNodeName(), "SERVICE", "free");
 				numberOfCrash++;
-				STATUS = "VMRP_FAILED";				
 				Msg.info("Entropy has encountered an error (nb: " + numberOfCrash +")");
 			}
 
-			
-			if(!computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)){
-				writeRawFile(getLineFromInformation(STATUS,				// computing_state	
-						(computationTime*1000+reconfigurationTime*1000)+"", 		// iteration_length_(ms)
-						"-1",											// time_computing_VMPP_(ms)
-						computationTime*1000+"",								// time_computing_VMRP_(ms)
-						reconfigurationTime*1000+"",							// time_applying_plan_(ms)
-						scheduler.getReconfigurationPlanCost()+"",		// cost
-						scheduler.getNbMigrations()+"",					// nb_migrations
-						scheduler.getReconfigurationGraphDepth()+"",	// depth_reconf_graph
-						numberOfNodesUsed+"",							// nb_of_nodes_used
-						Main.getCurrentConfig().load()+"" // nb_of_active_VMs
-						));
-			}
-			
-			/* Tracing code */
-			// Warning Node0 does not belong to the current configuration (this is a service node that does not host any vms).
-			currConf=Main.getCurrentConfig();
-			for (Node node: currConf.getAllNodes()){
-				Trace.hostSetState(node.getName(), "SERVICE", "free"); 
-			}
+		/* Tracing code */
+	    	for (XHost h: SimulatorManager.getSGHosts())
+					Trace.hostSetState(h.getName(), "SERVICE", "free");
 
-
-
-			// endTimeOfIteration = System.currentTimeMillis();
-			// iterationLength = endTimeOfIteration - beginTimeOfIteration;
-
-
-			//	writeIterationData(scheduler, computingState.toString(), iterationLength, numberOfNodesUsed, nbOfActiveVMs);
-			//	finalConfigurationFile = "logs/entropy/configurations/config-entropy-" + currentIteration + "-final.txt";
-			//	FileConfigurationSerializerFactory.getInstance().write(initialConfiguration, finalConfigurationFile);		
+            Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
 
 		}
 
 	}
-	
-	private void writeRawFile(String line) {
 
-		try {
-			File file = new File("raw_results_instances.txt");
-			PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file, true)));
-			pw.write(line+"\n");
-			pw.flush();
-			pw.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}	
-	}
 
-	public String getLineFromInformation(
-			String computing_state,
-			String iteration_length,
-			String time_computing_VMPP,
-			String time_computing_VMRP,
-			String time_applying_plan,
-			String cost,
-			String nb_migrations,
-			String depth_reconf_graph,
-			String nb_of_nodes_used,
-			String nb_of_active_VMs){
-
-		return computing_state + "\t" +
-				iteration_length + "\t" +
-				time_computing_VMPP + "\t" +
-				time_computing_VMRP + "\t" +
-				time_applying_plan + "\t" +
-				cost + "\t" +
-				nb_migrations + "\t" +
-				depth_reconf_graph + "\t" +
-				nb_of_nodes_used + "\t" +
-				nb_of_active_VMs + "\t";
-	}
-
-    public static void incMig(){
+    private static void incMig(){
         Trace.hostVariableAdd("node0", "NB_MIG", 1);
         ongoingMigration++ ;
     }
-    public static void decMig() {
+    private static void decMig() {
         ongoingMigration-- ;
     }
 
     public static boolean ongoingMigration() {
         return (ongoingMigration != 0);
+    }
+
+    public static void relocateVM(String VMName, String sourceName, String destName) {
+        Random rand = new Random(SimulatorProperties.getSeed());
+
+        Msg.info("Relocate VM "+VMName+" (from "+sourceName+" to "+destName+")");
+        if(destName != null){
+            String[] args = new String[3];
+
+            args[0] = sourceName;
+            args[1] = destName;
+            args[2] = VMName;
+            // Asynchronous migration
+            // The process is launched on the source node
+            try {
+                new Process(Host.getByName(sourceName),"Migrate-"+rand.nextDouble(),args) {
+                    public void main(String[] args){
+                        XHost destHost = null;
+                        XHost sourceHost = null;
+                        try {
+                            sourceHost = SimulatorManager.getXHostByName(args[1]);
+                            destHost = SimulatorManager.getXHostByName(args[2]);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            System.err.println("You are trying to migrate from/to a non existing node");
+                        }
+                        if(destHost != null){
+                            sourceHost.migrate(args[0],destHost);
+                            Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
+                            // Decrement the number of on-going migrating process
+                            CentralizedResolver.decMig();
+                            if(!destHost.isViable()){
+                                Msg.info("ARTIFICIAL VIOLATION ON "+destHost.getName()+"\n");
+                                Trace.hostSetState(destHost.getName(), "PM", "violation-out");
+                            }
+                            if(sourceHost.isViable()){
+                                Msg.info("SOLVED VIOLATION ON "+sourceHost.getName()+"\n");
+                                Trace.hostSetState(sourceHost.getName(), "PM", "normal");
+                            }
+                        }
+                    }
+                }.start();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            System.err.println("You are trying to relocate a VM on a non existing node");
+            System.exit(-1);
+        }
     }
 }
