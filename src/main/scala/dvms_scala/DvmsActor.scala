@@ -1,7 +1,6 @@
 package dvms_scala
 
 
-import _root_.configuration.ConfigurationManager
 import _root_.entropy._
 import _root_.entropy.NegativeResultOfComputation
 import _root_.entropy.PositiveResultOfComputation
@@ -11,6 +10,7 @@ import org.simgrid.msg.Msg
 import org.simgrid.trace.Trace
 import org.simgrid.msg.Host
 import scala.Some
+import simulation.SimulatorManager
 
 /**
  * Created with IntelliJ IDEA.
@@ -249,7 +249,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
                 // the initiator receives the  dissolution message.
                 if (applicationRef.getName == currentPartition.get.initiator.getName) {
                     Msg.info(applicationRef.getName() + ": ISP ends");
-                    Trace.hostVariableSub(ConfigurationManager.getServiceNodeName(), "NB_MC", 1);
+                    Trace.hostVariableSub(SimulatorManager.getServiceNodeName, "NB_MC", 1);
                 }
                 Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
                 /* End of Simgrid MSG related code */
@@ -447,7 +447,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
                         /* Simgrid MSG related code */
                         Msg.info(applicationRef.getName() + ": ISP starts");
-                        Trace.hostVariableAdd(ConfigurationManager.getServiceNodeName(), "NB_MC", 1);
+                        Trace.hostVariableAdd(SimulatorManager.getServiceNodeName, "NB_MC", 1);
                         Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "booked");
                         /* End of Simgrid MSG related code */
 
