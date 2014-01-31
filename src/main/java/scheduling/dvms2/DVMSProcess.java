@@ -1,8 +1,6 @@
 package scheduling.dvms2;
 
-
 import java.net.UnknownHostException;
-
 
 import dvms_scala.DvmsActor;
 import dvms_scala.ThisIsYourNeighbor;
@@ -11,16 +9,15 @@ import org.simgrid.msg.Msg;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
-import simulation.Main;
 
 import dvms.log.Logger;
+import simulation.SimulatorManager;
 
 //Represents a server running on a worker node
 //Currently, this server can only process on request at a time -> less concurrent access to the node object
 public class DVMSProcess extends Process {
 
-
-    DvmsActor dvms;
+    private DvmsActor dvms;
     Long id;
     Long neighborId;
 
@@ -76,7 +73,7 @@ public class DVMSProcess extends Process {
         Long nextId = nameToId(neighborName);
         this.updateNextNode(new SGNodeRef(neighborName, nextId));
 
-        while(!Main.isEndOfInjection()){
+        while(!SimulatorManager.isEndOfInjection()){
 
             try{
 

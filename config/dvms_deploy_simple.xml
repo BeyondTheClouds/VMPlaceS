@@ -3,7 +3,7 @@
 <platform version="3">
   <process host="node99" function="Injector.Injector">
    </process>
-   <process host="node0" function="simulation.DVMSResolver">
+   <process host="node0" function="simulation.DistributedResolver">
  	<argument value="node0"/> 	<!-- Name of the node -->
      <argument value="2"/> 		<!-- Number of CPU -->
      <argument value="20"/>    	<!-- Total Capacity of CPU: Nb of CPU * Capacity of one cpu -->
@@ -12,7 +12,7 @@
      <argument value="node1"/>  <!-- Neighborhood name -->
      <argument value="23002"/>  <!-- Neighborhood Listening port -->
     </process>
-     <process host="node1" function="simulation.DVMSResolver">
+     <process host="node1" function="simulation.DistributedResolver">
  	<argument value="node1"/> 	<!-- Name of the node -->
      <argument value="2"/> 		<!-- Number of CPU -->
      <argument value="20"/>    	<!-- Total Capacity of CPU: Nb of CPU * Capacity of one cpu -->
@@ -21,7 +21,7 @@
      <argument value="node0"/>  <!-- Neighborhood name -->
      <argument value="23003"/>  <!-- Neighborhood Listening port -->
    </process>
-     <process host="node2" function="simulation.DVMSResolver">
+     <process host="node2" function="simulation.DistributedResolver">
  	<argument value="node2"/> 	<!-- Name of the node -->
      <argument value="2"/> 		<!-- Number of CPU -->
      <argument value="20"/>    	<!-- Total Capacity of CPU: Nb of CPU * Capacity of one cpu -->

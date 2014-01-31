@@ -4,7 +4,6 @@ import java.util.Random;
 
 import configuration.SimulatorProperties;
 import configuration.XHost;
-import configuration.XVM;
 import entropy.configuration.*;
 import org.simgrid.msg.*;
 

@@ -33,7 +33,7 @@ elif largv == 6:
 
 	for i in range(1, nb_nodes):
 
-		line = "  <process host=\"node%d\" function=\"simulation.DVMSResolver\">\n \
+		line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
 		<argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
 		<argument value=\"node%d\" /><argument value=\"%d\" />\n \
 		</process>\n" % (i, i, nb_cpu, total_cpu_cap, ram, port, i+1, port+1) 
@@ -43,7 +43,7 @@ elif largv == 6:
 		sys.stdout.write(line)
 
 	# link the last agent to the first
-	line = "  <process host=\"node%d\" function=\"simulation.DVMSResolver\">\n \
+	line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
 	<argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
 	<argument value=\"node%d\" /><argument value=\"%d\" />\n \
 	</process>\n" % (nb_nodes, nb_nodes, nb_cpu, total_cpu_cap, ram, port, 1, port_orig) 
