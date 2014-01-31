@@ -27,13 +27,7 @@ public class XVM extends VM{
         this.ramsize= ramsize;
         this.daemon = new Daemon(this, 100);
         this.host = host;
-        try {
-            daemon.start();
-        } catch (HostNotFoundException e) {
-            e.printStackTrace();
-        }
-        this.setLoad(currentLoadDemand);
-    }
+   }
 
     public void setLoad(int expectedLoad){
         if (expectedLoad >0) {
@@ -48,6 +42,19 @@ public class XVM extends VM{
 
     public Daemon getDaemon(){
         return this.daemon;
+    }
+
+    /**
+     *  Override start method in order to start the daemon at the same time that should run inside the VM.
+     */
+    public void start(){
+        super.start();
+        try {
+            daemon.start();
+        } catch (HostNotFoundException e) {
+            e.printStackTrace();
+        }
+        this.setLoad(currentLoadDemand);
     }
   /*  public int getLoad(){
         System.out.println("Remaining comp:" + this.daemon.getRemaining());

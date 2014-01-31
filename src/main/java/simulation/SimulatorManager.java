@@ -104,7 +104,7 @@ public class SimulatorManager {
                     nodeMemCons[nodeIndex] += sgVMTmp.getMemSize();
 
                 } else {
-                    System.err.println("There is enough memory on the physical host "+sgHostTmp.getName());
+                    System.err.println("There is not enough memory on the physical host "+sgHostTmp.getName());
                     System.exit(1);
                 }
             }

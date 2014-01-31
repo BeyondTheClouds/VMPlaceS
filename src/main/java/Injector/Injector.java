@@ -26,6 +26,7 @@ public class Injector extends Process {
 
 	Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
 	    super(host, name, args);
+        System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
         System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
         faultQueue =generateFaultQueue(SimulatorManager.getSGHosts().toArray(new XHost[SimulatorManager.getSGHosts().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
@@ -83,7 +84,7 @@ public class Injector extends Process {
             gLoad = Math.max((randExpDis2.nextGaussian()*sigma)+mean, 0);
             int slot= (int) Math.round(Math.min(100,gLoad)*nbOfCPUDemandSlots/100);
 
-            vmCPUDemand = slot*cpuConsumptionSlot*(int)tempVM.getCore();
+            vmCPUDemand = slot*cpuConsumptionSlot*(int)tempVM.getCoreNumber();
 
             // Add a new event queue
             eventQueue.add(new LoadEvent(id++, currentTime,tempVM, vmCPUDemand));

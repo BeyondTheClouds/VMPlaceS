@@ -100,7 +100,7 @@ public class XHost{
     public void migrate(String vmName, XHost dest) {
         XVM vm = null ;
         for(XVM tmp : getRunnings()){
-            if (vm.getName().equals(vmName))
+            if (tmp.getName().equals(vmName))
                 vm = tmp ;
         }
         if (vm == null){

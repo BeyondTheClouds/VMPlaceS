@@ -27,6 +27,7 @@ public class CentralizedResolver extends Process {
 
 	/**
 	 * @param args
+     * A stupid main to easily comment main2 ;)
 	 */
     public void main(String[] args) throws MsgException{
        main2(args);
@@ -130,15 +131,17 @@ public class CentralizedResolver extends Process {
         Random rand = new Random(SimulatorProperties.getSeed());
 
         Msg.info("Relocate VM "+VMName+" (from "+sourceName+" to "+destName+")");
+
         if(destName != null){
             String[] args = new String[3];
 
-            args[0] = sourceName;
-            args[1] = destName;
-            args[2] = VMName;
+            args[0] = VMName;
+            args[1] = sourceName;
+            args[2] = destName;
             // Asynchronous migration
             // The process is launched on the source node
             try {
+                CentralizedResolver.incMig();
                 new Process(Host.getByName(sourceName),"Migrate-"+rand.nextDouble(),args) {
                     public void main(String[] args){
                         XHost destHost = null;

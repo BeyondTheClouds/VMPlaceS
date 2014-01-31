@@ -54,7 +54,7 @@ public class PlacementOptimizer implements Scheduler {
 
             for(XVM tmpVM:tmpH.getRunnings()) {
                 ArrayList<Cpu> cpusVM = new ArrayList<Cpu>();
-                Cpu tmpCpu = new Cpu((int)tmpVM.getCore(), 100);
+                Cpu tmpCpu = new Cpu((int)tmpVM.getCoreNumber(), 100);
                 tmpCpu.setUsage(tmpVM.getCPUDemand());
                 cpusVM.add(tmpCpu);
                 HardwareSpecification vmHardwareSpecification = new HardwareSpecification(

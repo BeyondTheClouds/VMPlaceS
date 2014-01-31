@@ -265,7 +265,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                 Node tmpENode = new SimpleNode(tmpH.getName(), tmpH.getNbCores(), tmpH.getCPUCapacity(), tmpH.getMemSize());
                 currConf.addOnline(tmpENode);
                 for(XVM tmpVM:tmpH.getRunnings()) {
-                    currConf.setRunOn(new SimpleVirtualMachine(tmpVM.getName(), (int) tmpVM.getCore(), 0,
+                    currConf.setRunOn(new SimpleVirtualMachine(tmpVM.getName(), (int) tmpVM.getCoreNumber(), 0,
                             tmpVM.getMemSize(), (int)tmpVM.getCPUDemand(), tmpVM.getMemSize()),
                             tmpENode);
                 }
