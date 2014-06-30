@@ -1,4 +1,4 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 
 import java.util.Random;
@@ -15,8 +15,6 @@ import configuration.ConfigurationManager;
 
 import simulation.Main;
 
-import scheduling.dvms.DVMSClientForSG;
-import scheduling.dvms.DVMSNode;
 import dvms.configuration.DVMSManagedElementSet;
 import dvms.configuration.DVMSVirtualMachine;
 import dvms.log.Logger;
@@ -24,6 +22,7 @@ import dvms.message.EventMessage;
 import dvms.message.NodeReservationMessage;
 import dvms.message.EventMessage.EventType;
 import dvms.tool.DVMSProperties;
+import simulation.SimulatorManager;
 
 //Represents the monitoring system
 public class DVMSMonitor extends Process{
@@ -91,7 +90,7 @@ public class DVMSMonitor extends Process{
 		
 		long delayBeforeEventWasSent=0;
 
-		while(!Main.isEndOfInjection()){
+		while(!SimulatorManager.isEndOfInjection()){
 		//	Msg.info("Update Monitoring values");
 			updateMonitoringInformation();
 			try {
@@ -226,7 +225,7 @@ public class DVMSMonitor extends Process{
 		Logger.log(node.getName() + ": starting scheduling");
 		
 		Msg.info(this.node.getName()+": ISP starts");		
-		Trace.hostVariableAdd(ConfigurationManager.getServiceNodeName(), "NB_MC", 1);
+		Trace.hostVariableAdd(SimulatorManager.getServiceNodeName(), "NB_MC", 1);
 		Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "booked"); 
 
 		return true; 
@@ -238,7 +237,7 @@ public class DVMSMonitor extends Process{
 
 		Msg.info(this.node.getName()+": ISP ends");
 	//	Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
-		Trace.hostVariableSub(ConfigurationManager.getServiceNodeName(), "NB_MC", 1);
+		Trace.hostVariableSub(SimulatorManager.getServiceNodeName(), "NB_MC", 1);
 		
 
 	}

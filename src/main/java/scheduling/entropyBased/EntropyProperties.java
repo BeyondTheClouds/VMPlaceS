@@ -1,11 +1,9 @@
-package scheduling;
+package scheduling.entropyBased;
 
 import java.io.File;
 
 import configuration.SimulatorProperties;
-
-
-
+import scheduling.GeneralProperties;
 
 
 //Represents properties mostly for DVMS instances (except for the logging property which is shared by DVMS instances and the simulator)

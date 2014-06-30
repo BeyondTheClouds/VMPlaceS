@@ -1,4 +1,4 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 
 public class SGSynchronized {

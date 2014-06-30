@@ -1,4 +1,4 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 import java.io.Serializable;
 import java.net.UnknownHostException;

@@ -1,30 +1,28 @@
-package scheduling.entropy;
+package scheduling.entropyBased.dvms;
 
-import entropy.configuration.Configuration;
-import entropy.plan.TimedReconfigurationPlan;
-import scheduling.Scheduler;
+import java.util.List;
+import java.util.Map;
 
-//An abstract scheduler
-public abstract class AbstractScheduler implements Scheduler {
+import dvms.configuration.DVMSManagedElementSet;
+import dvms.message.ReservationMessage;
+import dvms.scheduling.ComputingState;
 
-	
-	
+//An abstract scheduler which is used when the node needs to compute a new schedule
+public abstract class AbstractScheduler {
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Instance variables
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	//The initial configuration
-	protected final Configuration initialConfiguration;
+	//Nodes considered for scheduling
+	private final DVMSManagedElementSet<DVMSNode> nodesConsidered;
 	
-	//The new/final configuration
-	protected Configuration newConfiguration;
-	
-	//The reconfiguration plan
-	protected TimedReconfigurationPlan reconfigurationPlan;
+	//The node on which the scheduler is running
+	protected final DVMSNode node;
 	
 	/**
 	 * The time spent to compute VMPP
-	 *  @deprecated Please consider that this value is currently deprecated and will be set to zero untill it will be fixed - Adrien, Nov 18 2011
+	 *  @deprecated Please consider that this value is currently deprecated and will be set to zero until it will be fixed - Adrien, Nov 18 2011
 	 */
 	protected long timeToComputeVMPP;
 	
@@ -42,14 +40,15 @@ public abstract class AbstractScheduler implements Scheduler {
 	
 	//The depth of the graph of the reconfiguration actions
 	protected int reconfigurationGraphDepth;
-	
+
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Constructor
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	protected AbstractScheduler(Configuration initialConfiguration){
-		this.initialConfiguration = initialConfiguration;
+	public AbstractScheduler(DVMSManagedElementSet<DVMSNode> nodesConsidered, DVMSNode node) {
+		this.nodesConsidered = nodesConsidered;
+		this.node = node;
 		timeToComputeVMPP = 0;
 		timeToComputeVMRP = 0;
 		timeToApplyReconfigurationPlan = 0;
@@ -62,27 +61,31 @@ public abstract class AbstractScheduler implements Scheduler {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Accessors
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
-	public Configuration getNewConfiguration() {
-		return newConfiguration;
+
+	public DVMSManagedElementSet<DVMSNode> getNodesConsidered() {
+		return nodesConsidered;
 	}
 
-	public int getReconfigurationPlanCost() {
+	public DVMSNode getNode() {
+		return node;
+	}
+	
+	public int getReconfigurationPlanCost(){
 		return reconfigurationPlanCost;
 	}
 	
 	/**
-	 *  @deprecated Please consider that this value is currently deprecated and will be set to zero untill it will be fixed - Adrien, Nov 18 2011
+	 *  @deprecated Please consider that this value is currently deprecated and will be set to zero until it will be fixed - Adrien, Nov 18 2011
 	 */
-	public long getTimeToComputeVMPP() {
+	public long getTimeToComputeVMPP(){
 		return timeToComputeVMPP;
 	}
-
-	public long getTimeToComputeVMRP() {
+	
+	public long getTimeToComputeVMRP(){
 		return timeToComputeVMRP;
 	}
-
-	public long getTimeToApplyReconfigurationPlan() {
+	
+	public long getTimeToApplyReconfigurationPlan(){
 		return timeToApplyReconfigurationPlan;
 	}
 	
@@ -98,8 +101,20 @@ public abstract class AbstractScheduler implements Scheduler {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Abstract methods
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
-	public abstract ComputingState computeReconfigurationPlan();
-	
-	public abstract void applyReconfigurationPlan();
+
+	//Computes a reconfiguration plan
+	//Returns true only if a plan was found
+	public abstract ComputingState /*boolean*/ computeReconfigurationPlan();
+
+	//Computes the reservations needed to apply the reconfiguration plan
+	@Deprecated
+	public abstract List<ReservationMessage> computeReservations();
+
+	//Applies the reconfiguration plan
+	public abstract void applyReconfigurationPlan() throws InterruptedException;
+
+	//Returns a simplified view (map) of the new configuration
+	//Key: node name
+	//Value: names of the VMs hosted by this node
+	public abstract Map<String, List<String>> getNewConfiguration();
 }

@@ -1,4 +1,4 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 import org.simgrid.msg.Host;
 import org.simgrid.msg.MsgException;

@@ -10,10 +10,10 @@ import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import org.simgrid.trace.Trace;
 
-import scheduling.EntropyProperties;
+import scheduling.entropyBased.EntropyProperties;
 import scheduling.Scheduler.ComputingState;
 import scheduling.Scheduler;
-import scheduling.entropy.Entropy2RP;
+import scheduling.entropyBased.entropy2.Entropy2RP;
 
 
 public class CentralizedResolver extends Process {

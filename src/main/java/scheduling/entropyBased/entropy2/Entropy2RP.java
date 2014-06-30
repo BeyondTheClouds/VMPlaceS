@@ -1,4 +1,4 @@
-package scheduling.entropy;
+package scheduling.entropyBased.entropy2;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,8 +12,7 @@ import configuration.XVM;
 import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
 import org.simgrid.msg.HostFailureException;
-import org.simgrid.msg.Msg;
-import scheduling.EntropyProperties;
+import scheduling.entropyBased.EntropyProperties;
 import scheduling.Scheduler;
 import simulation.CentralizedResolver;
 
@@ -102,8 +101,6 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 			newConfiguration = reconfigurationPlan.getDestination();
 			nbMigrations = computeNbMigrations();
 			reconfigurationGraphDepth = computeReconfigurationGraphDepth();
-	
-			Msg.info("The following reconfiguration Plan will be performed:\n"+reconfigurationPlan);
 		}
 		
 		return res; 

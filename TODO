@@ -1,35 +1,55 @@
 TODO: 
 
-May 3, 2012		Automatically generate platform and deployment files 									Adrien - Done May 25, 2012, see ./generate.py at the root of the project
-May 4, 2012		Update current configuration after performing a reconfiguration							Adrien - Done May 23, 2012
-May 25, 2012	Validate the distribution model (it seems there are too many events)					Adrien - Validated by Lionel June 12, 2012
-May 25, 2012	Trace Simgrid 																			Adrien - Done June 6, 2012 
-May 25, 2012	Pthread limitation (see if we can know the maximum phtread number according to the OS). Adrien/Jonathan - Switch on Davinci JVM and take advantage of the coroutines Oct 25, 2012
-June 6, 2012	the injector should lead to underloaded situation not only normal or underloaded
-June 12, 2012	Add a counter per VM to know how many times the CPU has changed ? 
-June 12, 2012   Add a generic way to start different sizes of instances (cf . python scripts) 			Adrien - Done June 12, 2012
+June 30, 2014,  Relocate VMs to other nodes (randomly) when a node crash (turnOff is invoked by the injector)
+
+June 30, 2014   Add network stress (in/out)
+
+
+Oct.28, 2012	MB_MIG is not per node but per scheduling/reconfiguration process.
+				It would be good to know exactly which PMs are really involved in the reconfiguration
+				process (for both the centralized version and the DVMS one).
+				This implies to analyze the reconfiguration plan from Entropy2RP
+				(note: in the two files: i.e.for centralized version and the DVMS one :()
+
+June 20, 2012	There is a bug (or a feature ;)) in node.isOverloaded() from DVMSNode:
+					 this.getCPUUsedByVMs() > DVMSProperties.getCPUOverloadThreshold()
+					 defaultThreShold is a percentage where CPUsedByVMs is not a percentage but
+					like it is defined in simulation.properties (note that default threshold is
+					declare in dvms.properties)
+
 June 12, 2012	Add a generic way to enable (or disabled) the traces and to specify the trace file		Adrien/Flavien - Done Nov. 12, 2012
-				=> Resolve log (i.e.logback) issue. Actually, Entropy is leveraging sfl4j: 				
+				=> Resolve log (i.e.logback) issue. Actually, Entropy is leveraging sfl4j:
 				a wrapper for logger utilities (log4j, logback, jdj14,....).
-				By default, slf4j tries to bind itself with one (and ONLY one) logging utilities. 
+				By default, slf4j tries to bind itself with one (and ONLY one) logging utilities.
 				1./if there are more than one binding possibility, slf4j does not succeed to bind correctly
 				and no messages will be logged => let only ONE binding (i.e.either slf4j or logback for instance)
 				2./ Once you are sure that slf4j is bound to only one logging system, apply the corresponding
-				configuration process. 
-				For logback, a logback.xml file should be placed in the classpath (in our case, placing such a 
+				configuration process.
+				For logback, a logback.xml file should be placed in the classpath (in our case, placing such a
 				file in the correct location was not sufficient. We have to set the logback system properties
 				by adding -Dlogback.configurationFile=config/logback.xml as one of the VM arguments.
 
-June 12, 2012	Add a limitation in terms of charge for the infrastructure (cf. 70% etc...)
-June 20, 2012	There is a bug (or a feature ;)) in node.isOverloaded() from DVMSNode: 
-					 this.getCPUUsedByVMs() > DVMSProperties.getCPUOverloadThreshold() 
-					 defaultThreShold is a percentage where CPUsedByVMs is not a percentage but 
-					like it is defined in simulation.properties (note that default threshold is
-					declare in dvms.properties)
-					
-Oct.28, 2012	MB_MIG is not per node but per scheduling/reconfiguration process. 
-				It would be good to know exactly which PMs are really involved in the reconfiguration 
-				process (for both the centralized version and the DVMS one).
-				This implies to analyze the reconfiguration plan from Entropy2RP 
-				(note: in the two files: i.e.for centralized version and the DVMS one :()
+June 12, 2012	Add a counter per VM to know how many times the CPU has changed ?
+
+June 12, 2012   Add a generic way to start different sizes of instances (cf . python scripts) 			Adrien - Done June 12, 2012
+
+June 6, 2012	the injector should lead to underloaded situation not only normal or underloaded        Adrien - Done June 30, 2014
+
+May 25, 2012	Validate the distribution model (it seems there are too many events)					Adrien - Validated by Lionel June 12, 2012
+
+May 25, 2012	Trace Simgrid 																			Adrien - Done June 6, 2012
+
+May 25, 2012	Pthread limitation (see if we can know the maximum phtread number according to the OS). Adrien/Jonathan - Switch on Davinci JVM and take advantage of the coroutines Oct 25, 2012
+
+May 4, 2012		Update current configuration after performing a reconfiguration							Adrien - Done May 23, 2012
+
+May 3, 2012		Automatically generate platform and deployment files 									Adrien - Done May 25, 2012, see ./generate.py at the root of the project
+
+
+
+
+
+
+
+
 				

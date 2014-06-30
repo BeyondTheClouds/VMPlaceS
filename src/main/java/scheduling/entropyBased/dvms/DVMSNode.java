@@ -1,4 +1,4 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 import java.io.ObjectInputStream;
 import java.util.ArrayList;

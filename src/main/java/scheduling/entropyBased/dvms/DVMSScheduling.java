@@ -1,4 +1,4 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 
-import configuration.XSimpleConfiguration;
+//import configuration.XSimpleConfiguration;
 
 import dvms.configuration.DVMSManagedElementSet;
 import dvms.log.Logger;
@@ -269,7 +269,7 @@ public class DVMSScheduling extends Process {
 //			
 //			//Update information vector
 //			for(DVMSNode node : updatedInfo){
-//			//	event.updateInformationVector(node);//XXX This deprecated instruction was commented to avoid conflicts between dvms-core.dvms.configuration.DVMSNode and SG-INJECTOR.scheduling.dvms.DVMSNode
+//			//	event.updateInformationVector(node);//XXX This deprecated instruction was commented to avoid conflicts between dvms-core.dvms.configuration.DVMSNode and SG-INJECTOR.scheduling.entropyBased.dvms.DVMSNode
 //			}
 //			
 //			EventMessage event = new EventMessage(this.event.getOrigin(), this.event.getOrigin(), this.event.getType());

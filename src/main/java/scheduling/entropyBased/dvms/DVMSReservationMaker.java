@@ -1,21 +1,13 @@
-package scheduling.dvms;
-
-import java.util.LinkedList;
-import java.util.List;
+package scheduling.entropyBased.dvms;
 
 import java.util.concurrent.ExecutorService;
 
 
-import scheduling.dvms.DVMSClientForSG;
 import dvms.clientserver.Server;
 import dvms.configuration.DVMSManagedElementSet;
 import dvms.log.Logger;
 import dvms.message.EventMessage;
-import dvms.message.NegotiationOnReservationMessage;
 import dvms.message.NodeReservationMessage;
-import dvms.message.ReservationMessage;
-import dvms.message.UpdateNodeReservationMessage;
-import dvms.message.EventMessage.EventState;
 
 //Represents a component in charge of making (node) reservations
 public class DVMSReservationMaker {

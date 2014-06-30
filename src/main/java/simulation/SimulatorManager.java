@@ -29,6 +29,12 @@ public class SimulatorManager {
 
 	public static void setEndOfInjection(){
 		endOfInjection=true;
+
+        // Kill all VMs in order to finalize the simulation correctly
+        for (XVM vm : SimulatorManager.getSGVMs()) {
+            Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges());
+            vm.getDaemon().kill();
+        }
 	}
 
 	public static boolean isEndOfInjection(){

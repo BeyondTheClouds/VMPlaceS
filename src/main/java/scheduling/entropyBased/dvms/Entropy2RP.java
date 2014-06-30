@@ -1,4 +1,4 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -10,14 +10,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 // TODO why DVMSCLientForSG here ! 
-import scheduling.EntropyProperties;
-import scheduling.dvms.DVMSClientForSG;
+import scheduling.entropyBased.EntropyProperties;
 
 import dvms.clientserver.Server;
 import dvms.configuration.DVMSManagedElementSet;
@@ -26,7 +22,6 @@ import dvms.log.Logger;
 import dvms.message.MigrationMessage;
 import dvms.message.ReservationMessage;
 import dvms.message.MigrationMessage.MigrationOperation;
-import scheduling.dvms.AbstractScheduler;
 import dvms.scheduling.ComputingState;
 import dvms.tool.DVMSProperties;
 import entropy.PropertiesHelper;

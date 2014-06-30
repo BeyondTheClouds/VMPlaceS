@@ -1,9 +1,6 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
-import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Task;
-import org.simgrid.msg.TimeoutException;
-import org.simgrid.msg.TransferFailureException;
 
 
 public class SendMsgForSG extends Task {

@@ -10,7 +10,7 @@ import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
 import org.simgrid.trace.Trace;
 
-import scheduling.EntropyProperties;
+import scheduling.entropyBased.EntropyProperties;
 import simulation.*;
 
 import java.util.Deque;
@@ -39,7 +39,7 @@ public class Injector extends Process {
     /**
      *
      * @param vms, Simgrid VMs that have been instanciated
-     * @param duration int, duration of the simulated time in minutes
+     * @param duration int, duration of the simulated time in second
      * @param injectionPeriod int,  frequency of event occurrence in seconds
      * @return the queue of the VM changes
      */

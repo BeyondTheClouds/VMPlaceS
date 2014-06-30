@@ -1,4 +1,4 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 
 import java.net.UnknownHostException;
@@ -13,8 +13,6 @@ import org.simgrid.msg.Process;
 
 import org.simgrid.msg.Task;
 import org.simgrid.trace.Trace;
-
-import configuration.ConfigurationManager;
 
 import simulation.Main;
 
@@ -34,9 +32,9 @@ import dvms.message.TestMessage;
 import dvms.message.UpdateNodeReservationMessage;
 import dvms.message.EventMessage.EventType;
 import dvms.message.ReservationMessage.ReservationOperation;
-import entropy.configuration.Node;
 import entropy.configuration.SimpleVirtualMachine;
 import entropy.configuration.VirtualMachine;
+import simulation.SimulatorManager;
 
 //Represents a server running on a worker node
 //Currently, this server can only process on request at a time -> less concurrent access to the node object
@@ -110,7 +108,7 @@ public class DVMSServerForSG extends Process {
 
 		AbstractMessage msg;
 
-		while(!Main.isEndOfInjection()){
+		while(!SimulatorManager.isEndOfInjection()){
 			
 			try{
 				SendMsgForSG req=(SendMsgForSG) Task.receive(this.mBox); 
@@ -329,15 +327,13 @@ public class DVMSServerForSG extends Process {
 	private void processMigrationMessage(MigrationMessage migrationMessage, String replyBox) {	
 		switch(migrationMessage.getMigrationOperation()){
 		case SEND://If the node sends a VM...
-			// TODO ICI Il faut mettre � jour la conf global
 			node.removeVirtualMachine(migrationMessage.getVirtualMachine()); 
 			break;
 		case RECEIVE://If the node receives a VM...
-			// TODO ICI il faut mettre � jour la conf global
 			node.addVirtualMachine(migrationMessage.getVirtualMachine()); 
 			DVMSVirtualMachine dvmsVM = migrationMessage.getVirtualMachine();
-			VirtualMachine relocatedVM=new SimpleVirtualMachine(dvmsVM.getName(), dvmsVM.getNbOfCPUs(), dvmsVM.getCPUConsumption(), dvmsVM.getMemoryConsumption());  
-			ConfigurationManager.relocateVM(Main.getCurrentConfig(), relocatedVM.getName(), node.getName());
+			// Ugly fixed - adrien (June 6th 2014)- not tested
+            SimulatorManager.getXHostByName(migrationMessage.getOrigin().getHost()).migrate(dvmsVM.getName(), SimulatorManager.getXHostByName(node.getName()));
 			break;
 		default: Logger.log(node.getName() + ": Unsupported migration operation"); break;
 		}

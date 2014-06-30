@@ -1,8 +1,7 @@
-package scheduling.dvms;
+package scheduling.entropyBased.dvms;
 
 import java.util.concurrent.Callable;
 
-import org.simgrid.msg.Msg;
 import org.simgrid.msg.Task;
 
 

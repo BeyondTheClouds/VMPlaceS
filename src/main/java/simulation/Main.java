@@ -1,21 +1,24 @@
-/*
- * Copyright 2006,2007,2010. The SimGrid Team. All rights reserved. 
- *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the license (GNU LGPL) which comes with this package. 
- */
+ /**
+  * Copyright 2012-2013-2014. The SimGrid Team. All rights reserved.
+  *
+  * This program is free software; you can redistribute it and/or modify it
+  * under the terms of the license (GNU LGPL) which comes with this package.
+  *
+  * This file is the launcher on the Simgrid VM injector
+  * The main is composed of three part:
+  * 1./ Generate the deployment file according to the number of nodes and the algorithm you want to evaluate
+  * 2./ Configure, instanciate and assign each VM on the different PMs
+  * 3./ Launch the injector and the other simgrid processes in order to run the simulation.
+  *
+  * Please note that all parameters of the simulation are given in the ''simulator.properties'' file available
+  * in the ''config'' directory
+  *
+  * @author: adrien.lebre@inria.fr
+  */
 
 package simulation;
 
-// SG related import
-
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
@@ -34,11 +37,16 @@ import configuration.SimulatorProperties;
 
 
 public class Main {
-   
-	/* **** SIMULATOR LAUNCHER **** */
+
+    /**
+     * The Simulator launcher
+     * @param args
+     * @throws NativeException
+     */
 	public static void main(String[] args) throws NativeException {
 
 
+        /*
         // Just a way to get the compilation time (useful to differentiate experiments)
         JarFile jf = null;
         try {
@@ -49,125 +57,75 @@ public class Main {
         ZipEntry manifest = jf.getEntry("META-INF/MANIFEST.MF");
         long manifestTime = manifest.getTime();  //in standard millis
         System.out.println("Compilation time: "+new Date(manifestTime));
+        */
 
-       // Init. internal values
-		Msg.init(args);
+
+        // Historical fix to get the internal logs of Entropy correctly
+        // assume SLF4J is bound to logback in the current environment
+        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+        // print logback's internal status
+        StatusPrinter.print(lc);
+
+        // Init. internal values
+	    Msg.init(args);
 		
-       // Automatically generate deployment file. 
-       try {
+        // Automatically generate deployment file that is mandatory for launching the simgrid simulation.
+        try {
        
-    	   if(SimulatorProperties.getAlgo().equals("dvms")){
-    		   Msg.info("DVMS selected (generating deployment file)"); 
-    		   String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getNbOfNodes()+" "+
+    	    if(SimulatorProperties.getAlgo().equals("distributed")){
+    		    Msg.info("Distributed scheduling selected (generating deployment file)");
+    		    String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getNbOfNodes()+" "+
     			   				SimulatorProperties.getNbOfCPUs()+ " "+
     			   					SimulatorProperties.getCPUCapacity()+ " "+ 
     			   						SimulatorProperties.getMemoryTotal()+" 23000 > config/generated_deploy.xml"};
-    		   //"Usage: python generate.py nb_nodes nb_cpu total_cpu_cap ram port >
-    		   Runtime.getRuntime().exec(cmd);
-    	   }
-    	   else {//(SimulatorProperties.getAlgo().equals("entropy"))
-    		   Msg.info("Default selected (generating deployment file for centralized approach)"); 
+    		    //"Usage: python generate.py nb_nodes nb_cpu total_cpu_cap ram port >
+    		    Runtime.getRuntime().exec(cmd);
+    	    }
+    	    else {//(SimulatorProperties.getAlgo().equals("centralized"))
+    		    Msg.info("Default selected (generating deployment file for centralized approach)");
     		 
-    		   //"Usage: python generate.py nb_nodes
-    		   String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
-    		   Runtime.getRuntime().exec(cmd);   
-    		   
-    		   // TODO: AL -> JP why are you calling these two methods here (and only here ?)
-    		   //erasePreviousRawFile();
-    		   //writeRawFile(getHeader());
+    		    //"Usage: python generate.py nb_nodes
+    		    String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
+    		    Runtime.getRuntime().exec(cmd);
        		}
        	} catch (IOException e) {
        		e.printStackTrace();
    		}
-       
-
-    // assume SLF4J is bound to logback in the current environment
-       LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-       // print logback's internal status
-       StatusPrinter.print(lc);
-     
-      if (args.length < 2) {
-    	   Msg.info("Usage   : Basic platform_file deployment_file");
-    	   Msg.info("example : Basic basic_platform.xml basic_deployment.xml");
-    	   System.exit(1);
-      } else {
-		
-    	   /* construct the platform and deploy the application */
-    	   Msg.createEnvironment(args[0]);
-    	   Msg.deployApplication(args[1]);
-
-    	   Trace.hostStateDeclare ("PM"); 
-    	   Trace.hostStateDeclareValue ("PM", "underloaded", "0 1 1");
-    	   Trace.hostStateDeclareValue ("PM", "normal", "1 1 1");
-    	   Trace.hostStateDeclareValue ("PM", "violation", "1 0 0");
-    	   Trace.hostStateDeclareValue ("PM", "violation-det", "0 1 0");
-    	   Trace.hostStateDeclareValue ("PM", "violation-out", "1 0 0");
-
-    	   Trace.hostStateDeclare ("SERVICE"); 
-    	   Trace.hostStateDeclareValue ("SERVICE","free", "1 1 1");
-    	   Trace.hostStateDeclareValue ("SERVICE","booked", "0 0 1");
-    	   Trace.hostStateDeclareValue ("SERVICE","compute", "1 0 1");
-    	   Trace.hostStateDeclareValue ("SERVICE", "reconfigure", "1 1 0");
-    	   
-    	   Trace.hostVariableDeclare("LOAD");
-    	   Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
-    	   Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
-      }
 
 
+        /* construct the platform and deploy the application */
+        Msg.createEnvironment(args[0]);
+        Msg.deployApplication(args[1]);
 
-       System.out.println("Configure simulation" + new Date().toString());
-       SimulatorManager.instanciateVMs(SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs());
+        /* Prepare TRACE variables */
+        // A node can be underloaded
+        Trace.hostStateDeclare ("PM");
+        Trace.hostStateDeclareValue ("PM", "underloaded", "0 1 1");
+        Trace.hostStateDeclareValue ("PM", "normal", "1 1 1");
+        Trace.hostStateDeclareValue ("PM", "violation", "1 0 0");
+        Trace.hostStateDeclareValue ("PM", "violation-det", "0 1 0");
+        Trace.hostStateDeclareValue ("PM", "violation-out", "1 0 0");
 
-	/*  execute the simulation. */
+        Trace.hostStateDeclare ("SERVICE");
+        Trace.hostStateDeclareValue ("SERVICE","free", "1 1 1");
+        Trace.hostStateDeclareValue ("SERVICE","booked", "0 0 1");
+        Trace.hostStateDeclareValue ("SERVICE","compute", "1 0 1");
+        Trace.hostStateDeclareValue ("SERVICE", "reconfigure", "1 1 0");
+
+        Trace.hostVariableDeclare("LOAD");
+        Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
+        Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
+
+        /* Create all VM instances and assign them on the PMs */
+        /* The initial deployment is based on a round robin fashion */
+        System.out.println("Configure simulation" + new Date().toString());
+        SimulatorManager.instanciateVMs(SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs());
+
+	    /*  execute the simulation. */
         System.out.println("Begin simulation" + new Date().toString());
         Msg.run();
         System.out.println("End simulation" + new Date().toString());
         Msg.info("End of run");
   	    Process.killAll(-1);
     }
-	
-	
-	
-//	// TODO This code is not relevant in general but Entropy devoted....
-//	// It should not appear here.
-//	private static void erasePreviousRawFile() {
-//		File file = new File("raw_results_instances.txt");
-//		if(file.exists()) {
-//			file.delete();
-//		}
-//	}
-//
-//	private static void writeRawFile(String line) {
-//
-//		try {
-//
-//			File file = new File("raw_results_instances.txt");
-//			if(!file.exists()) {
-//				file.createNewFile();
-//			}
-//
-//			PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter("raw_results_instances.txt", true)));
-//			out.println(line);
-//			out.close();
-//
-//		} catch (FileNotFoundException e) {
-//			dvms.log.Logger.log(e);
-//		} catch (IOException e) {
-//			dvms.log.Logger.log(e);
-//		}
-//	}
-//
-//	public static String getHeader(){
-//		return "computing_state" + "\t" +
-//				"iteration_length_(ms)" + "\t" +
-//				"time_computing_VMPP_(ms)" + "\t" +
-//				"time_computing_VMRP_(ms)" + "\t" +
-//				"time_applying_plan_(ms)" + "\t" +
-//				"cost" + "\t" +
-//				"nb_migrations" + "\t" +
-//				"depth_reconf_graph" + "\t" +
-//				"nb_of_nodes_used" + "\t" +
-//				"nb_of_active_VMs" + "\t";
-//	}
 }
