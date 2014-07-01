@@ -1,4 +1,4 @@
-package Injector;
+package injector;
 
 import configuration.XVM;
 import simulation.SimulatorManager;

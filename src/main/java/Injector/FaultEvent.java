@@ -1,4 +1,4 @@
-package Injector;
+package injector;
 
 /**
  * Created with IntelliJ IDEA.

@@ -1,4 +1,4 @@
-package Injector;
+package injector;
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
