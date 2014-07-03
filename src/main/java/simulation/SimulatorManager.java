@@ -36,24 +36,24 @@ import java.util.*;
 public class SimulatorManager {
 
     /**
-     * The list of all XVMs
+     * The list of XVMs that are considered as off (i.e. the hosting machine is off)
      * @see configuration.XVM
      */
-    private static LinkedList<XVM> sgVMs = null;
-
-
+    private static LinkedList<XVM> sgVMsOff = null;
+    /**
+     * The list of XVMs that run
+     * @see configuration.XVM
+     */
+    private static LinkedList<XVM> sgVMsOn = null;
     /**
      * The list of all XHosts
      * @see configuration.XHost
      */
     private static LinkedList<XHost> sgHostsOff= null;
-
-
     /**
      * The list of Xhosts  that are running
      */
     private static LinkedList<XHost> sgHostsOn= null;
-
 
     /**
      * Just a stupid boolean to stop the simulation when the injector is finishing to consume events from its queue
@@ -66,14 +66,18 @@ public class SimulatorManager {
 	public static void setEndOfInjection(){
 		endOfInjection=true;
 
+        Msg.info(sgHostsOn.size()+"/"+getSGHosts().size()+"are up");
+        Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
+
+        for (XHost host : SimulatorManager.getSGHosts()) {
+            Msg.info(host.getName() + " has been turned off "+host.getTurnOffNb()+" times and violated "+host.getNbOfViolations());
+        }
 
         // Kill all VMs in order to finalize the simulation correctly
         for (XVM vm : SimulatorManager.getSGVMs()) {
             Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges());
             vm.getDaemon().kill();
         }
-
-
 	}
 
     /**
@@ -85,10 +89,27 @@ public class SimulatorManager {
 
 
     /**
-     * @return the collection of XVMs (i.e. the VMs running on the different hosts)
+     * @return the collection of XVMs: all VMs, the running and the ones that are considered as dead
+     * (i.e. hosted on hosts that have been turned off)
      */
     public static Collection<XVM> getSGVMs(){
-        return sgVMs;
+        LinkedList<XVM> tmp = new LinkedList<>(sgVMsOn);
+        tmp.addAll(sgVMsOff);
+        return tmp;
+    }
+
+    /**
+     * @return the collection of running XVMs
+     */
+    public static Collection<XVM> getSGVMsOn(){
+        return sgVMsOn;
+    }
+
+    /**
+     * @return the collection of the XVMs considered as dead
+     */
+    public static Collection<XVM> getSGVMsOff(){
+        return sgVMsOff;
     }
 
     /**
@@ -98,8 +119,8 @@ public class SimulatorManager {
      * you should invoke the msg Host.getByName(SimulatorManager.getServiceNodeName()).
      */
     public static Collection<XHost> getSGHosts(){
-        LinkedList<XHost> tmp = new LinkedList<XHost>(sgHostsOff);
-        tmp.addAll(sgHostsOn);
+        LinkedList<XHost> tmp = new LinkedList<>(sgHostsOn);
+        tmp.addAll(sgHostsOff);
         return tmp;
     }
 
@@ -142,7 +163,8 @@ public class SimulatorManager {
         // Since SG does not make any distinction between Host and Virtual Host (VMs and Hosts belong to the Host SG table)
         // we should retrieve first the real host in a separated table
         // Please remind that node0 does not host VMs (it is a service node) and hence, it is managed separately (getServiceNodeName())
-        sgHosts = new LinkedList<XHost>();
+        sgHostsOn = new LinkedList<>();
+        sgHostsOff = new LinkedList<>();
         XHost xtmp;
         for(int i = 1 ; i <= nbOfHosts  ; i ++){
             try {
@@ -150,7 +172,7 @@ public class SimulatorManager {
                 // The SimulatorProperties.getCPUCapacity returns the value indicated by nodes.cpucapacity in the simulator.properties file
                 xtmp = new XHost (tmp, SimulatorProperties.getMemoryTotal(), SimulatorProperties.getNbOfCPUs(), SimulatorProperties.getCPUCapacity(), SimulatorProperties.getNetCapacity(), "127.0.0.1");
                 xtmp.turnOn();
-               sgHosts.add(xtmp);
+               sgHostsOn.add(xtmp);
             } catch (HostNotFoundException e) {
                 e.printStackTrace();
             }
@@ -178,7 +200,8 @@ public class SimulatorManager {
         VMClasses.VMClass vmClass;
 
         initHosts(nbOfHosts);
-        sgVMs = new LinkedList<XVM>();
+        sgVMsOn = new LinkedList<>();
+        sgVMsOff = new LinkedList<>();
 
         XVM sgVMTmp;
 
@@ -213,7 +236,7 @@ public class SimulatorManager {
             // Creation of the VM
             sgVMTmp = new XVM(sgHostTmp, "vm-" + vmIndex,
                         vmClass.getNbOfCPUs(), vmClass.getMemSize(), vmClass.getNetBW(), null, -1, vmClass.getMigNetBW(), vmClass.getMemIntensity());
-            sgVMs.add(sgVMTmp);
+            sgVMsOn.add(sgVMTmp);
             vmIndex++;
 
             Msg.info(String.format("vm: %s, %d, %d, %s",
@@ -239,7 +262,7 @@ public class SimulatorManager {
             File file = new File("logs/simulatorManager/conf-"+ System.currentTimeMillis() + ".txt");
             file.getParentFile().mkdirs();
             BufferedWriter bw = new BufferedWriter(new FileWriter(file));
-            for (XHost h: sgHosts){
+            for (XHost h: SimulatorManager.getSGHosts()){
                 bw.write(h.getName()+":");
                 for (XVM vm: h.getRunnings()){
                     bw.write(" "+vm.getName());
@@ -268,9 +291,10 @@ public class SimulatorManager {
 
     /**
      * @return whether the current placement is viable or not (i.e. if every VM gets its expectations).
+     * Please note that we are considering only the host that are running.
      */
     public static boolean isViable() {
-        for (XHost h: sgHosts){
+        for (XHost h: sgHostsOn){
                   if(!h.isViable())
                 return false;
         }
@@ -279,15 +303,16 @@ public class SimulatorManager {
 
     /**
      * @return the average expected load at a particular moment (i.e. average load of each node)
+     * Please note that we are considering only the host that are running.
      */
     public static double getCPUDemand() {
         double cons=0;
         double tmpLoad = 0 ;
-        for(XHost h: sgHosts){
+        for(XHost h: sgHostsOn){
             tmpLoad = h.getCPUDemand()*100/h.getCPUCapacity();
             cons+= tmpLoad ;
         }
-        return cons/sgHosts.size();
+        return cons/sgHostsOn.size();
     }
 
     /**
@@ -295,7 +320,7 @@ public class SimulatorManager {
      */
     public static int getNbOfUsedHosts() {
         int i=0;
-        for (XHost h: sgHosts){
+        for (XHost h: sgHostsOn){
             if(h.getNbVMs()>0)
                 i++;
         }
@@ -303,12 +328,13 @@ public class SimulatorManager {
     }
 
     /**
-     * Return the XHost entitled ''name'', if not return null
+     * Return the XHost entitled ''name'', if not return null (please note that the search is performed by considering
+     * all hosts (i.e. event the off ones)
      * @param name the name of the host requested
      * @return the corresponding XHost instance (null if there is no corresponding host in the sgHosts collection)
      */
     public static XHost getXHostByName(String name) {
-        for (XHost tmp:sgHosts) {
+        for (XHost tmp:SimulatorManager.getSGHosts()) {
             if(tmp.getName().equals(name))
                 return tmp;
         }
@@ -316,12 +342,13 @@ public class SimulatorManager {
     }
 
     /**
-     * Return the XVM entitled ''name'', if not return null
+     * Return the XVM entitled ''name'', if not return null please note that the search is performed by considering
+     * all VMs (i.e. event the off ones)
      * @param name the name of the vm requested
      * @return the corresponding XVM instance (null if there is no corresponding vm in the sgVMs collection)
      */
     public static XVM getXVMByName(String name) {
-        for (XVM tmp:sgVMs) {
+        for (XVM tmp:SimulatorManager.getSGVMs()) {
             if(tmp.getName().equals(name))
                 return tmp;
         }
@@ -330,6 +357,8 @@ public class SimulatorManager {
 
     /**
      * Change the load of a VM.
+     * Please note that we do not detect violations on off hosts (i.e. if the nodes that hosts the VM is off, we change
+     * the load of the vm for consistency reasons but we do not consider the violation that may result from this change).
      * @param sgVM the VM that should be updated
      * @param load the new expected load
      */
@@ -337,24 +366,35 @@ public class SimulatorManager {
         XHost tmpHost = sgVM.getLocation();
         boolean previouslyViable = tmpHost.isViable();
         sgVM.setLoad(load);
-        Msg.info("Current getCPUDemand "+SimulatorManager.getCPUDemand()+"\n");
 
-        if(previouslyViable) {
-            if (!tmpHost.isViable()) {
-                Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
-                Trace.hostSetState(tmpHost.getName(), "PM", "violation");
-            }
-            else if(!previouslyViable){
-                if (tmpHost.isViable()) {
-                    Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
-                    Trace.hostSetState (tmpHost.getName(), "PM", "normal");
+        // If the node is off, we change the VM load but we do not consider it for possible violation and do not update
+        // neither the global load of the node nor the global load of the cluster.
+        // Violations are detected only on running node
+        if (!tmpHost.isOff()){
+
+            Msg.info("Current getCPUDemand "+SimulatorManager.getCPUDemand()+"\n");
+
+
+            if(previouslyViable) {
+                if (!tmpHost.isViable()) {
+                    Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
+                    tmpHost.incViolation();
+                    Trace.hostSetState(tmpHost.getName(), "PM", "violation");
                 }
-            }
-            // Update getCPUDemand of the host
-            Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());
+                else if(!previouslyViable){
+                    if (tmpHost.isViable()) {
+                        Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
+                        Trace.hostSetState (tmpHost.getName(), "PM", "normal");
+                    }
+                }
 
-            //Update global getCPUDemand
-            Trace.hostVariableSet(SimulatorManager.getServiceNodeName(),  "LOAD", tmpHost.getCPUDemand());
+
+                // Update getCPUDemand of the host
+                Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());
+
+                //Update global getCPUDemand
+                Trace.hostVariableSet(SimulatorManager.getServiceNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
+            }
         }
     }
 
@@ -366,10 +406,20 @@ public class SimulatorManager {
         if(host.isOff()) {
             Msg.info("Turn on node "+host.getName());
             host.turnOn();
-            sgHosts.add(host);
+            sgHostsOff.remove(host);
+            sgHostsOn.add(host);
+
             for (XVM vm: host.getRunnings()){
-                sgVMs.add(vm);
+                sgVMsOff.remove(vm);
+                sgVMsOn.add(vm);
             }
+
+            // Update getCPUDemand of the host
+            Trace.hostVariableSet(host.getName(), "LOAD", host.getCPUDemand());
+
+            //Update global getCPUDemand
+            Trace.hostVariableSet(SimulatorManager.getServiceNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
+
         } else{
             Msg.info("Weird... you are asking to turn on a host that is already on !");
         }
@@ -386,14 +436,23 @@ public class SimulatorManager {
             // First remove all VMs hosted on the node from the global collection
             // The VMs are still referenced on the node
             for (XVM vm : host.getRunnings()) {
-                sgVMs.remove(vm);
+                sgVMsOn.remove(vm);
+                sgVMsOff.add(vm);
             }
 
-            // Second, remove the node from the collection of running host
-            sgHosts.remove(host);
+            // Second, remove the node from the collection of running host and add it to the collection of off ones
+            sgHostsOn.remove(host);
+            sgHostsOff.add(host);
+
+            // Update getCPUDemand of the host
+            Trace.hostVariableSet(host.getName(), "LOAD", 0);
+
+            //Update global getCPUDemand
+            Trace.hostVariableSet(SimulatorManager.getServiceNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
 
             // Finally turn the node off
             host.turnOff();
+
         }
         else{
             Msg.info("Weird... you are asking to turn off a host that is already off !");

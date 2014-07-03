@@ -48,3 +48,4 @@ TODO - Describe the process to add a new scheduler into the injector
 ** Contributors
 - Adrien Lebre - adrien.lebre@inria.fr - France project founder, principal maintainer
 - José Simao - jsimao@cc.isel.ipl.pt - Portugal, first beta tester - few bug fixes
+- Flavien Quesnel - xxxx, bug fixes, distributed algorithm (based on DVMS proposal)

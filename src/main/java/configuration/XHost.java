@@ -58,7 +58,17 @@ public class XHost{
     private boolean off;
 
     /**
-     * Consrtuctor
+     * A counter to check how many times a host has been turn off
+     */
+    private int turnOffNb;
+
+    /**
+     * A counter to check how many times a node has been violated
+     */
+    private int nbOfViolations;
+
+    /**
+     * Constructor
      * Please note that by default a XHOST is off (you should invoke turnOn)
      * @param h MSG host to extend
      * @param memSize the size of the memory of the host (rigid value, once it has been assigned it does not change)
@@ -75,7 +85,9 @@ public class XHost{
        this.netBW = netBW;
        this.ip = ip;
        this.hostedVMs = new ArrayList<XVM>();
-       this.off=true;
+       this.off = true;
+       this.turnOffNb = 0;
+       this.nbOfViolations = 0;
     }
 
     /**
@@ -104,7 +116,6 @@ public class XHost{
     public int getNbCores(){
         return this.ncores;
     }
-
 
     /**
      * @return the NIC capability (i.e. the bandwidth expressed in MBytes)
@@ -197,10 +208,10 @@ public class XHost{
         if(!this.off) {
             Msg.info("Turn off " + this.sgHost.getName());
             this.off=true;
+            this.turnOffNb++;
             this.sgHost.off();
         }
     }
-
 
     /**
      * Turn on a host (the host should have been turn off previously), otherwise nothing happens
@@ -218,5 +229,26 @@ public class XHost{
      */
     public boolean isOff(){
         return this.off;
+    }
+
+    /**
+     * @return the number of times the host has been turned off since the beginning of the simulation
+     */
+    public int getTurnOffNb() {
+        return turnOffNb;
+    }
+
+    /**
+     * @return the number of times the host has turn to a violation state since the beginning of the simulation
+     */
+    public int getNbOfViolations() {
+        return nbOfViolations;
+    }
+
+    /**
+     * Increment the number of violations
+     */
+    public void incViolation() {
+        nbOfViolations++;
     }
 }

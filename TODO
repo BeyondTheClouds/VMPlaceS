@@ -1,6 +1,6 @@
 TODO: 
 
-July 3, 2014,   Fix simgrid_full.jar issue (currently not include to the git repo)
+July 3, 2014,   Change LIBS to lib (and fix git repos issues, Flavien's request)
 
 June 30, 2014,  Relocate VMs to other nodes (randomly) when a node crash (turnOff is invoked by the injector)
 
