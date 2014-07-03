@@ -125,7 +125,7 @@ public class Injector extends Process {
             // Add a new event queue
             faultQueue.add(new FaultEvent(id++, currentTime,tempHost, false));
             //For the moment, downtime of a node is arbitrarily set to 5 min
-            faultQueue.add(new FaultEvent(id++, currentTime+(300*1000),tempHost, true));
+            faultQueue.add(new FaultEvent(id++, currentTime+(300),tempHost, true));
             currentTime+=exponentialDis(randExpDis, lambda);
             //        System.err.println(eventQueue.size());
         }

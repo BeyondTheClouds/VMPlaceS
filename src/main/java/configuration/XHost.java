@@ -53,7 +53,13 @@ public class XHost{
     private String ip;
 
     /**
+     * is the MSG host off (1) or on (0)
+     */
+    private boolean off;
+
+    /**
      * Consrtuctor
+     * Please note that by default a XHOST is off (you should invoke turnOn)
      * @param h MSG host to extend
      * @param memSize the size of the memory of the host (rigid value, once it has been assigned it does not change)
      * @param ncores the number of cores available on the host
@@ -69,6 +75,7 @@ public class XHost{
        this.netBW = netBW;
        this.ip = ip;
        this.hostedVMs = new ArrayList<XVM>();
+       this.off=true;
     }
 
     /**
@@ -184,33 +191,32 @@ public class XHost{
     }
 
     /**
-     *  turnOff a host,
-     *  All the hosted VMs are relocating (no migration, direct assignement) to other hosts randomly selected.
+     *  turnOff a host (the host should be off, otherwise nothing happens)
      */
     public void turnOff() {
-        Msg.info("Turn off " + this.sgHost.getName());
-        /* Before shutting down the nodes we should remove the VMs and the node from the configuration */
-
-        // First remove all VMs hosted on the node
-        XVM[] vms = new XVM[getRunnings().size()];
-        int i = 0 ;
-        for (XVM vm: getRunnings()){
-            vms[i++]= vm ;
+        if(!this.off) {
+            Msg.info("Turn off " + this.sgHost.getName());
+            this.off=true;
+            this.sgHost.off();
         }
-        // Second, ugly hack for the moment
-        // Just relocate VM on other nodes (no migration direct assignment)
-        // TODO
-
-        this.sgHost.off();
     }
 
 
     /**
-     * Turn on a host (the host should have been turn off previously)
+     * Turn on a host (the host should have been turn off previously), otherwise nothing happens
      */
     public void turnOn() {
+        if (this.off){
+            Msg.info("Turn on "+this.getName());
+            this.off=false;
+            this.sgHost.on();
+        }
+    }
 
-        Msg.info("Turn on "+this.getName());
-        this.sgHost.on();
+    /**
+     * @return whether the MSG host is on or off
+     */
+    public boolean isOff(){
+        return this.off;
     }
 }
