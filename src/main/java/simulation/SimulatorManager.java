@@ -93,7 +93,7 @@ public class SimulatorManager {
      * (i.e. hosted on hosts that have been turned off)
      */
     public static Collection<XVM> getSGVMs(){
-        LinkedList<XVM> tmp = new LinkedList<>(sgVMsOn);
+        LinkedList<XVM> tmp = new LinkedList<XVM>(sgVMsOn);
         tmp.addAll(sgVMsOff);
         return tmp;
     }
@@ -119,7 +119,7 @@ public class SimulatorManager {
      * you should invoke the msg Host.getByName(SimulatorManager.getServiceNodeName()).
      */
     public static Collection<XHost> getSGHosts(){
-        LinkedList<XHost> tmp = new LinkedList<>(sgHostsOn);
+        LinkedList<XHost> tmp = new LinkedList<XHost>(sgHostsOn);
         tmp.addAll(sgHostsOff);
         return tmp;
     }
@@ -163,8 +163,8 @@ public class SimulatorManager {
         // Since SG does not make any distinction between Host and Virtual Host (VMs and Hosts belong to the Host SG table)
         // we should retrieve first the real host in a separated table
         // Please remind that node0 does not host VMs (it is a service node) and hence, it is managed separately (getServiceNodeName())
-        sgHostsOn = new LinkedList<>();
-        sgHostsOff = new LinkedList<>();
+        sgHostsOn = new LinkedList<XHost>();
+        sgHostsOff = new LinkedList<XHost>();
         XHost xtmp;
         for(int i = 1 ; i <= nbOfHosts  ; i ++){
             try {
@@ -200,8 +200,8 @@ public class SimulatorManager {
         VMClasses.VMClass vmClass;
 
         initHosts(nbOfHosts);
-        sgVMsOn = new LinkedList<>();
-        sgVMsOff = new LinkedList<>();
+        sgVMsOn = new LinkedList<XVM>();
+        sgVMsOff = new LinkedList<XVM>();
 
         XVM sgVMTmp;
 
