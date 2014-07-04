@@ -30,7 +30,7 @@ public class CentralizedResolver extends Process {
      * A stupid main to easily comment main2 ;)
 	 */
     public void main(String[] args) throws MsgException{
-       //main2(args);
+       main2(args);
     }
     public void main2(String[] args) throws MsgException{
         double period = EntropyProperties.getEntropyPeriodicity();
