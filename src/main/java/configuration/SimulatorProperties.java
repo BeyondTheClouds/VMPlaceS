@@ -262,7 +262,8 @@ public class SimulatorProperties extends Properties {
 	
 	@Deprecated
 	public static int getNbOfVCPUs(){
-		return getPropertyAsInt(NB_OF_VCPUS, DEFAULT_NB_OF_VCPUS);
+		//return getPropertyAsInt(NB_OF_VCPUS, DEFAULT_NB_OF_VCPUS);
+        return getPropertyAsInt(null, DEFAULT_NB_OF_VCPUS);
 	}
 	
 	@Deprecated
@@ -272,7 +273,8 @@ public class SimulatorProperties extends Properties {
 
 	@Deprecated
 	public static int getMemoryConsumption(){
-		return getPropertyAsInt(MEMORY_CONSUMPTION, DEFAULT_MEMORY_CONSUMPTION);
+		//return getPropertyAsInt(MEMORY_CONSUMPTION, DEFAULT_MEMORY_CONSUMPTION);
+        return getPropertyAsInt(null, DEFAULT_MEMORY_CONSUMPTION);
 	}
 	
 	public static int getNbOfCPUConsumptionSlots(){
