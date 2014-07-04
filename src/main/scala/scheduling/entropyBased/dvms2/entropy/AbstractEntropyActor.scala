@@ -19,7 +19,6 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
-import scheduling.entropyBased.dvms2.SGActor
 import concurrent.ExecutionContext
 import java.util.concurrent.Executors
 import scala.concurrent.duration._

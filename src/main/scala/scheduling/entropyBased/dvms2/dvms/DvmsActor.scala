@@ -32,7 +32,6 @@ import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
 
 //import org.discovery.dvms.entropy.EntropyProtocol.{EntropyComputeReconfigurePlan}
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
-import scheduling.entropyBased.dvms2.SGActor
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object DvmsActor {
