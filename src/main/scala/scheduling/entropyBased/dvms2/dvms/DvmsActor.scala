@@ -20,19 +20,21 @@ package org.discovery.dvms.dvms
  * ============================================================ */
 
 import scala.concurrent.duration._
-import concurrent.{Future, Await}
 import java.util.{Date, UUID}
 
 import org.discovery.dvms.dvms.DvmsProtocol._
 import org.discovery.dvms.dvms.DvmsModel._
 import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
-import org.simgrid.msg.{Msg, Host}
+import org.simgrid.msg.Msg
 import org.discovery.dvms.entropy.EntropyActor
-import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
+import scheduling.entropyBased.dvms2.SGNodeRef
+import scheduling.entropyBased.dvms2.SGActor
+import configuration.XHost
+import simulation.SimulatorManager
+import org.simgrid.trace.Trace
 
 //import org.discovery.dvms.entropy.EntropyProtocol.{EntropyComputeReconfigurePlan}
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 object DvmsActor {
   val partitionUpdateTimeout: FiniteDuration = 3500 milliseconds
@@ -44,7 +46,7 @@ object DvmsActor {
 class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   // by default, a node is in a ring containing only it self
-//  var nextDvmsNode: SGNodeRef = applicationRef
+  //  var nextDvmsNode: SGNodeRef = applicationRef
 
   // Variables that are specific to a node member of a partition
   var firstOut: Option[SGNodeRef] = None
@@ -56,16 +58,16 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   var lockedForFusion: Boolean = false
 
-//  val self: SGNodeRef = applicationRef
+  //  val self: SGNodeRef = applicationRef
 
   def logInfo(msg: String) {
     Msg.info(s"$msg")
-//    println(s"$msg")
+    //    println(s"$msg")
   }
 
   def logWarning(msg: String) {
     Msg.info(s"$msg")
-//    println(s"$msg")
+    //    println(s"$msg")
   }
 
   val entropyActor = new EntropyActor(applicationRef)
@@ -121,15 +123,15 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     currentPartition match {
       case Some(partition) =>
 
-         currentPartition = Some(DvmsPartition(
-            partition.leader,
-            partition.initiator,
-            partition.nodes,
-            newState,
-            partition.id
-         ))
+        currentPartition = Some(DvmsPartition(
+          partition.leader,
+          partition.initiator,
+          partition.nodes,
+          newState,
+          partition.id
+        ))
 
-         lastPartitionUpdateDate = Some(new Date())
+        lastPartitionUpdateDate = Some(new Date())
 
       case None =>
     }
@@ -164,7 +166,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
               )
 
               currentPartition = Some(newPartition)
-//              firstOut = Some(nextDvmsNode)
+              //              firstOut = Some(nextDvmsNode)
 
               lastPartitionUpdateDate = Some(new Date())
 
@@ -202,8 +204,8 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
       //         logInfo(s"$applicationRef: check if we have reach the timeout of partition")
 
-//      logInfo("checkTimeout")
-//      printDetails()
+      //      logInfo("checkTimeout")
+      //      printDetails()
 
       (currentPartition, lastPartitionUpdateDate) match {
         case (Some(p), Some(d)) => {
@@ -245,13 +247,13 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       }
 
 
-//      firstOut = None
+      //      firstOut = None
       currentPartition = None
       lockedForFusion = false
       lastPartitionUpdateDate = None
 
       // Alert LogginActor that the current node is free
-//      applicationRef.ref ! IsFree(ExperimentConfiguration.getCurrentTime())
+      //      applicationRef.ref ! IsFree(ExperimentConfiguration.getCurrentTime())
     }
 
     case IAmTheNewLeader(partition) => {
@@ -269,14 +271,14 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         lockedForFusion = false
 
-//        firstOut match {
-//          case None => firstOut = Some(firstOutOfTheLeader)
-//          case Some(node) => {
-//            if (firstOut.get.location isEqualTo partition.leader.location) {
-//              firstOut = Some(firstOutOfTheLeader)
-//            }
-//          }
-//        }
+        //        firstOut match {
+        //          case None => firstOut = Some(firstOutOfTheLeader)
+        //          case Some(node) => {
+        //            if (firstOut.get.location isEqualTo partition.leader.location) {
+        //              firstOut = Some(firstOutOfTheLeader)
+        //            }
+        //          }
+        //        }
       }
     }
 
@@ -287,7 +289,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     case msg@TransmissionOfAnISP(partition) => {
 
       logInfo(s"received an ISP: $msg @$currentPartition and @$firstOut")
-//      printDetails()
+      //      printDetails()
 
       currentPartition match {
         case Some(p) => p match {
@@ -457,11 +459,11 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
             )
 
             currentPartition = Some(newPartition)
-//            firstOut = Some(nextDvmsNode)
+            //            firstOut = Some(nextDvmsNode)
             lastPartitionUpdateDate = Some(new Date())
 
             // Alert LogginActor that the current node is booked in a partition
-//            applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
+            //            applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
 
             partition.nodes.foreach(node => {
               logInfo(s"$applicationRef: sending the $newPartition to $node")
@@ -488,15 +490,15 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
                 )
 
                 currentPartition = Some(newPartition)
-//                firstOut = Some(nextDvmsNode)
+                //                firstOut = Some(nextDvmsNode)
 
 
                 // Alert LogginActor that the current node is booked in a partition
-//                applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
+                //                applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
 
                 partition.nodes.filter(n => n.isDifferentFrom(applicationRef)).foreach(node => {
                   logInfo(s"$applicationRef: sending the $newPartition to $node")
-//                  node.ref ! IAmTheNewLeader(newPartition)
+                  //                  node.ref ! IAmTheNewLeader(newPartition)
                   send(node, IAmTheNewLeader(newPartition))
                 })
 
@@ -507,7 +509,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
                 // it was enough: the partition is no more useful
                 currentPartition.get.nodes.foreach(node => {
-//                  node.ref ! DissolvePartition("violation resolved")
+                  //                  node.ref ! DissolvePartition("violation resolved")
                   send(node, DissolvePartition("violation resolved"))
                 })
               }
@@ -531,52 +533,52 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     case "faultDetected" => {
 
-          currentPartition match {
-            case None => {
-              logInfo("Dvms has detected a new cpu violation")
-//              printDetails()
+      currentPartition match {
+        case None => {
+          logInfo("Dvms has detected a new cpu violation")
+          //              printDetails()
 
-              //          firstOut = Some(nextDvmsNode)
+          //          firstOut = Some(nextDvmsNode)
 
-              currentPartition = Some(DvmsPartition(
-                applicationRef,
-                applicationRef,
-                List(applicationRef),
-                Growing(),
-                UUID.randomUUID()
-              ))
+          currentPartition = Some(DvmsPartition(
+            applicationRef,
+            applicationRef,
+            List(applicationRef),
+            Growing(),
+            UUID.randomUUID()
+          ))
 
-              lastPartitionUpdateDate = Some(new Date())
+          lastPartitionUpdateDate = Some(new Date())
 
-              // Alert LogginActor that the current node is booked in a partition
-      //        applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
+          // Alert LogginActor that the current node is booked in a partition
+          //        applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
 
-              firstOut match {
-                case Some(existingNode) =>
-                  logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
-                  send(existingNode, TransmissionOfAnISP(currentPartition.get))
-                case None =>
-                  logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
-              }
-
-            }
-            case _ =>
-//              println(s"violation detected: this is my Partition [$currentPartition]")
+          firstOut match {
+            case Some(existingNode) =>
+              logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
+              send(existingNode, TransmissionOfAnISP(currentPartition.get))
+            case None =>
+              logInfo(s"$applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
           }
+
+        }
+        case _ =>
+        //              println(s"violation detected: this is my Partition [$currentPartition]")
+      }
 
     }
 
     case ThisIsYourNeighbor(node) => {
-//      logInfo(s"my neighbor has changed: $node")
+      //      logInfo(s"my neighbor has changed: $node")
       firstOut = Some(node)
     }
 
     case YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[SGNodeRef], newNeighbor: SGNodeRef) => {
 
-//      (firstOut, oldNeighbor) match {
-//        case (Some(fo), Some(n)) if (fo.location isEqualTo n.location) => firstOut = Some(newNeighbor)
-//        case _ =>
-//      }
+      //      (firstOut, oldNeighbor) match {
+      //        case (Some(fo), Some(n)) if (fo.location isEqualTo n.location) => firstOut = Some(newNeighbor)
+      //        case _ =>
+      //      }
     }
 
     case msg => forward(applicationRef, sender, msg)
@@ -597,6 +599,49 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     computationResult
   }
 
+  def applyMigration(m: MakeMigration) {
+    // TODO: appliquer les migrations ici
+    println("""/!\ WARNING /!\: Dans DvmsActor, les migrations sont synchrones!""");
+
+    val args: Array[String] = new Array[String](3)
+    args(0) = m.vmName
+    args(1) = m.from
+    args(2) = m.to
+
+    //    new org.simgrid.msg.Process(Host.getByName(m.from), "Migrate-" + new Random().nextDouble, args) {
+    //      def main(args: Array[String]) {
+    var destHost: XHost = null
+    var sourceHost: XHost = null
+    try {
+      sourceHost = SimulatorManager.getXHostByName(args(1))
+      destHost = SimulatorManager.getXHostByName(args(2))
+    }
+    catch {
+      case e: Exception => {
+        e.printStackTrace
+        System.err.println("You are trying to migrate from/to a non existing node")
+      }
+    }
+    if (destHost != null) {
+
+      sourceHost.migrate(args(0), destHost)
+
+      Msg.info("End of migration of VM " + args(0) + " from " + args(1) + " to " + args(2))
+      //              CentralizedResolver.decMig
+      if (!destHost.isViable) {
+        Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName + "\n")
+        Trace.hostSetState(destHost.getName, "PM", "violation-out")
+      }
+      if (sourceHost.isViable) {
+        Msg.info("SOLVED VIOLATION ON " + sourceHost.getName + "\n")
+        Trace.hostSetState(sourceHost.getName, "PM", "normal")
+      }
+    }
+
+    //      }
+    //    }.start
+  }
+
   def applySolution(solution: ReconfigurationSolution) {
 
     import scala.collection.JavaConversions._
@@ -606,8 +651,19 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         var continueToUpdatePartition: Boolean = true
 
-        // TODO: appliquer les migrations ici
-        println("""/!\ UNIMPLEMENTED /!\: Dans DvmsActor, appliquer les migrations ici""");
+
+        solution.actions.keySet().foreach(key => {
+          solution.actions.get(key).foreach(action => {
+
+
+            action match {
+              case m@MakeMigration(from, to, vmName) =>
+                applyMigration(m)
+              case _ =>
+            }
+          })
+        })
+
 
 
         continueToUpdatePartition = false
