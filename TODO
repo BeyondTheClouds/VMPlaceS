@@ -2,7 +2,11 @@ TODO:
 
 July 3, 2014,   Change LIBS to lib (and fix git repos issues, Flavien's request)
 
+July 3, 2014,   Change LIBS to lib (and fix git repos issues, Flavien's request)
+
 June 30, 2014,  Relocate VMs to other nodes (randomly) when a node crash (turnOff is invoked by the injector)
+                For the moment, the VMs stay on the ''off node'' in order to let the injector to change their loads if need be.
+                Please note that the VMS (as the node) are not considered by the scheduler.
 
 June 30, 2014   Add network stress (in/out)
 

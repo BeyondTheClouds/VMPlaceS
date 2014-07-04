@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# This script generates a specific deployment file for the Chord example.
+# This script generates a specific deployment file for the injection simulator.
 # It assumes that the platform will be a cluster.
 # Usage: python generate.py nb_nodes nb_bits end_date
 # Example: python generate.py 100000 32 1000

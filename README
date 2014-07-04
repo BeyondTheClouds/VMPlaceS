@@ -38,14 +38,18 @@ VM Options:  -Xmx4G -d64 -Dlogback.configurationFile=config/logback.xml
 Program arguments: ./config/cluster_platform.xml ./config/generated_deploy.xml  --cfg=cpu/optim:Full --cfg=tracing:1  --cfg=tracing/filename:simu.trace --cfg=tracing/platform:1
 Logs (if exists): ./logs/console.log
 
+Topology of the simulated infrastructure:
 Please note that the Simulator injector is currently released with a default platform xml file (see config/cluster_platform.xml) allowing to run a simulation up to 5K hosts in a one-site cluster scenario.
-If you want something different, you should either modify this platform file or use your own
-For more information, please refer to the SimGrid documentation (section Platform description)
+That means that nodes are homogeneous. They have the same capabilities in terms of nb of cores, cpu/ram capacitity and network bandwidth.
+You can if you want change the network topology as well as the network capability of each node by modifying  the platform file or by using your own one (for more information, please refer to the SimGrid
+documentation, section Platform description)
+WARNING: please keep in mind that due to the fact the capability in terms of cores number/cpu/ramsize is defined in the simulator.properties files, nodes will stay homogeneous.
+
 
 ** Implement/evaluate a new algorithm
 TODO - Describe the process to add a new scheduler into the injector
 
 ** Contributors
-- Adrien Lebre - adrien.lebre@inria.fr - France project founder, principal maintainer
-- José Simao - jsimao@cc.isel.ipl.pt - Portugal, first beta tester - few bug fixes
-- Flavien Quesnel - xxxx, bug fixes, distributed algorithm (based on DVMS proposal)
+- Adrien Lebre - adrien.lebre@inria.fr - France -  project founder, principal maintainer
+- Flavien Quesnel - xxxx - France - simulator properties, bug fixes, distributed algorithm (based on DVMS proposal)
+- José Simao - jsimao@cc.isel.ipl.pt - Portugal - first beta tester - few bug fixes

@@ -1,3 +1,16 @@
+/**
+ *
+ * Copyright 2012-2013-2014. The SimGrid Team. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the license (GNU LGPL) which comes with this package.
+ *
+ * This class manages the definition of the different parameters, which are present in the ''config/simulator.properties''
+ * files
+ *
+ * @author: flavien.quesnel@inria.fr
+ * @coauthor: adrien.lebre@inria.fr
+ */
 package configuration;
 
 import java.io.BufferedReader;
@@ -10,32 +23,66 @@ import java.util.Properties;
 public class SimulatorProperties extends Properties {
 
 	/**
-	 * 
+	 *
 	 */
-	private static final long serialVersionUID = -103113318411928500L;
-	
-	//Default location of the properties file
-	public static final String DEFAULT_PROP_FILE = "config" + File.separator + "simulator.properties";
-	
-	//Singleton
-	public final static SimulatorProperties INSTANCE = new SimulatorProperties();
+	//private static final long serialVersionUID = -103113318411928500L;
+
+    /**
+     *  Default location of the properties file
+     */
+   	public static final String DEFAULT_PROP_FILE = "config" + File.separator + "simulator.properties";
+
+    /**
+     * Singleton
+     */
+    public final static SimulatorProperties INSTANCE = new SimulatorProperties();
 	
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//Property keys
+    // //// ///// Property keys
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	
-	//Keys related to nodes
-	public final static String NB_OF_NODES = "nodes.number";	
-	public final static String NB_OF_CPUS = "nodes.cpunumber";	
-	public final static String CPU_CAPACITY = "nodes.cpucapacity";	
+
+    // //// /////
+    // //// ///// Keys related to nodes
+    // //// /////
+
+    // TODO, remove these keys and leverage the platform file instead.
+
+    /**
+     * Number of nodes (aka. hosts) composing the infrastructure (this number does not include the service node).
+     */
+	public final static String NB_OF_NODES = "nodes.number";
+    /**
+     * Number of cores per nodes
+     */
+	public final static String NB_OF_CPUS = "nodes.cpunumber";
+    /**
+     * CPU capacity for a node (number of cores * one_core_capacity = nodes.cpucapacity)
+     */
+    public final static String CPU_CAPACITY = "nodes.cpucapacity";
+    /**
+     * Size of the RAM for each node.
+     */
 	public final static String MEMORY_TOTAL = "nodes.memorytotal";
+    /**
+     * Available network bandwidth (not used for the moment)
+     */
     public final static String NET_CAPACITY = "nodes.netbw";
-	//Keys related to VMs
-	public final static String NB_OF_VMS = "vm.number";		
-	public final static String NB_OF_VCPUS = "vm.vcpunumber";	
+
+    // //// /////
+    // //// ///// Keys related to VMs
+    // //// /////
+
+    /**
+     * Number of VMs that will be assigned to the host at the beginning
+     */
+	public final static String NB_OF_VMS = "vm.number";
+
+    /**
+     * the consumption of one VM
+     */
 	public final static String CPU_CONSUMPTION = "vm.cpuconsumption";
-	public final static String MEMORY_CONSUMPTION = "vm.memoryconsumption";
+
 	
 	//Other keys
 	public final static String CONFIGURATION_FILE = "config.file";
