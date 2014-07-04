@@ -260,23 +260,22 @@ public class SimulatorProperties extends Properties {
 		return getPropertyAsInt(MAX_PERCENTAGE_OF_ACTIVE_VMS, DEFAULT_MAX_PERCENTAGE_OF_ACTIVE_VMS);
 	}
 	
-	@Deprecated
+	/*@Deprecated
 	public static int getNbOfVCPUs(){
-		//return getPropertyAsInt(NB_OF_VCPUS, DEFAULT_NB_OF_VCPUS);
-        return getPropertyAsInt(null, DEFAULT_NB_OF_VCPUS);
-	}
+		return getPropertyAsInt(NB_OF_VCPUS, DEFAULT_NB_OF_VCPUS);
+	}*/
+
 	
 	@Deprecated
 	public static int getCPUConsumption(){
 		return getPropertyAsInt(CPU_CONSUMPTION, DEFAULT_CPU_CONSUMPTION);
 	}
 
-	@Deprecated
+	/*@Deprecated
 	public static int getMemoryConsumption(){
-		//return getPropertyAsInt(MEMORY_CONSUMPTION, DEFAULT_MEMORY_CONSUMPTION);
-        return getPropertyAsInt(null, DEFAULT_MEMORY_CONSUMPTION);
-	}
-	
+		return getPropertyAsInt(MEMORY_CONSUMPTION, DEFAULT_MEMORY_CONSUMPTION);
+	}*/
+
 	public static int getNbOfCPUConsumptionSlots(){
 		return getPropertyAsInt(NB_OF_CPU_CONSUMPTION_SLOTS, DEFAULT_NB_OF_CPU_CONSUMPTION_SLOTS);
 	}
@@ -376,9 +375,9 @@ public class SimulatorProperties extends Properties {
 		System.out.println("memory total: " + SimulatorProperties.getMemoryTotal());
 		System.out.println("nb of vms: " + SimulatorProperties.getNbOfVMs());
 		System.out.println("min percentage of active vms: " + SimulatorProperties.getMinPercentageOfActiveVMs());
-		System.out.println("nb of vcpus: " + SimulatorProperties.getNbOfVCPUs());
+
 		System.out.println("cpu consumption: " + SimulatorProperties.getCPUConsumption());
-		System.out.println("memory consumption: " + SimulatorProperties.getMemoryConsumption());
+
 		System.out.println("Simuation duration: " + SimulatorProperties.getDuration());
 		System.out.println("Load period: " + SimulatorProperties.getLoadPeriod());
         System.out.println("Crash period: " + SimulatorProperties.getCrashPeriod());
