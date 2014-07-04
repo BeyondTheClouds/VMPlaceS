@@ -5,7 +5,7 @@
 
 ** Description
 A dedicated framework to evaluate and compare VM placement  algorithms.
-At coarse-grained, the framework is composed of two major components: the injector and the VM placement algorithm.
+At coarse-grained, the framework is composed of two major components: the injecto   r and the VM placement algorithm.
 The injector is the generic part of the framework (i.e. the one you can directly use) while the VM placement algorithm is the part you want to study (or compare with available algorithms).
 
 The injector executes different kind of events:
@@ -38,5 +38,14 @@ VM Options:  -Xmx4G -d64 -Dlogback.configurationFile=config/logback.xml
 Program arguments: ./config/cluster_platform.xml ./config/generated_deploy.xml  --cfg=cpu/optim:Full --cfg=tracing:1  --cfg=tracing/filename:simu.trace --cfg=tracing/platform:1
 Logs (if exists): ./logs/console.log
 
+Please note that the Simulator injector is currently released with a default platform xml file (see config/cluster_platform.xml) allowing to run a simulation up to 5K hosts in a one-site cluster scenario.
+If you want something different, you should either modify this platform file or use your own
+For more information, please refer to the SimGrid documentation (section Platform description)
+
 ** Implement/evaluate a new algorithm
 TODO - Describe the process to add a new scheduler into the injector
+
+** Contributors
+- Adrien Lebre - adrien.lebre@inria.fr - France project founder, principal maintainer
+- José Simao - jsimao@cc.isel.ipl.pt - Portugal, first beta tester - few bug fixes
+- Flavien Quesnel - xxxx, bug fixes, distributed algorithm (based on DVMS proposal)

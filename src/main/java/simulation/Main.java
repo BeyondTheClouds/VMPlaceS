@@ -119,7 +119,9 @@ public class Main {
         /* Create all VM instances and assign them on the PMs */
         /* The initial deployment is based on a round robin fashion */
         System.out.println("Configure simulation" + new Date().toString());
-        SimulatorManager.instanciateVMs(SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs());
+        SimulatorManager.cleanLog();
+        SimulatorManager.instanciateVMs(SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(),true);
+        SimulatorManager.writeCurrentConfiguration();
 
 	    /*  execute the simulation. */
         System.out.println("Begin simulation" + new Date().toString());
