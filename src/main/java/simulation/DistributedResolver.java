@@ -6,6 +6,7 @@ import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.entropyBased.dvms2.DVMSProcess;
 import scheduling.entropyBased.dvms2.MonitorProcess;
+import scheduling.entropyBased.dvms2.TimeoutProcess;
 
 
 /** This class is in charge of launching the latest version of DVMs (currently DVMS V2 implemented in SCALA)
@@ -29,6 +30,9 @@ public class DistributedResolver extends Process {
 
             MonitorProcess monitorProcess = new MonitorProcess(SimulatorManager.getXHostByName(host.getName()), nodeId, port, dmvsProcess.self(), dmvsProcess);
             monitorProcess.start();
+
+            TimeoutProcess timeoutProcess = new TimeoutProcess(SimulatorManager.getXHostByName(host.getName()), nodeId, port, dmvsProcess.self(), dmvsProcess);
+            timeoutProcess.start();
 
             Msg.info("Agent "+nodeId+" started");
 
