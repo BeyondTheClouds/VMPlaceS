@@ -20,7 +20,7 @@ package org.discovery.dvms.dvms
  * ============================================================ */
 
 import scala.concurrent.duration._
-import java.util.{Date, UUID}
+import java.util.{Random, Date, UUID}
 
 import org.discovery.dvms.dvms.DvmsProtocol._
 import org.discovery.dvms.dvms.DvmsModel._
@@ -34,10 +34,11 @@ import simulation.SimulatorManager
 import org.simgrid.trace.Trace
 
 //import org.discovery.dvms.entropy.EntropyProtocol.{EntropyComputeReconfigurePlan}
+
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 
 object DvmsActor {
-  val partitionUpdateTimeout: FiniteDuration = 3500 milliseconds
+  val partitionUpdateTimeout: Double = 3.5
 
 
 }
@@ -54,7 +55,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
   var currentPartition: Option[DvmsPartition] = None
 
   // Variables used for resiliency
-  var lastPartitionUpdateDate: Option[Date] = None
+  var lastPartitionUpdateDate: Option[Double] = None
 
   var lockedForFusion: Boolean = false
 
@@ -83,7 +84,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       currentPartition.get.nodes ::: partition.nodes,
       Growing(), UUID.randomUUID()))
 
-    lastPartitionUpdateDate = Some(new Date())
+    lastPartitionUpdateDate = Some(Msg.getClock)
 
     currentPartition.get.nodes.foreach(node => {
       logInfo(s"(a) $applicationRef: sending a new version of the partition ${IAmTheNewLeader(currentPartition.get)} to $node")
@@ -91,7 +92,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     })
 
     val computationResult = computeEntropy()
-    computationResult match{
+    computationResult match {
       case solution: ReconfigurationSolution => {
         logInfo(s"(1) the partition $currentPartition is enough to reconfigure")
 
@@ -131,7 +132,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
           partition.id
         ))
 
-        lastPartitionUpdateDate = Some(new Date())
+        lastPartitionUpdateDate = Some(Msg.getClock)
 
       case None =>
     }
@@ -168,7 +169,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
               currentPartition = Some(newPartition)
               //              firstOut = Some(nextDvmsNode)
 
-              lastPartitionUpdateDate = Some(new Date())
+              lastPartitionUpdateDate = Some(Msg.getClock)
 
               logInfo(s"$applicationRef: A node crashed ($node), I am becoming the new leader of $currentPartition")
 
@@ -200,7 +201,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     }
 
 
-    case CheckTimeout() => {
+    case "checkTimeout" => {
 
       //         logInfo(s"$applicationRef: check if we have reach the timeout of partition")
 
@@ -210,12 +211,12 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       (currentPartition, lastPartitionUpdateDate) match {
         case (Some(p), Some(d)) => {
 
-          val now: Date = new Date()
-          val duration: Duration = (now.getTime - d.getTime) milliseconds
+          // Check time in seconds
+          val duration: Double = (Msg.getClock - d)
 
           if (duration > DvmsActor.partitionUpdateTimeout) {
 
-            logInfo(s"$applicationRef: timeout of partition has been reached: I dissolve everything")
+            logInfo(s"$applicationRef: timeout of $duration at partition $currentPartition has been reached: I dissolve everything")
 
             p.nodes.foreach(n => {
               send(n, DissolvePartition("timeout"))
@@ -265,9 +266,9 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         case _ => false
       }
 
-      if(!outdatedUpdate) {
+      if (!outdatedUpdate) {
         currentPartition = Some(partition)
-        lastPartitionUpdateDate = Some(new Date())
+        lastPartitionUpdateDate = Some(Msg.getClock)
 
         lockedForFusion = false
 
@@ -316,7 +317,6 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
               case None =>
                 logInfo(s"(X) $applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
             }
-
 
 
           }
@@ -390,7 +390,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
               }
 
-              case Finishing() =>  {
+              case Finishing() => {
                 firstOut match {
                   case Some(existingNode) =>
                     logInfo(s"$applicationRef: forwarding $msg to $firstOut")
@@ -460,7 +460,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
             currentPartition = Some(newPartition)
             //            firstOut = Some(nextDvmsNode)
-            lastPartitionUpdateDate = Some(new Date())
+            lastPartitionUpdateDate = Some(Msg.getClock)
 
             // Alert LogginActor that the current node is booked in a partition
             //            applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
@@ -470,7 +470,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
               send(node, IAmTheNewLeader(newPartition))
             })
 
-            lastPartitionUpdateDate = Some(new Date())
+            lastPartitionUpdateDate = Some(Msg.getClock)
 
             // ask entropy if the new partition is enough to resolve the overload
 
@@ -502,7 +502,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
                   send(node, IAmTheNewLeader(newPartition))
                 })
 
-                lastPartitionUpdateDate = Some(new Date())
+                lastPartitionUpdateDate = Some(Msg.getClock)
 
                 // Applying the reconfiguration plan
                 applySolution(solution)
@@ -548,7 +548,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
             UUID.randomUUID()
           ))
 
-          lastPartitionUpdateDate = Some(new Date())
+          lastPartitionUpdateDate = Some(Msg.getClock)
 
           // Alert LogginActor that the current node is booked in a partition
           //        applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
@@ -601,7 +601,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   def applyMigration(m: MakeMigration) {
     // TODO: appliquer les migrations ici
-    println("""/!\ WARNING /!\: Dans DvmsActor, les migrations sont synchrones!""");
+    println( """/!\ WARNING /!\: Dans DvmsActor, les migrations sont synchrones!""");
 
     val args: Array[String] = new Array[String](3)
     args(0) = m.vmName
@@ -651,6 +651,27 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         var continueToUpdatePartition: Boolean = true
 
+        new org.simgrid.msg.Process(applicationRef.getName, "Update-" + new Random().nextDouble, new Array[String](0)) {
+          def main(args: Array[String]) {
+            while (continueToUpdatePartition) {
+
+//              val newPartition: DvmsPartition = new DvmsPartition(
+//                applicationRef,
+//                partition.initiator,
+//                partition.nodes,
+//                partition.state,
+//                UUID.randomUUID()
+//              )
+//
+//              partition.nodes.foreach(node => {
+////                logInfo(s"$applicationRef: updating partition $newPartition while migration are performing")
+//                send(node, IAmTheNewLeader(newPartition))
+//              })
+              logInfo(s"$applicationRef waiting 1 seconds")
+              waitFor(1)
+            }
+          }
+        }.start
 
         solution.actions.keySet().foreach(key => {
           solution.actions.get(key).foreach(action => {
@@ -664,15 +685,12 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
           })
         })
 
-
-
         continueToUpdatePartition = false
 
         partition.nodes.foreach(node => {
           logInfo(s"$applicationRef: reconfiguration plan has been applied, dissolving partition $partition")
           send(node, DissolvePartition("Reconfiguration plan has been applied"))
         })
-
 
       case None =>
         logInfo("cannot apply reconfigurationSolution: current partition is undefined")
