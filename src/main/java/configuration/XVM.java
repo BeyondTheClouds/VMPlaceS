@@ -54,6 +54,12 @@ public class XVM extends VM{
     private XHost host;
 
     /**
+     * Temporary fix due to a simgrid issue
+     * See https://gforge.inria.fr/tracker/index.php?func=detail&aid=17636&group_id=12&atid=165
+     */
+    private boolean vmIsMigrating; //Temporary fix to prevent migrating the same VM twice
+
+    /**
      * Construcor
      * @param host the XHost (i.e. the PM where the VM is currently running)
      * @param name the name of the vm (as it is listed by virsh list for instance)
@@ -86,6 +92,7 @@ public class XVM extends VM{
         this.daemon = new Daemon(this, 100);
         this.host = host;
         this.NbOfLoadChanges = 0;
+        this.vmIsMigrating = false;
    }
 
     /**
@@ -137,14 +144,20 @@ public class XVM extends VM{
      * Migrate a VM from one XHost to another one.
      * @param host the host where to migrate the VM
      */
-    public void migrate(XHost host){
-        Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
-        Msg.info("    currentLoadDemand:"+this.currentLoadDemand +"/ramSize:"+this.ramsize+"/dpIntensity:"+this.dpIntensity+"/remaining:"+this.daemon.getRemaining());
-        super.migrate(host.getSGHost());
-        this.host = host;
-        this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
-                                                //The dummy cpu action is not bounded.
-        Msg.info("End of migration of VM " + this.getName() + " to node " + host.getName());
+    public void migrate(XHost host) {
+        if (!this.vmIsMigrating) {
+            this.vmIsMigrating = true;
+            Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
+            Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
+            super.migrate(host.getSGHost());
+            this.host = host;
+            this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
+            //The dummy cpu action is not bounded.
+            Msg.info("End of migration of VM " + this.getName() + " to node " + host.getName());
+            this.vmIsMigrating = false;
+        } else
+            Msg.info("You are trying to migrate twice a VM... it is impossible ! Byebye");
+            System.exit(-1);
     }
 
     /**
