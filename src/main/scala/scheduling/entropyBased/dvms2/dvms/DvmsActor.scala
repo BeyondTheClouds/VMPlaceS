@@ -19,8 +19,7 @@ package org.discovery.dvms.dvms
  * limitations under the License.
  * ============================================================ */
 
-import scala.concurrent.duration._
-import java.util.{Random, Date, UUID}
+import java.util.{Random, UUID}
 
 import org.discovery.dvms.dvms.DvmsProtocol._
 import org.discovery.dvms.dvms.DvmsModel._
@@ -32,9 +31,6 @@ import scheduling.entropyBased.dvms2.SGActor
 import configuration.XHost
 import simulation.SimulatorManager
 import org.simgrid.trace.Trace
-
-//import org.discovery.dvms.entropy.EntropyProtocol.{EntropyComputeReconfigurePlan}
-
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 
 object DvmsActor {
@@ -59,16 +55,12 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   var lockedForFusion: Boolean = false
 
-  //  val self: SGNodeRef = applicationRef
-
   def logInfo(msg: String) {
     Msg.info(s"$msg")
-    //    println(s"$msg")
   }
 
   def logWarning(msg: String) {
     Msg.info(s"$msg")
-    //    println(s"$msg")
   }
 
   val entropyActor = new EntropyActor(applicationRef)
@@ -167,7 +159,6 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
               )
 
               currentPartition = Some(newPartition)
-              //              firstOut = Some(nextDvmsNode)
 
               lastPartitionUpdateDate = Some(Msg.getClock)
 
@@ -185,6 +176,142 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   }
 
+  def computeEntropy(): ReconfigurationResult = {
+    val computationResult = entropyActor.computeReconfigurationPlan(currentPartition.get.nodes)
+    computationResult
+  }
+
+  def checkTimeout() {
+    (currentPartition, lastPartitionUpdateDate) match {
+      case (Some(p), Some(d)) => {
+        val duration: Double = (Msg.getClock - d)
+        if (duration > DvmsActor.partitionUpdateTimeout) {
+          logInfo(s"$applicationRef: timeout of $duration at partition $currentPartition has been reached: I dissolve everything")
+          p.nodes.filterNot(ref => ref.getId == applicationRef.getId).foreach(n => {
+            send(n, DissolvePartition("timeout"))
+          })
+          dissolvePartition("timeout")
+        }
+      }
+      case _ =>
+    }
+  }
+
+  def applyMigration(m: MakeMigration) {
+
+    println( """/!\ WARNING /!\: Dans DvmsActor, les migrations sont synchrones!""");
+    println(s"trying to migrate ${m.vmName} from ${m.from} to ${m.to}");
+
+    val args: Array[String] = new Array[String](3)
+    args(0) = m.vmName
+    args(1) = m.from
+    args(2) = m.to
+
+    //    new org.simgrid.msg.Process(Host.getByName(m.from), "Migrate-" + new Random().nextDouble, args) {
+    //      def main(args: Array[String]) {
+    var destHost: XHost = null
+    var sourceHost: XHost = null
+    try {
+      sourceHost = SimulatorManager.getXHostByName(args(1))
+      destHost = SimulatorManager.getXHostByName(args(2))
+    }
+    catch {
+      case e: Exception => {
+        e.printStackTrace
+        System.err.println("You are trying to migrate from/to a non existing node")
+      }
+    }
+    if (destHost != null) {
+
+      sourceHost.migrate(args(0), destHost)
+
+      Msg.info("End of migration of VM " + args(0) + " from " + args(1) + " to " + args(2))
+      //              CentralizedResolver.decMig
+      if (!destHost.isViable) {
+        Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName + "\n")
+        Trace.hostSetState(destHost.getName, "PM", "violation-out")
+      }
+      if (sourceHost.isViable) {
+        Msg.info("SOLVED VIOLATION ON " + sourceHost.getName + "\n")
+        Trace.hostSetState(sourceHost.getName, "PM", "normal")
+      }
+    }
+
+    //      }
+    //    }.start
+  }
+
+  def applySolution(solution: ReconfigurationSolution) {
+
+    println(s"Applying reconfigurationPlan: $solution")
+
+    import scala.collection.JavaConversions._
+
+    val currentPartitionCopy: Option[DvmsPartition] = currentPartition
+    currentPartitionCopy match {
+      case Some(partition) =>
+
+        var continueToUpdatePartition: Boolean = true
+
+        val updaterProcess = new org.simgrid.msg.Process(applicationRef.getName, "Update-" + new Random().nextDouble, new Array[String](0)) {
+          def main(args: Array[String]) {
+            while (true) {
+
+              val newPartition: DvmsPartition = new DvmsPartition(
+                applicationRef,
+                partition.initiator,
+                partition.nodes,
+                partition.state,
+                UUID.randomUUID()
+              )
+
+              partition.nodes.foreach(node => {
+                send(node, IAmTheNewLeader(newPartition))
+              })
+
+              logInfo(s"$applicationRef waiting 1 seconds")
+              waitFor(1)
+            }
+          }
+        }
+
+        updaterProcess.start()
+
+        solution.actions.keySet().foreach(key => {
+          solution.actions.get(key).foreach(action => {
+
+
+            action match {
+              case m@MakeMigration(from, to, vmName) =>
+                applyMigration(m)
+              case _ =>
+            }
+          })
+        })
+
+
+        continueToUpdatePartition = false
+
+        updaterProcess.kill()
+
+        partition.nodes.foreach(node => {
+          logInfo(s"$applicationRef: reconfiguration plan has been applied, dissolving partition $partition")
+          send(node, DissolvePartition("Reconfiguration plan has been applied"))
+        })
+
+      case None =>
+        logInfo("cannot apply reconfigurationSolution: current partition is undefined")
+    }
+  }
+
+  def dissolvePartition(reason: String) {
+    logInfo(s"$applicationRef: I dissolve the partition $currentPartition, because <$reason>")
+
+    lockedForFusion = false
+    lastPartitionUpdateDate = None
+    currentPartition = None
+  }
+
   def receive(message: Object, sender: SGNodeRef, returnCanal: SGNodeRef) = message match {
 
     case IsThisVersionOfThePartitionStillValid(partition) => {
@@ -196,37 +323,15 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       }
     }
 
-    case FailureDetected(node) => {
+    case FailureDetected(node) =>
       remoteNodeFailureDetected(node)
-    }
 
 
-    case "checkTimeout" => {
+    case "updateLastPartitionUpdate" =>
+      lastPartitionUpdateDate = Some(Msg.getClock)
 
-      //         logInfo(s"$applicationRef: check if we have reach the timeout of partition")
-
-      //      logInfo("checkTimeout")
-      //      printDetails()
-
-      (currentPartition, lastPartitionUpdateDate) match {
-        case (Some(p), Some(d)) => {
-
-          // Check time in seconds
-          val duration: Double = (Msg.getClock - d)
-
-          if (duration > DvmsActor.partitionUpdateTimeout) {
-
-            logInfo(s"$applicationRef: timeout of $duration at partition $currentPartition has been reached: I dissolve everything")
-
-            p.nodes.foreach(n => {
-              send(n, DissolvePartition("timeout"))
-            })
-          }
-
-        }
-        case _ =>
-      }
-    }
+    case "checkTimeout" =>
+      checkTimeout()
 
 
     case CanIMergePartitionWithYou(partition, contact) => {
@@ -239,22 +344,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     }
 
     case DissolvePartition(reason) => {
-
-      currentPartition match {
-        case Some(p) =>
-          logInfo(s"$applicationRef: I dissolve the partition $p, because <$reason>")
-        case None =>
-          logInfo(s"$applicationRef: I dissolve the partition None, because <$reason>")
-      }
-
-
-      //      firstOut = None
-      currentPartition = None
-      lockedForFusion = false
-      lastPartitionUpdateDate = None
-
-      // Alert LogginActor that the current node is free
-      //      applicationRef.ref ! IsFree(ExperimentConfiguration.getCurrentTime())
+      dissolvePartition(reason)
     }
 
     case IAmTheNewLeader(partition) => {
@@ -271,15 +361,6 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         lastPartitionUpdateDate = Some(Msg.getClock)
 
         lockedForFusion = false
-
-        //        firstOut match {
-        //          case None => firstOut = Some(firstOutOfTheLeader)
-        //          case Some(node) => {
-        //            if (firstOut.get.location isEqualTo partition.leader.location) {
-        //              firstOut = Some(firstOutOfTheLeader)
-        //            }
-        //          }
-        //        }
       }
     }
 
@@ -322,7 +403,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
           }
           // the ISP went back to it's initiator for the second time
           case _ if ((partition.initiator isEqualTo p.initiator)
-            && (partition.state isEqualTo Blocked())) => {
+            && (partition.state isEqualTo Blocked()) && (p.state isEqualTo Blocked()) && partition.id == p.id) => {
 
             logInfo(s"$applicationRef: the partition $partition went back to it's initiator" +
               s" with a Blocked state: it dissolve it :(")
@@ -531,14 +612,11 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       }
     }
 
-    case "faultDetected" => {
+    case "overloadingDetected" => {
 
       currentPartition match {
         case None => {
           logInfo("Dvms has detected a new cpu violation")
-          //              printDetails()
-
-          //          firstOut = Some(nextDvmsNode)
 
           currentPartition = Some(DvmsPartition(
             applicationRef,
@@ -563,139 +641,21 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         }
         case _ =>
-        //              println(s"violation detected: this is my Partition [$currentPartition]")
+          // The node is already in a partition => nothing should be done!
       }
 
     }
 
     case ThisIsYourNeighbor(node) => {
-      //      logInfo(s"my neighbor has changed: $node")
       firstOut = Some(node)
     }
 
     case YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[SGNodeRef], newNeighbor: SGNodeRef) => {
-
-      //      (firstOut, oldNeighbor) match {
-      //        case (Some(fo), Some(n)) if (fo.location isEqualTo n.location) => firstOut = Some(newNeighbor)
-      //        case _ =>
-      //      }
     }
 
     case msg => forward(applicationRef, sender, msg)
   }
 
-
-  def computeEntropy(): ReconfigurationResult = {
-
-    logInfo("computeEntropy (1)")
-
-
-    // TODO: reimplement call to entropy actor
-    println("Please reimplement the call to entropy Actor")
-    val computationResult = entropyActor.computeReconfigurationPlan(currentPartition.get.nodes)
-
-    logInfo("computeEntropy (2)")
-
-    computationResult
-  }
-
-  def applyMigration(m: MakeMigration) {
-    // TODO: appliquer les migrations ici
-    println( """/!\ WARNING /!\: Dans DvmsActor, les migrations sont synchrones!""");
-
-    val args: Array[String] = new Array[String](3)
-    args(0) = m.vmName
-    args(1) = m.from
-    args(2) = m.to
-
-    //    new org.simgrid.msg.Process(Host.getByName(m.from), "Migrate-" + new Random().nextDouble, args) {
-    //      def main(args: Array[String]) {
-    var destHost: XHost = null
-    var sourceHost: XHost = null
-    try {
-      sourceHost = SimulatorManager.getXHostByName(args(1))
-      destHost = SimulatorManager.getXHostByName(args(2))
-    }
-    catch {
-      case e: Exception => {
-        e.printStackTrace
-        System.err.println("You are trying to migrate from/to a non existing node")
-      }
-    }
-    if (destHost != null) {
-
-      sourceHost.migrate(args(0), destHost)
-
-      Msg.info("End of migration of VM " + args(0) + " from " + args(1) + " to " + args(2))
-      //              CentralizedResolver.decMig
-      if (!destHost.isViable) {
-        Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName + "\n")
-        Trace.hostSetState(destHost.getName, "PM", "violation-out")
-      }
-      if (sourceHost.isViable) {
-        Msg.info("SOLVED VIOLATION ON " + sourceHost.getName + "\n")
-        Trace.hostSetState(sourceHost.getName, "PM", "normal")
-      }
-    }
-
-    //      }
-    //    }.start
-  }
-
-  def applySolution(solution: ReconfigurationSolution) {
-
-    import scala.collection.JavaConversions._
-
-    currentPartition match {
-      case Some(partition) =>
-
-        var continueToUpdatePartition: Boolean = true
-
-        new org.simgrid.msg.Process(applicationRef.getName, "Update-" + new Random().nextDouble, new Array[String](0)) {
-          def main(args: Array[String]) {
-            while (continueToUpdatePartition) {
-
-//              val newPartition: DvmsPartition = new DvmsPartition(
-//                applicationRef,
-//                partition.initiator,
-//                partition.nodes,
-//                partition.state,
-//                UUID.randomUUID()
-//              )
-//
-//              partition.nodes.foreach(node => {
-////                logInfo(s"$applicationRef: updating partition $newPartition while migration are performing")
-//                send(node, IAmTheNewLeader(newPartition))
-//              })
-              logInfo(s"$applicationRef waiting 1 seconds")
-              waitFor(1)
-            }
-          }
-        }.start
-
-        solution.actions.keySet().foreach(key => {
-          solution.actions.get(key).foreach(action => {
-
-
-            action match {
-              case m@MakeMigration(from, to, vmName) =>
-                applyMigration(m)
-              case _ =>
-            }
-          })
-        })
-
-        continueToUpdatePartition = false
-
-        partition.nodes.foreach(node => {
-          logInfo(s"$applicationRef: reconfiguration plan has been applied, dissolving partition $partition")
-          send(node, DissolvePartition("Reconfiguration plan has been applied"))
-        })
-
-      case None =>
-        logInfo("cannot apply reconfigurationSolution: current partition is undefined")
-    }
-  }
 }
 
 

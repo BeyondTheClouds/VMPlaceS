@@ -50,7 +50,7 @@ public class MonitorProcess extends Process {
                 }
 
                 // Replace CpuViolationDetected() by a string
-                send(ref, "faultDetected");
+                send(ref, "overloadingDetected");
             }
             else if(cpuConsumption <= this.xhost.getCPUCapacity()) {
                 Trace.hostPushState(Host.currentHost().getName(), "PM", "normal");

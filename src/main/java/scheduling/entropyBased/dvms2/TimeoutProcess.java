@@ -1,8 +1,11 @@
 package scheduling.entropyBased.dvms2;
 
 import configuration.XHost;
+import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Process;
 import simulation.SimulatorManager;
+
+import java.util.concurrent.TimeoutException;
 
 public class TimeoutProcess extends Process {
 
@@ -28,11 +31,12 @@ public class TimeoutProcess extends Process {
             this.process = process;
         }
 
-        public void doCheckTimeout() {
+        public void doCheckTimeout() throws HostFailureException {
 
 
             // Send a "checkTimeout" string instead of CheckTimeout()
             send(ref, "checkTimeout");
+            waitFor(1);
 
 
         }
@@ -44,7 +48,7 @@ public class TimeoutProcess extends Process {
             while (!SimulatorManager.isEndOfInjection()) {
 
                 timeoutActor.doCheckTimeout();
-                waitFor(1);
+
             }
         } catch (Exception e) {
             e.printStackTrace();

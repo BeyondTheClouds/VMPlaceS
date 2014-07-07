@@ -1,10 +1,6 @@
 package scheduling.entropyBased.dvms2;
 
-import org.simgrid.msg.Host;
-import org.simgrid.msg.HostFailureException;
-import org.simgrid.msg.Task;
-import org.simgrid.msg.TimeoutException;
-import org.simgrid.msg.TransferFailureException;
+import org.simgrid.msg.*;
 
 public class SGActor {
 
@@ -19,22 +15,15 @@ public class SGActor {
         return ref;
     }
 
-//    public void main(String[] args) {
-//
-//        try {
-//
-//            while(true) {
-//
-//                waitFor(0.01);
-//            }
-//
-//        } catch(Exception e) {
-//
-//            e.printStackTrace();
-//        }
-//    }
+    public static int MSG_COUNT = 0;
 
     public void send(SGNodeRef node, Object message){
+
+//        if(message != "checkTimeout") {
+//            MSG_COUNT++;
+//            System.out.println("MSG_COUNT["+ Msg.getClock()+"]: "+MSG_COUNT+" -> "+message+"@"+node);
+//        }
+
         MsgForSG msg = new MsgForSG(message,
                 node+"", ref.getName() ,null);
         msg.send();
