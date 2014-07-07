@@ -1,7 +1,5 @@
 package org.discovery.dvms.dvms
 
-
-
 /* ============================================================
  * Discovery Project - DVMS
  * http://beyondtheclouds.github.io/
@@ -29,13 +27,13 @@ trait DvmsMessage
 object DvmsProtocol {
 
    case class ThisIsYourNeighbor(neighbor: SGNodeRef)
-   case class YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[SGNodeRef], newNeighbor: SGNodeRef)
    case class CpuViolationDetected()
 
    // Message used for the base of DVMS
+   case class SetCurrentPartition(partition: DvmsPartition)
    case class DissolvePartition(reason: String)
    case class TransmissionOfAnISP(currentPartition: DvmsPartition)
-   case class IAmTheNewLeader(partition: DvmsPartition)
+//   case class IAmTheNewLeader(partition: DvmsPartition)
 
    // Message used for the merge of partitions
    case class IsThisVersionOfThePartitionStillValid(partition: DvmsPartition)

@@ -24,7 +24,7 @@ import java.util.{Random, UUID}
 import org.discovery.dvms.dvms.DvmsProtocol._
 import org.discovery.dvms.dvms.DvmsModel._
 import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
-import org.simgrid.msg.Msg
+import org.simgrid.msg.{HostFailureException, Host, Msg}
 import org.discovery.dvms.entropy.EntropyActor
 import scheduling.entropyBased.dvms2.SGNodeRef
 import scheduling.entropyBased.dvms2.SGActor
@@ -35,25 +35,21 @@ import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 
 object DvmsActor {
   val partitionUpdateTimeout: Double = 3.5
-
-
 }
-
 
 class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
-  // by default, a node is in a ring containing only it self
-  //  var nextDvmsNode: SGNodeRef = applicationRef
+  /* Local states of a DVMS agent */
 
-  // Variables that are specific to a node member of a partition
   var firstOut: Option[SGNodeRef] = None
-
   var currentPartition: Option[DvmsPartition] = None
-
-  // Variables used for resiliency
   var lastPartitionUpdateDate: Option[Double] = None
-
   var lockedForFusion: Boolean = false
+  val entropyActor = new EntropyActor(applicationRef)
+
+  implicit def selfSender: SGNodeRef = self
+
+  /* Methods and functions related to logs */
 
   def logInfo(msg: String) {
     Msg.info(s"$msg")
@@ -63,9 +59,34 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     Msg.info(s"$msg")
   }
 
-  val entropyActor = new EntropyActor(applicationRef)
+  /* Methods and functions related to partition management */
 
-  implicit def selfSender: SGNodeRef = self
+  def isThisPartitionStillValid(partition: DvmsPartition): Boolean = {
+    val response = currentPartition match {
+      case Some(p) =>
+        p.id == partition.id && p.version <= partition.version
+      case None =>
+        false
+    }
+    logInfo(s"$applicationRef@$currentPartition isThisPartitionStillValid($partition)? => $response")
+    response
+  }
+
+  def updatePartitionOnAllNodes(partition: DvmsPartition) {
+    currentPartition = Some(partition)
+    updateLastUpdateTime()
+    partition.nodes.filterNot(member => member.getId == self().getId).foreach(member => {
+      ask(member, SetCurrentPartition(partition))
+    })
+  }
+
+  def dissolvePartition(reason: String) {
+    logInfo(s"$applicationRef: I dissolve the partition $currentPartition, because <$reason>")
+
+    lockedForFusion = false
+    lastPartitionUpdateDate = None
+    currentPartition = None
+  }
 
   def mergeWithThisPartition(partition: DvmsPartition) {
 
@@ -74,13 +95,13 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       currentPartition.get.leader,
       currentPartition.get.initiator,
       currentPartition.get.nodes ::: partition.nodes,
-      Growing(), UUID.randomUUID()))
+      Growing(), UUID.randomUUID(), 0))
 
     lastPartitionUpdateDate = Some(Msg.getClock)
 
     currentPartition.get.nodes.foreach(node => {
-      logInfo(s"(a) $applicationRef: sending a new version of the partition ${IAmTheNewLeader(currentPartition.get)} to $node")
-      send(node, IAmTheNewLeader(currentPartition.get))
+      logInfo(s"(a) $applicationRef: sending a new version of the partition ${SetCurrentPartition(currentPartition.get)} to $node")
+      send(node, SetCurrentPartition(currentPartition.get))
     })
 
     val computationResult = computeEntropy()
@@ -93,7 +114,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         logInfo(s"(a) I decide to dissolve $currentPartition")
         currentPartition.get.nodes.foreach(node => {
-          send(node, DissolvePartition("violation resolved"))
+          ask(node, DissolvePartition("violation resolved"))
         })
       }
       case ReconfigurationlNoSolution() => {
@@ -115,70 +136,148 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
   def changeCurrentPartitionState(newState: DvmsPartititionState) {
     currentPartition match {
       case Some(partition) =>
-
-        currentPartition = Some(DvmsPartition(
+        val newPartition = DvmsPartition(
           partition.leader,
           partition.initiator,
           partition.nodes,
           newState,
-          partition.id
-        ))
-
-        lastPartitionUpdateDate = Some(Msg.getClock)
+          partition.id,
+          partition.version + 1
+        )
+        updatePartitionOnAllNodes(newPartition)
 
       case None =>
     }
   }
 
-  def remoteNodeFailureDetected(node: SGNodeRef) {
+  def updateThePartitionWith(remotePartition: DvmsPartition) {
     currentPartition match {
-      case Some(p) => {
-        if (p.nodes.contains(node)) {
-          node match {
-            // the initiator of the partition has crashed
-            case node: SGNodeRef if (node isEqualTo p.initiator) => {
+      case Some(partition) if (partition.id == remotePartition.id) && (partition.version < remotePartition.version) =>
+        currentPartition = Some(remotePartition)
+        updateLastUpdateTime()
+        true
 
-              logInfo(s"$applicationRef: The initiator ($node) has crashed, I am becoming the new leader of $currentPartition")
+      case None =>
+        currentPartition = Some(remotePartition)
+        updateLastUpdateTime()
+        true
 
-              // the partition will be dissolved
-              p.nodes.filterNot(n => n isEqualTo node).foreach(n => {
-                send(n, DissolvePartition("initiator crashed"))
-              })
-            }
+      case _ =>
+        false
+    }
+  }
 
-            // the leader or a normal node of the partition has crashed
-            case node: SGNodeRef => {
 
-              // creation of a new partition without the crashed node
-              val newPartition: DvmsPartition = new DvmsPartition(
-                applicationRef,
-                p.initiator,
-                p.nodes.filterNot(n => n isEqualTo node),
-                p.state,
-                UUID.randomUUID()
-              )
+  /* Methods and functions related to ISP reception */
 
-              currentPartition = Some(newPartition)
+  def isOutdatedUpdate(remotePartition: DvmsPartition): Boolean = {
+    (currentPartition, remotePartition.state) match {
+      case (None, Finishing()) => true
+      case (Some(p), _) if (p.state isEqualTo Finishing()) => true
+      case _ => false
+    }
+  }
 
-              lastPartitionUpdateDate = Some(Msg.getClock)
+  def receivedAnIspWhenFree(sender: SGNodeRef, remotePartition: DvmsPartition, msg: Object) {
+    var partitionIsStillValid: Boolean = true
 
-              logInfo(s"$applicationRef: A node crashed ($node), I am becoming the new leader of $currentPartition")
+    try {
+      partitionIsStillValid = ask(remotePartition.initiator, IsThisVersionOfThePartitionStillValid(remotePartition)).asInstanceOf[Boolean]
 
-              newPartition.nodes.foreach(node => {
-                send(node, IAmTheNewLeader(newPartition))
-              })
-            }
+    } catch {
+      case e: Throwable => {
+        logInfo(s"Partition $remotePartition is no more valid (Exception")
+        e.printStackTrace()
+        partitionIsStillValid = false
+      }
+    }
+
+    logInfo(s"check if $remotePartition is still valid? $partitionIsStillValid")
+
+    if (partitionIsStillValid) {
+
+      // the current node is becoming the leader of the incoming ISP
+      val newPartition: DvmsPartition = new DvmsPartition(
+        applicationRef,
+        remotePartition.initiator,
+        applicationRef :: remotePartition.nodes,
+        Growing(),
+        remotePartition.id,
+        remotePartition.version + 1
+      )
+
+      logInfo(s"$applicationRef: I am becoming the new leader of $newPartition")
+
+      updatePartitionOnAllNodes(newPartition)
+
+      // ask entropy if the new partition is enough to resolve the overload
+      val computationResult = computeEntropy()
+
+      computationResult match {
+        case solution: ReconfigurationSolution => {
+          logInfo("(A) Partition was enough to reconfigure ")
+
+          changeCurrentPartitionState(Finishing())
+
+          updatePartitionOnAllNodes(currentPartition.get)
+
+          // Applying the reconfiguration plan
+          applySolution(solution)
+
+          // it was enough: the partition is no more useful
+          currentPartition.get.nodes.foreach(node => {
+            send(node, DissolvePartition("reconfigurationPlan applied"))
+          })
+        }
+        case ReconfigurationlNoSolution() => {
+
+          firstOut match {
+            case Some(existingNode) =>
+              logInfo(s"(A) Partition was not enough to reconfigure, forwarding to $existingNode")
+              send(existingNode, TransmissionOfAnISP(currentPartition.get))
+            case None =>
+              logInfo(s"(A) $applicationRef : ${currentPartition.get} was not forwarded to nobody")
           }
         }
       }
-      case None =>
+    } else {
+      logWarning(s"$applicationRef: $remotePartition is no more valid (source: ${remotePartition.initiator})")
     }
-
   }
 
-  def computeEntropy(): ReconfigurationResult = {
-    val computationResult = entropyActor.computeReconfigurationPlan(currentPartition.get.nodes)
-    computationResult
+  def receivedAnIspWhenBooked(sender: SGNodeRef, remotePartition: DvmsPartition, msg: Object) {
+
+    firstOut match {
+      case Some(nextNode) =>
+        currentPartition match {
+          case Some(p) =>
+            (p.state, remotePartition.state) match {
+              case (_, Growing()) =>
+                if (remotePartition.initiator.getId == self().getId) {
+                  changeCurrentPartitionState(Blocked())
+                } else {
+                  forward(nextNode, sender, msg)
+                }
+
+              case (Blocked(), Blocked()) =>
+                if (remotePartition.initiator.getId == self().getId) {
+                  dissolvePartition("blocked partition went back to its initiator :(")
+                } else {
+                  mergeWithThisPartition(remotePartition)
+                }
+              case _ =>
+                forward(nextNode, sender, msg)
+            }
+        }
+      case _ =>
+        throw new RuntimeException(s"cannot forward $remotePartition to unknown firstOut")
+    }
+  }
+
+  /* Methods and functions related to fault tolerance */
+
+  def updateLastUpdateTime() {
+    lastPartitionUpdateDate = Some(Msg.getClock)
   }
 
   def checkTimeout() {
@@ -197,6 +296,13 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     }
   }
 
+  /* Methods and functions related to reconfiguration plans and migrations */
+
+  def computeEntropy(): ReconfigurationResult = {
+    val computationResult = entropyActor.computeReconfigurationPlan(currentPartition.get.nodes)
+    computationResult
+  }
+
   def applyMigration(m: MakeMigration) {
 
     println( """/!\ WARNING /!\: Dans DvmsActor, les migrations sont synchrones!""");
@@ -207,8 +313,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     args(1) = m.from
     args(2) = m.to
 
-    //    new org.simgrid.msg.Process(Host.getByName(m.from), "Migrate-" + new Random().nextDouble, args) {
-    //      def main(args: Array[String]) {
+
     var destHost: XHost = null
     var sourceHost: XHost = null
     try {
@@ -236,12 +341,14 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         Trace.hostSetState(sourceHost.getName, "PM", "normal")
       }
     }
-
-    //      }
-    //    }.start
   }
 
   def applySolution(solution: ReconfigurationSolution) {
+    def updateTimeout(partition: DvmsPartition) {
+      partition.nodes.foreach(node => {
+        ask(node, "updateLastPartitionUpdate")
+      })
+    }
 
     println(s"Applying reconfigurationPlan: $solution")
 
@@ -251,51 +358,62 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     currentPartitionCopy match {
       case Some(partition) =>
 
-        var continueToUpdatePartition: Boolean = true
+        var migrationDone: Int = 0
+        var migrationCount: Int = 0
 
-        val updaterProcess = new org.simgrid.msg.Process(applicationRef.getName, "Update-" + new Random().nextDouble, new Array[String](0)) {
+        solution.actions.keySet().foreach(key => {
+          solution.actions.get(key).foreach(action => {
+            action match {
+              case m@MakeMigration(from, to, vmName) =>
+                println(s"$partition => $m")
+                migrationCount += 1
+            }
+          })
+        })
+
+        val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName+"-timeout", "timeout-prevent-process" + new Random().nextDouble, new Array[String](0)) {
           def main(args: Array[String]) {
             while (true) {
-
-              val newPartition: DvmsPartition = new DvmsPartition(
-                applicationRef,
-                partition.initiator,
-                partition.nodes,
-                partition.state,
-                UUID.randomUUID()
-              )
-
-              partition.nodes.foreach(node => {
-                send(node, IAmTheNewLeader(newPartition))
-              })
-
-              logInfo(s"$applicationRef waiting 1 seconds")
-              waitFor(1)
+              updateTimeout(partition)
+              waitFor(0.5)
             }
           }
         }
 
-        updaterProcess.start()
+        timeoutProcess.start()
 
         solution.actions.keySet().foreach(key => {
           solution.actions.get(key).foreach(action => {
-
-
             action match {
               case m@MakeMigration(from, to, vmName) =>
-                applyMigration(m)
+                val migrationProcess = new org.simgrid.msg.Process(applicationRef.getName+"-migration-"+migrationDone, "timeout-prevent-process" + new Random().nextDouble, new Array[String](0)) {
+                  def main(args: Array[String]) {
+                    applyMigration(m)
+                    migrationDone += 1
+                  }
+                }
+                migrationProcess.start()
               case _ =>
             }
           })
         })
 
+        while(migrationDone < migrationCount) {
+          try {
+            org.simgrid.msg.Process.currentProcess.waitFor(1)
+          }
+          catch {
+            case e: HostFailureException => {
+              e.printStackTrace
+            }
+          }
+        }
 
-        continueToUpdatePartition = false
+        timeoutProcess.kill()
 
-        updaterProcess.kill()
+        logInfo(s"$applicationRef: reconfiguration plan $solution has been applied, dissolving partition $partition")
 
         partition.nodes.foreach(node => {
-          logInfo(s"$applicationRef: reconfiguration plan has been applied, dissolving partition $partition")
           send(node, DissolvePartition("Reconfiguration plan has been applied"))
         })
 
@@ -304,316 +422,47 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     }
   }
 
-  def dissolvePartition(reason: String) {
-    logInfo(s"$applicationRef: I dissolve the partition $currentPartition, because <$reason>")
 
-    lockedForFusion = false
-    lastPartitionUpdateDate = None
-    currentPartition = None
-  }
+  /* Messages reception loop */
 
   def receive(message: Object, sender: SGNodeRef, returnCanal: SGNodeRef) = message match {
 
-    case IsThisVersionOfThePartitionStillValid(partition) => {
-      currentPartition match {
-        case Some(p) =>
-          send(sender, partition.id.equals(currentPartition.get.id))
-        case None =>
-          send(sender, false)
-      }
-    }
-
-    case FailureDetected(node) =>
-      remoteNodeFailureDetected(node)
-
+    case IsThisVersionOfThePartitionStillValid(partition) =>
+      logInfo(s"send $sender that partition is still valid ${isThisPartitionStillValid(partition)}")
+      send(returnCanal, isThisPartitionStillValid(partition))
 
     case "updateLastPartitionUpdate" =>
-      lastPartitionUpdateDate = Some(Msg.getClock)
+      updateLastUpdateTime()
+      send(returnCanal, true)
 
     case "checkTimeout" =>
       checkTimeout()
 
-
-    case CanIMergePartitionWithYou(partition, contact) => {
-
+    case CanIMergePartitionWithYou(partition, contact) =>
       send(sender, (!lockedForFusion))
-
       if (!lockedForFusion) {
         lockedForFusion = true
       }
-    }
 
-    case DissolvePartition(reason) => {
+    case DissolvePartition(reason) =>
       dissolvePartition(reason)
-    }
+      send(returnCanal, true)
 
-    case IAmTheNewLeader(partition) => {
+    case SetCurrentPartition(partition: DvmsPartition) =>
+      val done = updateThePartitionWith(partition)
+      send(returnCanal, done)
 
-      logInfo(s"$applicationRef: ${partition.leader} is the new leader of $partition")
-
-      val outdatedUpdate: Boolean = (currentPartition, partition.state) match {
-        case (None, Finishing()) => true
-        case _ => false
-      }
-
-      if (!outdatedUpdate) {
-        currentPartition = Some(partition)
-        lastPartitionUpdateDate = Some(Msg.getClock)
-
-        lockedForFusion = false
-      }
-    }
-
-    case ChangeTheStateOfThePartition(newState) => {
-      changeCurrentPartitionState(newState)
-    }
-
-    case msg@TransmissionOfAnISP(partition) => {
-
+    case msg@TransmissionOfAnISP(remotePartition) =>
       logInfo(s"received an ISP: $msg @$currentPartition and @$firstOut")
-      //      printDetails()
-
       currentPartition match {
-        case Some(p) => p match {
-          // the ISP went back to it's initiator for the first time
-          case _ if ((partition.initiator isEqualTo p.initiator)
-            && (partition.state isEqualTo Growing())) => {
+        case Some(p) =>
+          receivedAnIspWhenBooked(sender, remotePartition, msg)
 
-            logInfo(s"$applicationRef: the partition $partition went back to it's initiator" +
-              s" with a Growing state: it becomes blocked :s")
-
-
-            changeCurrentPartitionState(Blocked())
-
-            // the state of the current partition become Blocked()
-            p.nodes.foreach(node => {
-              send(node, ChangeTheStateOfThePartition(Blocked()))
-            })
-
-
-            firstOut match {
-              case Some(existingNode) =>
-                logInfo(s"(X) $applicationRef transmitting a new ISP ${currentPartition.get} to neighbour: $existingNode")
-                send(existingNode, TransmissionOfAnISP(currentPartition.get))
-              case None =>
-                logInfo(s"(X) $applicationRef transmitting a new ISP ${currentPartition.get} to nobody")
-            }
-
-
-          }
-          // the ISP went back to it's initiator for the second time
-          case _ if ((partition.initiator isEqualTo p.initiator)
-            && (partition.state isEqualTo Blocked()) && (p.state isEqualTo Blocked()) && partition.id == p.id) => {
-
-            logInfo(s"$applicationRef: the partition $partition went back to it's initiator" +
-              s" with a Blocked state: it dissolve it :(")
-            // the currentPartition should be dissolved
-            p.nodes.foreach(node => {
-              send(node, DissolvePartition("back to initiator with a blocked state"))
-            })
-
-          }
-          // the incoming ISP is different from the current ISP and the current state is not Blocked
-          case _ if ((partition.initiator isDifferentFrom p.initiator)
-            && (p.state isEqualTo Growing())) => {
-
-            // I forward the partition to the current firstOut
-            firstOut match {
-              case Some(existingNode) =>
-                logInfo(s"$applicationRef: forwarding $msg to $firstOut")
-                forward(firstOut.get, sender, msg)
-              case None =>
-                logInfo(s"$applicationRef: cannot forward to firstOut")
-            }
-
-
-          }
-          // the incoming ISP is different from the current ISP and the current state is Blocked
-          //   ==> we may merge!
-          case _ if ((partition.initiator isDifferentFrom p.initiator)
-            && (p.state isEqualTo Blocked())) => {
-
-            partition.state match {
-              case Blocked() => {
-
-                if (partition.initiator isSuperiorThan p.initiator) {
-                  logInfo(s"$applicationRef: may merge $p with $partition")
-
-
-                  lockedForFusion = true
-                  val willMerge: Boolean = ask(sender, CanIMergePartitionWithYou(p, applicationRef)).asInstanceOf[Boolean]
-
-                  logInfo(s"$applicationRef got a result $willMerge")
-
-                  willMerge match {
-                    case true => {
-                      lockedForFusion = true
-
-                      logInfo(s"$applicationRef is effectively merging partition $p with $partition")
-
-                      mergeWithThisPartition(partition)
-                    }
-                    case false =>
-                  }
-                } else {
-
-                  firstOut match {
-                    case Some(existingNode) =>
-                      // the order between nodes is not respected, the ISP should be forwarded
-                      logInfo(s"$applicationRef: order between nodes is not respected, I forward $partition to $existingNode")
-                      forward(existingNode, sender, msg)
-                    case None =>
-                      // the order between nodes is not respected, the ISP should be forwarded
-                      logInfo(s"bug:$applicationRef: cannot forward $partition to $firstOut")
-                  }
-
-                }
-
-              }
-
-              case Finishing() => {
-                firstOut match {
-                  case Some(existingNode) =>
-                    logInfo(s"$applicationRef: forwarding $msg to $firstOut")
-                    forward(existingNode, sender, msg)
-                  case None =>
-                    logInfo(s"$applicationRef: cannot forward to firstOut")
-                }
-              }
-
-              case Growing() => {
-
-                firstOut match {
-                  case Some(existingNode) =>
-                    logInfo(s"$applicationRef: forwarding $msg to $firstOut")
-                    forward(existingNode, sender, msg)
-                  case None =>
-                    logInfo(s"$applicationRef: cannot forward to firstOut")
-                }
-
-              }
-            }
-          }
-          // other case... (if so)
-          case _ => {
-            firstOut match {
-              case Some(existingNode) =>
-                logInfo(s"$applicationRef: forwarding $msg to $firstOut (forward-bis)")
-                forward(existingNode, sender, msg)
-              case None =>
-                logInfo(s"$applicationRef: cannot forward to firstOut (forward-bis)")
-            }
-          }
-        }
-
-        case None => {
-
-          var partitionIsStillValid: Boolean = true
-
-          if (partition.state isEqualTo Blocked()) {
-            try {
-
-              // TODO: there was a mistake reported here!
-              partitionIsStillValid = ask(partition.initiator, IsThisVersionOfThePartitionStillValid(partition)).asInstanceOf[Boolean]
-
-            } catch {
-              case e: Throwable => {
-                logInfo(s"Partition $partition is no more valid (Exception")
-                e.printStackTrace()
-                partitionIsStillValid = false
-              }
-            }
-
-          }
-
-          if (partitionIsStillValid) {
-
-            // the current node is becoming the leader of the incoming ISP
-            logInfo(s"$applicationRef: I am becoming the new leader of $partition")
-
-            val newPartition: DvmsPartition = new DvmsPartition(
-              applicationRef,
-              partition.initiator,
-              applicationRef :: partition.nodes,
-              Growing(),
-              UUID.randomUUID()
-            )
-
-            currentPartition = Some(newPartition)
-            //            firstOut = Some(nextDvmsNode)
-            lastPartitionUpdateDate = Some(Msg.getClock)
-
-            // Alert LogginActor that the current node is booked in a partition
-            //            applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
-
-            partition.nodes.foreach(node => {
-              logInfo(s"$applicationRef: sending the $newPartition to $node")
-              send(node, IAmTheNewLeader(newPartition))
-            })
-
-            lastPartitionUpdateDate = Some(Msg.getClock)
-
-            // ask entropy if the new partition is enough to resolve the overload
-
-            val computationResult = computeEntropy()
-
-            computationResult match {
-              case solution: ReconfigurationSolution => {
-                logInfo("(A) Partition was enough to reconfigure ")
-
-
-                val newPartition: DvmsPartition = new DvmsPartition(
-                  applicationRef,
-                  partition.initiator,
-                  applicationRef :: partition.nodes,
-                  Finishing(),
-                  UUID.randomUUID()
-                )
-
-                currentPartition = Some(newPartition)
-                //                firstOut = Some(nextDvmsNode)
-
-
-                // Alert LogginActor that the current node is booked in a partition
-                //                applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
-
-                partition.nodes.filter(n => n.isDifferentFrom(applicationRef)).foreach(node => {
-                  logInfo(s"$applicationRef: sending the $newPartition to $node")
-                  //                  node.ref ! IAmTheNewLeader(newPartition)
-                  send(node, IAmTheNewLeader(newPartition))
-                })
-
-                lastPartitionUpdateDate = Some(Msg.getClock)
-
-                // Applying the reconfiguration plan
-                applySolution(solution)
-
-                // it was enough: the partition is no more useful
-                currentPartition.get.nodes.foreach(node => {
-                  //                  node.ref ! DissolvePartition("violation resolved")
-                  send(node, DissolvePartition("violation resolved"))
-                })
-              }
-              case ReconfigurationlNoSolution() => {
-
-                firstOut match {
-                  case Some(existingNode) =>
-                    logInfo(s"(A) Partition was not enough to reconfigure, forwarding to $existingNode")
-                    send(existingNode, TransmissionOfAnISP(currentPartition.get))
-                  case None =>
-                    logInfo(s"(A) $applicationRef : ${currentPartition.get} was not forwarded to nobody")
-                }
-              }
-            }
-          } else {
-            logWarning(s"$applicationRef: $partition is no more valid (source: ${partition.initiator})")
-          }
-        }
+        case None =>
+          receivedAnIspWhenFree(sender, remotePartition, msg)
       }
-    }
 
-    case "overloadingDetected" => {
-
+    case "overloadingDetected" =>
       currentPartition match {
         case None => {
           logInfo("Dvms has detected a new cpu violation")
@@ -622,14 +471,10 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
             applicationRef,
             applicationRef,
             List(applicationRef),
-            Growing(),
-            UUID.randomUUID()
+            Growing()
           ))
 
           lastPartitionUpdateDate = Some(Msg.getClock)
-
-          // Alert LogginActor that the current node is booked in a partition
-          //        applicationRef.ref ! IsBooked(ExperimentConfiguration.getCurrentTime())
 
           firstOut match {
             case Some(existingNode) =>
@@ -641,21 +486,14 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         }
         case _ =>
-          // The node is already in a partition => nothing should be done!
+        // The node is already in a partition => nothing should be done!
       }
 
-    }
-
-    case ThisIsYourNeighbor(node) => {
+    case ThisIsYourNeighbor(node) =>
       firstOut = Some(node)
-    }
-
-    case YouMayNeedToUpdateYourFirstOut(oldNeighbor: Option[SGNodeRef], newNeighbor: SGNodeRef) => {
-    }
 
     case msg => forward(applicationRef, sender, msg)
   }
-
 }
 
 

@@ -36,7 +36,7 @@ public class SGActor {
 
     public Object ask(SGNodeRef node, Object message){
         MsgForSG msg = new MsgForSG(message,
-                node+"", node+"", Host.currentHost().getName()+":"+ Math.random());
+                node+"", ref.getName(), Host.currentHost().getName()+":"+ Math.random());
         msg.send();
         MsgForSG reply;
         try {

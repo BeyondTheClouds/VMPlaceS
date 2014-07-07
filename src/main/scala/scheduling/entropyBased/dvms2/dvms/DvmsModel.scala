@@ -27,10 +27,10 @@ object DvmsModel {
 
    object DvmsPartition {
       def apply(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState): DvmsPartition =
-         DvmsPartition(leader, initiator, nodes, state, UUID.randomUUID())
+         DvmsPartition(leader, initiator, nodes, state, UUID.randomUUID(), 0)
    }
 
-   case class DvmsPartition(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState, id: UUID)
+   case class DvmsPartition(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState, id: UUID, version: Int)
 
 
    object DvmsPartititionState {
