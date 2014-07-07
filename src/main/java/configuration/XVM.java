@@ -155,9 +155,10 @@ public class XVM extends VM{
             //The dummy cpu action is not bounded.
             Msg.info("End of migration of VM " + this.getName() + " to node " + host.getName());
             this.vmIsMigrating = false;
-        } else
+        } else {
             Msg.info("You are trying to migrate twice a VM... it is impossible ! Byebye");
             System.exit(-1);
+        }
     }
 
     /**
