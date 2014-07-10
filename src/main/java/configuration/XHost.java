@@ -150,6 +150,16 @@ public class XHost{
     }
 
     /**
+     * @return the sum of all memory demands of the hosted VMs
+     */
+    public int getMemDemand(){
+        int cons=0;
+        for (XVM vm: this.getRunnings())
+            cons+=vm.getMemSize();
+        return cons;
+    }
+
+    /**
      * Link the VM to the host and start it
      * @param sgVM
      */

@@ -283,7 +283,9 @@ public class SimulatorManager {
      */
     public static void cleanLog(){
         try {
-            Runtime.getRuntime().exec("rm -rf ./logs/*");
+            Runtime.getRuntime().exec("rm -rf ./logs/simulatorManager");
+            Runtime.getRuntime().exec("rm -rf ./logs/entropy");
+            Runtime.getRuntime().exec("rm -rf ./logs/entropy.log");
         } catch (IOException e) {
             e.printStackTrace();
         }

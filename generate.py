@@ -9,15 +9,24 @@ import sys, random
 
 ## centralized scheduling
 largv=len(sys.argv)
-if largv == 2:
-		nb_nodes = int(sys.argv[1])
-		sys.stderr.write("generate deployment file for entropy"); 
-		sys.stdout.write("<?xml version='1.0'?>\n"
-		"<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
-		"<platform version=\"3\">\n"
-		"  <process host=\"node0\" function=\"injector.Injector\"> </process>\n"
-		"  <process host=\"node0\" function=\"simulation.CentralizedResolver\"> </process>\n"
-		"</platform>")
+if largv == 3:
+    nb_nodes = int(sys.argv[2])
+    if (sys.argv[1] == 'hierarchical'):
+	    sys.stderr.write("generate deployment file for snooze");
+	    sys.stdout.write("<?xml version='1.0'?>\n"
+	    "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
+	    "<platform version=\"3\">\n"
+	    "  <process host=\"node0\" function=\"injector.Injector\"> </process>\n"
+        "  <process host=\"node0\" function=\"simulation.HierarchicalResolver\"> </process>\n"
+	    "</platform>");
+    else:
+        sys.stderr.write("generate deployment file for entropy");
+        sys.stdout.write("<?xml version='1.0'?>\n"
+        "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
+        "<platform version=\"3\">\n"
+        "  <process host=\"node0\" function=\"injector.Injector\"> </process>\n"
+        "  <process host=\"node0\" function=\"simulation.CentralizedResolver\"> </process>\n"
+        "</platform>");
 
 elif largv == 6:
 	nb_nodes = int(sys.argv[1])
