@@ -81,11 +81,17 @@ public class Main {
     		    //"Usage: python generate.py nb_nodes nb_cpu total_cpu_cap ram port >
     		    Runtime.getRuntime().exec(cmd);
     	    }
-    	    else {//(SimulatorProperties.getAlgo().equals("centralized"))
+    	    else if (SimulatorProperties.getAlgo().equals("hierarchical")) {
+                Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
+
+                //"Usage: python generate.py nb_nodes
+                String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
+                Runtime.getRuntime().exec(cmd);
+            } else { //(SimulatorProperties.getAlgo().equals("centralized"))
     		    Msg.info("Default selected (generating deployment file for centralized approach)");
     		 
     		    //"Usage: python generate.py nb_nodes
-    		    String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
+    		    String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
     		    Runtime.getRuntime().exec(cmd);
        		}
        	} catch (IOException e) {
