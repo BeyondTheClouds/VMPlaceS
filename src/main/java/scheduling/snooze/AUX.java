@@ -12,6 +12,7 @@ public class AUX {
     static final String epInbox = "epInbox";                  // EP mbox
     static final String epGLElection = "epGLElection";        // EP mbox
     static final String glInbox = "glInbox";
+    static final String multicast = "multicast";              // GL/GM multicast mbox
     static final String glHeartbeatNew = "glHeartbeatNew";    // HeartbeatGroup mbox
     static final String glHeartbeatBeat = "glHeartbeatBeat";  // HeartbeatGroup mbox
     static final String glElection = "glElection";            // HeartbeatGroup mbox
@@ -20,7 +21,7 @@ public class AUX {
     static final long HeartbeatInterval = 2500;
     static final long HeartbeatTimeout = 5000;
     static final long JoinAcknowledgementTimeout = 5000;
-    static final long GLCreationTimeout = 2000;
+    static final long GLCreationTimeout = 5000;
 
     static SnoozeMsg arecv(String mbox) {
         if (Task.listen(mbox))
@@ -31,6 +32,10 @@ public class AUX {
             }
         return null;
     }
+
+    static String glInbox(String gmHost) { return glInbox; }
+    static String gmInbox(String gmHost) { return gmHost + "-gmInbox"; }
+    static String lcInbox(String lcHost) { return lcHost + "-lcInbox"; }
 
     static long timeDiff(Date d) {
         long curTime = new Date().getTime();

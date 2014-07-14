@@ -44,7 +44,7 @@ public class HeartbeatGroup extends Process {
             // Store GroupLeader
             NewGLMsg m = (NewGLMsg) Task.receive(AUX.glHeartbeatNew);
             if (glHostname == null) setGl((String) m.getMessage());
-            else Logger.log("HeartbeatGroup:newGL, ERROR: 2nd GroupLeader" + m);
+            else Logger.err("HeartbeatGroup:newGL, 2nd GroupLeader" + m);
             // Notify EP
             m = new NewGLMsg((String) m.getMessage(), AUX.epInbox, null, null);
             m.send();
@@ -57,13 +57,13 @@ public class HeartbeatGroup extends Process {
     void recvGLbeat() {
         try{
             BeatGLMsg m = (BeatGLMsg) AUX.arecv(AUX.glHeartbeatBeat);
-            Logger.log(Host.currentHost().getName() + ": received " + m.getMessage());
+            Logger.info(Host.currentHost().getName() + ": received " + m.getMessage());
             String gl = (String) m.getMessage();
 
             if (glHostname != null && glHostname != gl)
-                Logger.log("[HeartbeatGroup] Err: multiple GLs");
+                Logger.err("[HeartbeatGroup] Err: multiple GLs");
         } catch (Exception e) {
-            Logger.log(e);
+            e.printStackTrace();
         }
     }
 
@@ -93,7 +93,7 @@ public class HeartbeatGroup extends Process {
                 gmInfo.put(gm, new GMInfo(gmInfo.get(gm).replyBox, new Date()));
             }
         } catch (Exception e) {
-            Logger.log(e);
+            e.printStackTrace();
         }
     }
 
@@ -105,7 +105,7 @@ public class HeartbeatGroup extends Process {
         for (String gmHostname : gmInfo.keySet()) {
             if (AUX.timeDiff(gmInfo.get(gmHostname).timestamp) > AUX.HeartbeatTimeout) {
                 deadGMs.add(gmHostname);
-                Logger.log("[HB.deadGMs] GM " + gmHostname + "is dead");
+                Logger.info("[HB.deadGMs] GM " + gmHostname + "is dead");
             }
 
             // Remove dead LCs
@@ -121,17 +121,17 @@ public class HeartbeatGroup extends Process {
         SnoozeMsg m = (GLElecMsg) AUX.arecv(AUX.glElection);
         if (m != null) {
             electLeader = true;
-            Logger.logInfo("[HB.leaderElection] LGElecMsg arrived: " + m);
+            Logger.info("[HB.leaderElection] LGElecMsg arrived: " + m);
         }
         if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout) {
             electLeader = true;
-            Logger.logInfo("[HB.leaderElection] HB timeout for GL " + glHostname + "after " + glTimestamp);
+            Logger.info("[HB.leaderElection] HB timeout for GL " + glHostname + "after " + glTimestamp);
         }
 
         if (!electLeader) return;
 
         if (gmInfo.isEmpty()) {
-            GroupLeader gl = new GroupLeader();
+            GroupLeader gl = new GroupLeader(host, name);
             // TODO: deployment on the Heartbeat node! Where should it be deployed?
             glHostname = gl.getHost().getName();
         } else {
@@ -150,7 +150,7 @@ public class HeartbeatGroup extends Process {
                 gmInfo.remove(gm);
             } else {
                 // Ignore other messages on mbox AUX.glElection
-                Logger.log("[HB.leaderElection] Waited for GMElecMsg, message ignored: " + m);
+                Logger.info("[HB.leaderElection] Waited for GMElecMsg, message ignored: " + m);
             }
         }
         m = new GLElecMsg(glHostname, AUX.epGLElection, null, null);

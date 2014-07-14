@@ -3,7 +3,6 @@ package scheduling.snooze;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
-import org.simgrid.msg.Task;
 import scheduling.snooze.msg.*;
 
 import java.util.Date;
@@ -15,44 +14,70 @@ import java.util.Hashtable;
 public class GroupLeader extends Process {
     private Host host;
     private Hashtable<String, GMSum> gmInfo = new Hashtable<String, GMSum>(); // ConcurrentHashMap more efficient
+    private String inbox;
     private String glSummary = "glSummary";
 
-    GroupLeader() {
-        this.host = Host.currentHost();
+    public GroupLeader(Host host, String name) {
+        super(host, name);
+        this.host = host;
+        this.inbox = AUX.glInbox;
     }
 
     @Override
     public void main(String[] strings) throws MsgException {
-        SnoozeMsg m;
-        m = new NewGLMsg(host.getName(), AUX.glHeartbeatNew, null, null);
-        m.send();
-
         while (true) {
-            handleInbox();
-            updateSummaryInfo();
+            SnoozeMsg m = AUX.arecv(inbox);
+            if (m != null) handle(m);
             beat();
             sleep(AUX.HeartbeatInterval);
         }
     }
 
-    void handleInbox() {
+    void handle(SnoozeMsg m) {
+        String cs = m.getClass().getSimpleName();
+        switch (cs) {
+            case "LCAssMsg" : handleLCAss(m); break;
+            case "GMSumMsg" : handleGMSum(m); break;
+            case "NewGMMsg" : handleNewGM(m); break;
+            case "SnoozeMsg":
+                Logger.err("[GL(SnoozeMsg)] Unknown message" + m);
+                break;
+        }
+    }
+
+    void handleLCAss(SnoozeMsg m) {
+        String gm = lcAssignment((String) m.getMessage());
+        if (gm.equals("")) return;
+        m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
+        m.send();
+//        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
+    }
+
+    void handleGMSum(SnoozeMsg m) {
         try {
-            while (Task.listen(AUX.glInbox)) {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(AUX.glInbox);
-                handle(m);
-            }
-        } catch(Exception e) {
+            GMSumMsg.GMSum s = (GMSumMsg.GMSum) m.getMessage();
+            GMSum sum = new GMSum(s.getProcCharge(), s.getMemUsed(), new Date());
+            gmInfo.put(m.getOrigin(), sum);
+//            Logger.info("[GL(GMSum] " + m.getOrigin() + ": " + sum);
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    void handle(SnoozeMsg m) { Logger.log("[GL.handle] Unknown message" + m); }
+    void handleNewGM(SnoozeMsg m) {
+        String gmHostname = (String) m.getMessage();
+        if (gmInfo.containsKey(gmHostname)) Logger.err("[GL.handle] GM " + gmHostname + " exists already");
+        // Add GM
+        GMSum gi = new GMSum(0, 0, new Date());
+        gmInfo.put(gmHostname, gi);
+        // Acknowledge integration
+        m = new NewGMMsg((String) host.getName(), m.getReplyBox(), null, null);
+        Logger.info("[GL(NewGMMsg)] GM added: " + m);
+        m.send();
+    }
 
-    /**
-     * Join/rejoin LC: assign LC to least charged GroupManager
-     */
-    void handle(NewLCMsg m) {
-        // identify least charged GroupManager
+    String lcAssignment(String lc) {
+        if (gmInfo.size()==0) return "";
         String gmHost = "";
         double minCharge = 2, curCharge;
         GMSum cs;
@@ -61,38 +86,8 @@ public class GroupLeader extends Process {
             curCharge = cs.procCharge + cs.memUsed;
             if (minCharge > curCharge) { minCharge = curCharge; gmHost = s; }
         };
-        // relay message
-        m = new NewLCMsg(gmHost, gmHost+"gmInbox", m.getOrigin(), m.getReplyBox());
-        m.send();
-    }
-
-    /**
-     * Join GM
-     */
-    void handle(NewGMMsg m) {
-        String gmHostname = (String) m.getMessage();
-        if (gmInfo.containsKey(gmHostname)) Logger.log("[GL.handle] GM " + gmHostname + " exists already");
-        // Add GM
-        GMSum cs = new GMSum(0, 0, new Date());
-        gmInfo.put(gmHostname, cs);
-        // Acknowledge integration
-        m = new NewGMMsg((String) m.getMessage(), m.getReplyBox(), null, null);
-        m.send();
-    }
-
-    void updateSummaryInfo() {
-        // accepts all pending summary messages, adds time stamps and stores the entries in gmInfo
-        while (Task.listen(glSummary)) {
-            try {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(glSummary);
-                m = (GMSumMsg) m;
-                GMSum cs = (GMSum) m.getMessage();
-                cs.timestamp = new Date();
-                gmInfo.put(m.getOrigin(), cs);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+//        Logger.info("[GL.lcAssignment] GM selected: " + gmHost);
+        return gmHost;
     }
 
     void dispatchVMRequest() {
@@ -104,22 +99,14 @@ public class GroupLeader extends Process {
     }
 
     /**
-     * Beats to heartbeat group and EP
+     * Beats to multicast group
      */
     void beat() {
         String glHostname = host.getName();
         // Beat to HB
-        BeatGLMsg m = new BeatGLMsg(glHostname, AUX.glHeartbeatBeat, null, null);
+        BeatGLMsg m = new BeatGLMsg(glHostname, AUX.multicast, null, null);
         m.send();
-        // Beat to EP
-        m = new BeatGLMsg(glHostname, AUX.epInbox, null, null);
-        m.send();
-        // Beat to GMs
-        for (String gm: gmInfo.keySet()) {
-            m = new BeatGLMsg(glHostname, gm + "gmInbox", null, null);
-            m.send();
-        }
-
+//        Logger.info("[GL.beat] Beat sent");
     }
 
     /**

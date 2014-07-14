@@ -9,11 +9,27 @@ public class GMSumMsg extends SnoozeMsg {
     }
 
     public static class GMSum {
-        double procCharge;
-        int memUsed;
+        private double procCharge;
+        private int memUsed;
 
         public GMSum(double p, int m) {
-            this.procCharge = p; this.memUsed = m;
+            this.setProcCharge(p); this.setMemUsed(m);
+        }
+
+        public double getProcCharge() {
+            return procCharge;
+        }
+
+        public void setProcCharge(double procCharge) {
+            this.procCharge = procCharge;
+        }
+
+        public int getMemUsed() {
+            return memUsed;
+        }
+
+        public void setMemUsed(int memUsed) {
+            this.memUsed = memUsed;
         }
     }
 }

@@ -12,122 +12,150 @@ import java.util.Hashtable;
  * Created by sudholt on 25/05/2014.
  */
 public class GroupManager extends Process {
+    private String name;
     private Host host;
-    private boolean thisGMStopped = false;
-    private String glHostname;
-    private Date   glTimestamp;
-    private Hashtable<String, LCInfo> lcInfo;  // ConcurrentHashMap more efficient?
+    private boolean thisGMToBeStopped = false;
+    private String glHostname = "";
+    private Date glTimestamp;
+    private Hashtable<String, LCInfo> lcInfo = new Hashtable<String, LCInfo>();  // ConcurrentHashMap more efficient?
     // one mailbox per LC: lcHostname+"beat"
     private double procSum;
-    private int    memSum;
+    private int memSum;
     private String glSummary = "glSummary";
     private String inbox;
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
-    private String lcCharge;
-    private String myHeartbeat;
 
-    GroupManager() {
-        this.host = Host.currentHost();
-        this.inbox = host.getName() + "gmInbox";
-        this.myHeartbeat = host.getName() + "myHeartbeat";
-        this.lcCharge = host.getName() + "lcCharge";
+    public GroupManager(Host host, String name) {
+        super(host, name);
+        this.host = host;
+        this.name = name;
+        this.inbox = AUX.gmInbox(host.getName());
     }
 
     @Override
     public void main(String[] strings) throws MsgException {
-        SnoozeMsg m = new NewGMMsg(host.getName(), AUX.gmHeartbeatNew, null, myHeartbeat);
-        m.send();
-
+        join();
         while (true) {
-            handleInbox();
-            if (glDead())      continue;
-            if (thisGMStopped) break;
-            updateLCCharge();
-            recvLCBeats();
+            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+            handle(m);
+            glDead();
+            if (thisGMToBeStopped) break;
             deadLCs();
             summaryInfoToGL();
             beat();
-            sleep(AUX.HeartbeatInterval);
+//            sleep(AUX.HeartbeatInterval);
         }
+        Logger.info("GM stopped: " + host.getName());
     }
 
-    void handleInbox() {
-        try {
-            while (Task.listen(inbox)) {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-                handle(m);
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    void handle(SnoozeMsg m) { Logger.log("[GM.handle] Unknown message" + m); }
-
-    /**
-     * Integrate new LCs
-     */
-    void handle(NewLCMsg m) {
-        String lcHostname = (String) m.getMessage();
-        Date   ts  = new Date();
-        // Init LC charge and heartbeat
-        LCInfo    lci = new LCInfo(new LCCharge(0, 0, ts), ts);
-        lcInfo.put(lcHostname, lci);
-        // Send acknowledgment
-        m = new NewLCMsg(host.getName(), m.getReplyBox(), null, null);
-        m.send();
-    }
-
-    void handle(GMElecMsg m) {
-        // Instantiate new GL
-        GroupLeader gl = new GroupLeader();
-        // Terminate GM
-        thisGMStopped = true;
-        // Acknowledge GL creation/GM termination
-        m = new GMElecMsg(host.currentHost().getName(), AUX.glElection, null, null);
-        m.send();
-    }
-
-    void handle(BeatGLMsg m) {
-        if (glHostname != "" && glHostname != m.getMessage())
-            Logger.log("[BM.handle(BeatGLMsg)] Different GLs: " + glHostname + ", " + m.getMessage());
-        if (glHostname == "") glHostname = (String) m.getMessage(); // New GL
-        glTimestamp = new Date();
-    }
-
-    boolean glDead() { return AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout; }
-
-    /**
-     * Send join request to EP and wait for GroupLeader acknowledgement
-     */
-    void join() {
-        // Send join request to EP
-        NewGMMsg m = new NewGMMsg(host.getName(), AUX.epInbox, name, inbox);
-        m.send();
-        try {
-            // Wait for GroupLeader acknowledgement
-            m = (NewGMMsg) Task.receive(inbox, 2);
-            glHostname = (String) m.getMessage();
-        } catch (TimeoutException e) {
-            Logger.log("[GM.join] No joining" + host.getName());
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
+    void handle(SnoozeMsg m) {
+        String cs = m.getClass().getSimpleName();
+        switch (cs) {
+            case "BeatLCMsg":   handleBeatLC(m);   break;
+            case "GMElecMsg":   handleGMElec(m);   break;
+            case "LCChargeMsg": handleLCCharge(m); break;
+            case "NewLCMsg":    handleNewLC(m);    break;
+            case "RBeatGLMsg":  handleRBeatGL(m);  break;
+            case "SnoozeMsg":
+                Logger.err("[GM(SnoozeMsg)] Unknown message" + m + " on " + host);
+                break;
         }
     }
 
     /**
      * Listen asynchronously for heartbeats from all known LCs
      */
-    void recvLCBeats() {
-        BeatLCMsg m = null;
-        for (String lcHostname: lcInfo.keySet()) {
-            String lcBeatBox = lcHostname+"lcBeat";
-            m = (BeatLCMsg) AUX.arecv(lcBeatBox);
-            lcInfo.put(lcHostname, new LCInfo(lcInfo.get(lcHostname).charge, new Date()));
+    void handleBeatLC(SnoozeMsg m) {
+        // TODO: get all beat msgs on extra mbox
+        String lc = (String) m.getMessage();
+        lcInfo.put(lc, new LCInfo(lcInfo.get(lc).charge, new Date()));
+//        Logger.info("[GM(BeatLC)] " + lc);
+    }
+
+    void handleGMElec(SnoozeMsg m) {
+        // Ex-nihilo GL creation
+        GroupLeader gl = new GroupLeader(Host.currentHost(), "groupLeader");
+        try {
+            gl.start();
+        } catch (HostNotFoundException e) {
+            e.printStackTrace();
+        }
+        glHostname = gl.getHost().getName();
+        Logger.info("[GM(GMElec)] New leader created on: " + glHostname);
+
+        // Notify LCs and Multicast, stop this GM
+        for (String lc : lcInfo.keySet()) new GMStopMsg(host.getName(), AUX.lcInbox(lc), null, null).send();
+        m = new GMStopMsg(glHostname, AUX.glElection, null, null);
+        m.send();
+        Logger.info("[GM(GMElec)] Stop msg: " + m);
+        try {
+            sleep(AUX.GLCreationTimeout); // TODO: should be replaced by a sync. with LCs and MUL
+        } catch (HostFailureException e) {
+            e.printStackTrace();
+        }
+        thisGMToBeStopped = true;
+    }
+
+    void handleLCCharge(SnoozeMsg m) {
+        // TODO: get all charge msgs on extra mbox
+        try {
+            String lcHostname = (String) m.getOrigin();
+            LCChargeMsg.LCCharge cs = (LCChargeMsg.LCCharge) m.getMessage();
+            LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), new Date());
+            Date oldBeat = lcInfo.get(lcHostname).heartbeatTimestamp;
+            lcInfo.put(lcHostname, new LCInfo(newCharge, oldBeat));
+//            Logger.info("[GM(LCCharge] Charge updated: " + lcHostname);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
+
+    void handleNewLC(SnoozeMsg m) {
+        String lcHostname = (String) m.getMessage();
+        Date   ts  = new Date();
+        // Init LC charge and heartbeat
+        LCInfo    lci = new LCInfo(new LCCharge(0, 0, ts), ts);
+        lcInfo.put(lcHostname, lci);
+        // Send acknowledgment
+        m = new NewLCMsg(host.getName(), AUX.lcInbox(lcHostname), null, null);
+        m.send();
+//        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
+    }
+
+    void handleRBeatGL(SnoozeMsg m) {
+        String gl = (String) m.getOrigin();
+//        Logger.info("[GM(RBeatGL)] Old, new GL: " + glHostname + ", " + gl);
+        if (glHostname.equals("")) {
+            glHostname = gl;
+            join();
+            Logger.info("[GM(RBeatGL)] GL initialized: " + gl + " on " + host);
+        }
+        else if (glHostname != gl) Logger.err("[GM(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gl);
+        else glTimestamp = (Date) m.getMessage();
+    }
+
+    /**
+     * Sends beats to multicast group
+     */
+    void beat() {
+        BeatGMMsg m = new BeatGMMsg(host.getName(), AUX.multicast, null, null);
+        m.send();
+//        Logger.info("[GM.beat] " + m);
+    }
+
+    /**
+     * Identify dead GL, request election (not: wait for new GL)
+     */
+    void glDead() {
+        if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout) {
+            glHostname = "";
+            SnoozeMsg m = new GLElecMsg(host.getName(), AUX.multicast, null, null);
+            m.send();
+            // New GL will be initialized via BeatGLMsg
+        }
+    }
+
 
     /**
      * Identify and handle dead LCs
@@ -138,13 +166,73 @@ public class GroupManager extends Process {
         for (String lcHostname: lcInfo.keySet()) {
             if (AUX.timeDiff(lcInfo.get(lcHostname).heartbeatTimestamp) > AUX.HeartbeatTimeout) {
                 deadLCs.add(lcHostname);
-                Logger.log("[deadLCs] LC " + lcHostname + "is dead");
+                Logger.err("[GM.deadLCs] " + lcHostname);
             }
         }
 
         // Remove dead LCs
         for (String lcHostname: deadLCs) lcInfo.remove(lcHostname);
     }
+
+    /**
+     * Send join request to Multicast
+     */
+    void join() {
+        try {
+            SnoozeMsg m = new NewGMMsg(host.getName(), AUX.multicast, null, inbox);
+            m.send();
+            do {
+                m = (SnoozeMsg) Task.receive(inbox);
+            } while (!m.getClass().getSimpleName().equals("RBeatGLMsg"));
+            glHostname = m.getOrigin();
+//            Logger.info("[GM.join] GL beat: " + m);
+            // Wait for GroupLeader acknowledgement
+            m = new NewGMMsg(host.getName(), AUX.glInbox(glHostname), null, inbox);
+            m.send();
+            do {
+                m = (SnoozeMsg) Task.receive(inbox);
+            } while (!m.getClass().getSimpleName().equals("NewGMMsg"));
+//            Logger.info("[GM.join] GL ack.: " + m);
+            glHostname = (String) m.getMessage();
+        } catch (TimeoutException e) {
+            Logger.err("[GM.join] No joining" + host.getName());
+            e.printStackTrace();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    /**
+     * Sends GM charge summary info to GL
+     */
+    void summaryInfoToGL() {
+        if (lcInfo.isEmpty()) return;
+        updateChargeSummary();
+        GMSumMsg.GMSum c = new GMSumMsg.GMSum(procSum, memSum);
+        GMSumMsg m = new GMSumMsg(c, AUX.glInbox, host.getName(), null);
+        m.send();
+//        Logger.info("[GM.summaryInfoToGL] " + m);
+    }
+
+    /**
+     * Updates charge summary based on local LC charge info
+     */
+    void updateChargeSummary() {
+        int proc = 0;
+        int mem = 0;
+        int s = lcInfo.size();
+        for(String lcHostname: lcInfo.keySet()) {
+            LCInfo lci = lcInfo.get(lcHostname);
+            proc += lci.charge.procCharge;
+            mem += lci.charge.memUsed;
+        }
+        proc /= s; mem /= s;
+        procSum = proc; memSum = mem;
+//        Logger.info("[GM.updateChargeSummary] " + proc + ", " + mem);
+    }
+
+
 
     void receiveHostQuery() {
 
@@ -167,67 +255,6 @@ public class GroupManager extends Process {
     }
 
     void sendVMCommandsLC() {
-
-    }
-
-    /**
-     * Sends GM charge summary info to GL
-     */
-    void summaryInfoToGL() {
-        updateChargeSummary();
-        GMSumMsg.GMSum c = new GMSumMsg.GMSum(procSum, memSum);
-        GMSumMsg m = new GMSumMsg(c, glSummary, host.getName(), null);
-        m.send();
-    }
-
-    /**
-     * Sends beats to heartbeat group and LCs
-     */
-    void beat() {
-        // Beat to heartbeat group
-        BeatGMMsg m = new BeatGMMsg(host.getName(), gmHeartbeatBeat, null, null);
-        m.send();
-
-        // Beat to LCs
-        for (String lc: lcInfo.keySet()) {
-            m = new BeatGMMsg(host.getName(), gmHeartbeatBeat, null, null);
-            m.send();
-        }
-    }
-
-    /**
-     * Updates charge summary based on local LC charge info
-     */
-    void updateChargeSummary() {
-        int proc = 0;
-        int mem = 0;
-        int s = lcInfo.size();
-        for(String lcHostname: lcInfo.keySet()) {
-            LCInfo lci = lcInfo.get(lcHostname);
-            proc += lci.charge.procCharge;
-            mem += lci.charge.memUsed;
-        }
-        proc /= s; mem /= s;
-        procSum = proc; memSum = mem;
-    }
-
-    /**
-     * Accepts asynchronously all pending LC charge messages, adds time stamps and updates lcInfo
-     */
-    void updateLCCharge() {
-        while (Task.listen(glSummary)) {
-            try {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(glSummary);
-                m = (GMSumMsg) m;
-                String lcHostname = (String) m.getOrigin();
-                LCChargeMsg.LCCharge cs = (LCChargeMsg.LCCharge) m.getMessage();
-                LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), new Date());
-                Date oldBeat = lcInfo.get(lcHostname).heartbeatTimestamp;
-                lcInfo.put(lcHostname, new LCInfo(newCharge, oldBeat));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
 
     }
 

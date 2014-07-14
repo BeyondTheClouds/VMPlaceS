@@ -1,7 +1,6 @@
 package scheduling.snooze;
 
 import org.simgrid.msg.Host;
-import org.simgrid.msg.Msg;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
 import scheduling.snooze.msg.*;
@@ -13,11 +12,11 @@ import java.util.Date;
  */
 public class EntryPoint extends Process {
     private Host host;
-    private String glHostname = "";
+    private String glHostname;
     private Date   glTimestamp;
 
-    public EntryPoint(Host host, String processName) {
-        super(host, processName);
+    public EntryPoint(Host host, String name) {
+        super(host, name);
         this.host = host;
     }
 
@@ -25,7 +24,7 @@ public class EntryPoint extends Process {
         while (true) {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(AUX.epInbox);
-                Msg.info("I got a message or I'm stupid");
+//                Logger.info("[EP.main] " + m);
                 handle(m);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -34,7 +33,21 @@ public class EntryPoint extends Process {
     }
 
     void handle(SnoozeMsg m) {
-        Logger.log("[EP.handle] Unknown message" + m);
+        String cs = m.getClass().getSimpleName();
+        switch (cs) {
+            case "RBeatGLMsg":
+                String gm = (String) m.getOrigin();
+                if (glHostname == null) {
+                    glHostname = gm;
+                    Logger.info("[EP(RBeatGLMsg)] GL initialized: " + gm);
+                }
+                else if (glHostname != gm) Logger.err("[EP(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gm);
+                else glTimestamp = (Date) m.getMessage();
+                break;
+            case "SnoozeMsg":
+                Logger.err("[EP(SnoozeMsg)] Unknown message" + m);
+                break;
+        }
     }
 
     void handle(NewGLMsg m) {
@@ -54,14 +67,7 @@ public class EntryPoint extends Process {
         if (glHostname != "") {
             NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), AUX.glInbox, m.getOrigin(), m.getReplyBox());
             mGl.send();
-        } else Logger.log("[EP.handle] New LC without GroupLeader");
-    }
-
-    void handle(BeatGMMsg m) {
-        String gm = (String) m.getMessage();
-        if      (glHostname == null) Logger.log("[EP.handle(BeatGLMsg)] No GL");
-        else if (glHostname != gm)   Logger.log("[EP.handle(BeatGLMsg)] Multiple GLs");
-        else glTimestamp = new Date();
+        } else Logger.err("[EP.handle] New LC without GroupLeader");
     }
 
     void glDead() {

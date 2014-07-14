@@ -8,3 +8,4 @@ public class BeatGLMsg extends SnoozeMsg {
         super(name, sendBox, origin, replyBox);
     }
 }
+

@@ -51,5 +51,11 @@ public class SnoozeMsg extends Task {
         this.isend(this.getSendBox());
 //        this.dsend(this.getSendBox());
     }
+
+    public String toString() {
+        return
+            this.getClass().getSimpleName() +
+                "(" + getMessage() + ", " + getSendBox() + ", " + getOrigin() + ", " + getReplyBox() + ")";
+    }
 }
 
