@@ -32,6 +32,8 @@ import configuration.XHost
 import simulation.SimulatorManager
 import org.simgrid.trace.Trace
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
+import scheduling.entropyBased.dvms2.dvms.LoggingActor
+import scheduling.entropyBased.dvms2.dvms.LoggingProtocol._
 
 object DvmsActor {
   val partitionUpdateTimeout: Double = 3.5
@@ -86,6 +88,8 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     lockedForFusion = false
     lastPartitionUpdateDate = None
     currentPartition = None
+
+    LoggingActor.write(IsFree(Msg.getClock, s"${applicationRef.getId}"))
   }
 
   def mergeWithThisPartition(partition: DvmsPartition) {
@@ -206,6 +210,8 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         remotePartition.version + 1
       )
 
+      LoggingActor.write(IsBooked(Msg.getClock, s"${applicationRef.getId}"))
+
       logInfo(s"$applicationRef: I am becoming the new leader of $newPartition")
 
       updatePartitionOnAllNodes(newPartition)
@@ -299,7 +305,11 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
   /* Methods and functions related to reconfiguration plans and migrations */
 
   def computeEntropy(): ReconfigurationResult = {
+    val timeBeforeComputeEntropy = new java.util.Date().getTime()
     val computationResult = entropyActor.computeReconfigurationPlan(currentPartition.get.nodes)
+    val timeAfterComputeEntropy = new java.util.Date().getTime()
+
+    LoggingActor.write(ComputingSomeReconfigurationPlan(Msg.getClock, s"${applicationRef.getId}", timeAfterComputeEntropy-timeBeforeComputeEntropy, computationResult.toString))
     computationResult
   }
 
@@ -328,7 +338,13 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     }
     if (destHost != null) {
 
+      LoggingActor.write(StartingMigration(Msg.getClock, s"${applicationRef.getId}", m.vmName, m.from, m.to))
+
+      val timeBeforeMigration = Msg.getClock
       sourceHost.migrate(args(0), destHost)
+      val timeAfterMigration = Msg.getClock
+
+      LoggingActor.write(FinishingMigration(Msg.getClock, s"${applicationRef.getId}", m.vmName, m.from, m.to, timeAfterMigration - timeBeforeMigration))
 
       Msg.info("End of migration of VM " + args(0) + " from " + args(1) + " to " + args(2))
       //              CentralizedResolver.decMig
@@ -345,9 +361,10 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   def applySolution(solution: ReconfigurationSolution) {
     def updateTimeout(partition: DvmsPartition) {
-      partition.nodes.foreach(node => {
+      partition.nodes.filterNot(n => n.getId == applicationRef.getId).foreach(node => {
         ask(node, "updateLastPartitionUpdate")
       })
+      updateLastUpdateTime()
     }
 
     println(s"Applying reconfigurationPlan: $solution")
@@ -371,7 +388,9 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
           })
         })
 
-        val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName+"-timeout", "timeout-prevent-process" + new Random().nextDouble, new Array[String](0)) {
+        val threadName = s"${applicationRef.getName}-${new Random().nextInt(10000)}"
+
+        val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-timeout", new Array[String](0)) {
           def main(args: Array[String]) {
             while (true) {
               updateTimeout(partition)
@@ -380,14 +399,12 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
           }
         }
 
-        timeoutProcess.start()
-
         solution.actions.keySet().foreach(key => {
           solution.actions.get(key).foreach(action => {
             action match {
               case m@MakeMigration(from, to, vmName) =>
-                val migrationProcess = new org.simgrid.msg.Process(applicationRef.getName+"-migration-"+migrationDone, "timeout-prevent-process" + new Random().nextDouble, new Array[String](0)) {
-                  def main(args: Array[String]) {
+                val migrationProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-migration", new Array[String](0)) {
+                  def main(args: Array[String]): Unit = {
                     applyMigration(m)
                     migrationDone += 1
                   }
@@ -397,6 +414,8 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
             }
           })
         })
+
+        timeoutProcess.start()
 
         while(migrationDone < migrationCount) {
           try {
@@ -473,6 +492,8 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
             List(applicationRef),
             Growing()
           ))
+
+          LoggingActor.write(IsBooked(Msg.getClock, s"${applicationRef.getId}"))
 
           lastPartitionUpdateDate = Some(Msg.getClock)
 

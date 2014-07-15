@@ -5,7 +5,9 @@ import configuration.XVM;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import org.simgrid.trace.Trace;
+import scheduling.entropyBased.dvms2.dvms.LoggingActor;
 import simulation.SimulatorManager;
+import scheduling.entropyBased.dvms2.dvms.LoggingProtocol.*;
 
 public class MonitorProcess extends Process {
 
@@ -39,7 +41,8 @@ public class MonitorProcess extends Process {
             for(XVM vm: this.xhost.getRunnings()){
                 cpuConsumption += vm.getCPUDemand();
             }
-//            Msg.info(String.format("%s's CPU consumption: %d/%d", name, cpuConsumption, configurationNode.getCPUCapacity()));
+
+            LoggingActor.write(new CurrentLoadIs(Msg.getClock(), ref.getId()+"", cpuConsumption));
 
             if(cpuConsumption > this.xhost.getCPUCapacity()) {
                 if (!violation_detected){

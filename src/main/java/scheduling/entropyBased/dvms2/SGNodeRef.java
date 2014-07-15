@@ -7,7 +7,8 @@ public class SGNodeRef {
 
     public SGNodeRef(String name, Long id){
 
-		this.name = name; 
+		this.name = name;
+        this.id = id;
 	}
 
 	public String toString(){
