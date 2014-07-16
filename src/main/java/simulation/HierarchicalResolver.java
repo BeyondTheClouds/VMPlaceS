@@ -40,7 +40,6 @@ public class HierarchicalResolver extends Process {
         int hostIndex;
         LinkedList<Integer> initialGMs = new LinkedList<Integer>();
         for (int i=0; i< SnoozeProperties.getGMNumber() ; i++){
-
             // Select the next hosting node for the GM and prevent to get one that has been already selected
             do {
                 hostIndex = randHostPicker.nextInt(SimulatorProperties.getNbOfNodes());

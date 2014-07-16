@@ -48,12 +48,11 @@ public class GroupLeader extends Process {
     }
 
     void handleLCAss(SnoozeMsg m) {
-        Logger.info("[GL(LCAssMsg)] Request by a LC looking for a GM: " + m);
         String gm = lcAssignment((String) m.getMessage());
         if (gm.equals("")) return;
         m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
         m.send();
-        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
+//        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
     }
 
     void handleGMSum(SnoozeMsg m) {
@@ -75,7 +74,7 @@ public class GroupLeader extends Process {
         gmInfo.put(gmHostname, gi);
         // Acknowledge integration
         m = new NewGMMsg((String) host.getName(), m.getReplyBox(), null, null);
-        Logger.info("[GL(NewGMMsg)] GM added: " + m);
+//        Logger.info("[GL(NewGMMsg)] GM added: " + m);
         m.send();
     }
 
@@ -89,7 +88,7 @@ public class GroupLeader extends Process {
             curCharge = cs.procCharge + cs.memUsed;
             if (minCharge > curCharge) { minCharge = curCharge; gmHost = s; }
         };
-       Logger.info("[GL.lcAssignment] GM selected: " + gmHost);
+//       Logger.info("[GL.lcAssignment] GM selected: " + gmHost);
         return gmHost;
     }
 

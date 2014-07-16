@@ -10,7 +10,6 @@ import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
 
-import java.net.UnknownHostException;
 import java.util.Date;
 
 public class LocalController extends Process {
@@ -36,7 +35,7 @@ public class LocalController extends Process {
 
     @Override
     public void main(String[] args) throws MsgException {
-        Logger.info("Start LC "+args[1]);
+//        Logger.info("Start LC "+args[1]);
         init(SimulatorManager.getXHostByName(args[0]), args[1]);
         join();
         while (true) {
@@ -114,7 +113,7 @@ public class LocalController extends Process {
         // Join GL multicast group
         m = new NewLCMsg(host.getName(), AUX.multicast, name, inbox);
         m.send();
-        Logger.info("[LC.join] Request sent: " + m);
+//        Logger.info("[LC.join] Request sent: " + m);
         // Wait for GL beat
         do {
             try {
@@ -140,17 +139,17 @@ public class LocalController extends Process {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-                Logger.info("[LC.join] Ass. msg.: " + m);
+//                Logger.info("[LC.join] Ass. msg.: " + m);
             if (m.getClass().getSimpleName().equals("LCAssMsg")) {
                 String gm = (String) m.getMessage();
                 gmHostname = gm;
             }
         } while (gmHostname.equals(""));
-        Logger.info("[LC.join] GM assigned: " + m);
+//        Logger.info("[LC.join] GM assigned: " + m);
 
         // Send GM integration request
         m = new NewLCMsg(host.getName(), AUX.gmInbox(gmHostname), name, inbox);
-        Logger.info("[LC.join] GM int.: " + m);
+//        Logger.info("[LC.join] GM int.: " + m);
         m.send();
 
         // Wait for GM acknowledgement
@@ -169,7 +168,7 @@ public class LocalController extends Process {
         // Leave GL, join GM multicast group
         m = new NewLCMsg(host.getName(), AUX.multicast, "removeLCjoinGM", gmHostname);
         m.send();
-        Logger.info("[LC.join] Finished: LC removed, GM multicast joined: " + m);
+        Logger.info("[LC.join] Finished: GL removed, GM multicast joined: " + m);
     }
 
     void rejoin() {

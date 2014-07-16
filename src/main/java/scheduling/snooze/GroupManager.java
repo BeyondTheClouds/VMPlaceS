@@ -50,7 +50,8 @@ public class GroupManager extends Process {
             summaryInfoToGL();
             beat();
             // TODO Mario invoke scheduleVMs in another Process
-            sleep(AUX.SchedulingPeriodicity*1000);
+//            sleep(AUX.SchedulingPeriodicity*1000);
+            sleep(10);
             scheduleVMs();
 //            sleep(AUX.HeartbeatInterval);
         }
@@ -128,7 +129,7 @@ public class GroupManager extends Process {
         // Send acknowledgment
         m = new NewLCMsg(host.getName(), AUX.lcInbox(lcHostname), null, null);
         m.send();
-//        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
+        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
     }
 
     void handleRBeatGL(SnoozeMsg m) {
@@ -189,21 +190,19 @@ public class GroupManager extends Process {
         try {
             SnoozeMsg m = new NewGMMsg(host.getName(), AUX.multicast, null, inbox);
             m.send();
-            Logger.info("send done");
             do {
                 m = (SnoozeMsg) Task.receive(inbox);
-                Logger.info("bla");
             } while (!m.getClass().getSimpleName().equals("RBeatGLMsg"));
             glHostname = m.getOrigin();
-            Logger.info("[GM.join] GL beat: " + m);
+//            Logger.info("[GM.join] GL beat: " + m);
             // Wait for GroupLeader acknowledgement
             m = new NewGMMsg(host.getName(), AUX.glInbox(glHostname), null, inbox);
             m.send();
             do {
                 m = (SnoozeMsg) Task.receive(inbox);
             } while (!m.getClass().getSimpleName().equals("NewGMMsg"));
-           Logger.info("[GM.join] GL ack.: " + m);
             glHostname = (String) m.getMessage();
+            Logger.info("[GM.join] Finished: " + m);
         } catch (TimeoutException e) {
             Logger.err("[GM.join] No joining" + host.getName());
             e.printStackTrace();
