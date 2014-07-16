@@ -27,9 +27,11 @@ public class GroupLeader extends Process {
     public void main(String[] strings) throws MsgException {
         while (true) {
             SnoozeMsg m = AUX.arecv(inbox);
-            if (m != null) handle(m);
+            if (m != null)
+                handle(m);
             beat();
-            sleep(AUX.HeartbeatInterval);
+           sleep(AUX.HeartbeatInterval);
+
         }
     }
 
@@ -46,11 +48,12 @@ public class GroupLeader extends Process {
     }
 
     void handleLCAss(SnoozeMsg m) {
+        Logger.info("[GL(LCAssMsg)] Request by a LC looking for a GM: " + m);
         String gm = lcAssignment((String) m.getMessage());
         if (gm.equals("")) return;
         m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
         m.send();
-//        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
+        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
     }
 
     void handleGMSum(SnoozeMsg m) {
@@ -86,7 +89,7 @@ public class GroupLeader extends Process {
             curCharge = cs.procCharge + cs.memUsed;
             if (minCharge > curCharge) { minCharge = curCharge; gmHost = s; }
         };
-//        Logger.info("[GL.lcAssignment] GM selected: " + gmHost);
+       Logger.info("[GL.lcAssignment] GM selected: " + gmHost);
         return gmHost;
     }
 
@@ -106,7 +109,7 @@ public class GroupLeader extends Process {
         // Beat to HB
         BeatGLMsg m = new BeatGLMsg(glHostname, AUX.multicast, null, null);
         m.send();
-//        Logger.info("[GL.beat] Beat sent");
+       // Logger.info("[GL.beat] Beat sent");
     }
 
     /**

@@ -1,12 +1,16 @@
 package scheduling.snooze;
 
+import configuration.XHost;
+import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import org.simgrid.trace.Trace;
+import scheduling.Scheduler;
+import scheduling.entropyBased.entropy2.Entropy2RP;
 import scheduling.snooze.msg.*;
+import simulation.SimulatorManager;
 
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.*;
 
 /**
  * Created by sudholt on 25/05/2014.
@@ -25,6 +29,7 @@ public class GroupManager extends Process {
     private String inbox;
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
+    private Collection<XHost> managedLCs;
 
     public GroupManager(Host host, String name) {
         super(host, name);
@@ -44,6 +49,9 @@ public class GroupManager extends Process {
             deadLCs();
             summaryInfoToGL();
             beat();
+            // TODO Mario invoke scheduleVMs in another Process
+            sleep(AUX.SchedulingPeriodicity*1000);
+            scheduleVMs();
 //            sleep(AUX.HeartbeatInterval);
         }
         Logger.info("GM stopped: " + host.getName());
@@ -181,18 +189,20 @@ public class GroupManager extends Process {
         try {
             SnoozeMsg m = new NewGMMsg(host.getName(), AUX.multicast, null, inbox);
             m.send();
+            Logger.info("send done");
             do {
                 m = (SnoozeMsg) Task.receive(inbox);
+                Logger.info("bla");
             } while (!m.getClass().getSimpleName().equals("RBeatGLMsg"));
             glHostname = m.getOrigin();
-//            Logger.info("[GM.join] GL beat: " + m);
+            Logger.info("[GM.join] GL beat: " + m);
             // Wait for GroupLeader acknowledgement
             m = new NewGMMsg(host.getName(), AUX.glInbox(glHostname), null, inbox);
             m.send();
             do {
                 m = (SnoozeMsg) Task.receive(inbox);
             } while (!m.getClass().getSimpleName().equals("NewGMMsg"));
-//            Logger.info("[GM.join] GL ack.: " + m);
+           Logger.info("[GM.join] GL ack.: " + m);
             glHostname = (String) m.getMessage();
         } catch (TimeoutException e) {
             Logger.err("[GM.join] No joining" + host.getName());
@@ -252,10 +262,84 @@ public class GroupManager extends Process {
 
     void scheduleVMs() {
 
+        Scheduler scheduler;
+        long beginTimeOfCompute;
+        long endTimeOfCompute;
+        long computationTime;
+        Scheduler.ComputingState computingState;
+        double reconfigurationTime = 0;
+
+        scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(this.getManagedXHosts()), -1);
+
+        Msg.info("Size of the GM: "+this.getManagedXHosts().size());
+        beginTimeOfCompute = System.currentTimeMillis();
+        computingState = scheduler.computeReconfigurationPlan();
+        endTimeOfCompute = System.currentTimeMillis();
+        computationTime = (endTimeOfCompute - beginTimeOfCompute);
+
+        try {
+            Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
+        } catch (HostFailureException e) {
+            e.printStackTrace();
+        }
+
+        Msg.info("Computation time (in ms):" + computationTime);
+       // TODO Adrien
+       // SimulatorManager.incEntropyComputationTime(computationTime;);
+
+        if (computingState.equals(Scheduler.ComputingState.NO_RECONFIGURATION_NEEDED)) {
+            Msg.info("Configuration remains unchanged");
+            Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
+        } else if (computingState.equals(Scheduler.ComputingState.SUCCESS)) {
+            int cost = scheduler.getReconfigurationPlanCost();
+
+			/* Tracing code */
+            // TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
+            for (XHost h : this.getManagedXHosts())
+                Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
+
+            Msg.info("Starting reconfiguration");
+            double startReconfigurationTime = Msg.getClock() * 1000;
+            scheduler.applyReconfigurationPlan();
+            double endReconfigurationTime = Msg.getClock() * 1000;
+            reconfigurationTime = endReconfigurationTime - startReconfigurationTime;
+            Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
+            // TODO Adrien
+            //SimulatorManager.incEntropyReconfigurationTime(reconfigurationTime);
+
+            Msg.info("Number of nodes used: " + SimulatorManager.getNbOfUsedHosts());
+
+        } else {
+            System.err.println("The resolver does not find any solutions - EXIT");
+            // TODO Adrien
+            //SimulatorManager.incEntropyNotFound();
+            // TODO Adrien
+            //Msg.info("Entropy has encountered an error (nb: " + SimulatorManager.getEntropyNotFound() + ")");
+        }
+
+		/* Tracing code */
+        for (XHost h : SimulatorManager.getSGHosts())
+            Trace.hostSetState(h.getName(), "SERVICE", "free");
+
+        Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
+
     }
+
 
     void sendVMCommandsLC() {
 
+    }
+
+    /**
+     * @return the collection of XHost managed by the GM
+     */
+    public Collection<XHost> getManagedXHosts() {
+        Set<String> xhostNames =  lcInfo.keySet();
+        LinkedList<XHost> xhosts = new LinkedList<XHost>();
+        for (String xName: xhostNames){
+            xhosts.add(SimulatorManager.getXHostByName(xName));
+        }
+        return xhosts;
     }
 
     /**

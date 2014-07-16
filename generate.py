@@ -12,13 +12,22 @@ largv=len(sys.argv)
 if largv == 3:
     nb_nodes = int(sys.argv[2])
     if (sys.argv[1] == 'hierarchical'):
-	    sys.stderr.write("generate deployment file for snooze");
-	    sys.stdout.write("<?xml version='1.0'?>\n"
-	    "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
-	    "<platform version=\"3\">\n"
-	    "  <process host=\"node0\" function=\"injector.Injector\"> </process>\n"
-        "  <process host=\"node0\" function=\"simulation.HierarchicalResolver\"> </process>\n"
-	    "</platform>");
+        sys.stderr.write("generate deployment file for snooze");
+        sys.stdout.write("<?xml version='1.0'?>\n"
+        "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
+        "<platform version=\"3\">\n"
+        "  <process host=\"node0\" function=\"injector.Injector\"> </process>\n"
+        "  <process host=\"node0\" function=\"simulation.HierarchicalResolver\"> </process>\n")
+
+        for i in range(1, nb_nodes):
+
+            line = "  <process host=\"node%d\" function=\"scheduling.snooze.LocalController\">\
+<argument value=\"node%d\" /><argument value=\"localController-%d\" />\
+</process>\n" % (i, i, i)
+            sys.stdout.write(line)
+
+        sys.stdout.write("</platform>")
+
     else:
         sys.stderr.write("generate deployment file for entropy");
         sys.stdout.write("<?xml version='1.0'?>\n"
@@ -29,37 +38,37 @@ if largv == 3:
         "</platform>");
 
 elif largv == 6:
-	nb_nodes = int(sys.argv[1])
-	nb_cpu = int(sys.argv[2])
-	total_cpu_cap = int(sys.argv[3])
-	ram = int(sys.argv[4])
-	port_orig = int(sys.argv[5])
-	port = port_orig
-	sys.stdout.write("<?xml version='1.0'?>\n"
-	"<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
-	"<platform version=\"3\">\n"
-	"  <process host=\"node0\" function=\"injector.Injector\"> </process>\n")
+        nb_nodes = int(sys.argv[1])
+        nb_cpu = int(sys.argv[2])
+        total_cpu_cap = int(sys.argv[3])
+        ram = int(sys.argv[4])
+        port_orig = int(sys.argv[5])
+        port = port_orig
+        sys.stdout.write("<?xml version='1.0'?>\n"
+        "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
+        "<platform version=\"3\">\n"
+        "  <process host=\"node0\" function=\"injector.Injector\"> </process>\n")
 
-	for i in range(1, nb_nodes):
+        for i in range(1, nb_nodes):
 
-		line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
-		<argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
-		<argument value=\"node%d\" /><argument value=\"%d\" />\n \
-		</process>\n" % (i, i, nb_cpu, total_cpu_cap, ram, port, i+1, port+1) 
-	
-		port+=1
+                line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
+                <argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
+                <argument value=\"node%d\" /><argument value=\"%d\" />\n \
+                </process>\n" % (i, i, nb_cpu, total_cpu_cap, ram, port, i+1, port+1)
 
-		sys.stdout.write(line)
+                port+=1
 
-	# link the last agent to the first
-	line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
-	<argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
-	<argument value=\"node%d\" /><argument value=\"%d\" />\n \
-	</process>\n" % (nb_nodes, nb_nodes, nb_cpu, total_cpu_cap, ram, port, 1, port_orig) 
-	
-	sys.stdout.write(line)
-	sys.stdout.write("</platform>")
+                sys.stdout.write(line)
+
+        # link the last agent to the first
+        line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
+        <argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
+        <argument value=\"node%d\" /><argument value=\"%d\" />\n \
+        </process>\n" % (nb_nodes, nb_nodes, nb_cpu, total_cpu_cap, ram, port, 1, port_orig)
+
+        sys.stdout.write(line)
+        sys.stdout.write("</platform>")
 
 else:
-	print("Usage: python generate.py nb_nodes or python generate.py nb_nodes nb_cpu total_cpu_cap ram port > dvms_deploy.xml")
-	sys.exit(1)
+        print("Usage: python generate.py nb_nodes or python generate.py nb_nodes nb_cpu total_cpu_cap ram port > dvms_deploy.xml")
+        sys.exit(1)

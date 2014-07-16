@@ -8,6 +8,7 @@ import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
+import simulation.SimulatorManager;
 
 import java.net.UnknownHostException;
 import java.util.Date;
@@ -21,8 +22,13 @@ public class LocalController extends Process {
     private String inbox;
     private String lcCharge; // GM mbox
 
-    public LocalController(XHost host, String name) throws UnknownHostException {
-        super(host.getSGHost(), name);
+    public LocalController (Host host, String name,String[] args) throws HostNotFoundException, NativeException  {
+
+        super(host, name, args);
+
+    }
+
+    public void init(XHost host, String name)  {
         this.host = host;
         this.name = name;
         this.inbox = host.getName() + "-lcInbox";
@@ -30,6 +36,8 @@ public class LocalController extends Process {
 
     @Override
     public void main(String[] args) throws MsgException {
+        Logger.info("Start LC "+args[1]);
+        init(SimulatorManager.getXHostByName(args[0]), args[1]);
         join();
         while (true) {
             try{
@@ -38,7 +46,7 @@ public class LocalController extends Process {
                 gmDead();
                 beat();
                 lcChargeToGM();
-//                sleep(AUX.HeartbeatInterval);
+                sleep(AUX.HeartbeatInterval);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -106,7 +114,7 @@ public class LocalController extends Process {
         // Join GL multicast group
         m = new NewLCMsg(host.getName(), AUX.multicast, name, inbox);
         m.send();
-//        Logger.info("[LC.join] Request sent: " + m);
+        Logger.info("[LC.join] Request sent: " + m);
         // Wait for GL beat
         do {
             try {
@@ -114,35 +122,35 @@ public class LocalController extends Process {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-//            Logger.info("[LC.join] Ans: " + m);
+           // Logger.info("[LC.join] Ans: " + m);
         }
         while (!m.getClass().getSimpleName().equals("RBeatGLMsg"));
         String gl = m.getOrigin();
-//        Logger.info("[LC.join] Got GL: " + gl);
-
-
-        // Send GM assignment req.
-        m = new LCAssMsg(host.getName(), AUX.glInbox, host.getName(), inbox);
-//        Logger.info("[LC.join] GM ass. request: " + m);
-        m.send();
-
-        // Wait for GM assigment
+       // Logger.info("[LC.join] Got GL: " + gl);
         do {
-            try {
-                m = (SnoozeMsg) Task.receive(inbox);
-            } catch (Exception e) {
-                e.printStackTrace();
+            gmHostname = "";
+            // Send GM assignment req.
+            m = new LCAssMsg(host.getName(), AUX.glInbox, host.getName(), inbox);
+            // Logger.info("[LC.join] GM ass. request: " + m);
+            m.send();
+            // Wait for GM assignment
+
+                 try {
+                    m = (SnoozeMsg) Task.receive(inbox);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                Logger.info("[LC.join] Ass. msg.: " + m);
+            if (m.getClass().getSimpleName().equals("LCAssMsg")) {
+                String gm = (String) m.getMessage();
+                gmHostname = gm;
             }
-//            Logger.info("[LC.join] Ass. msg.: " + m);
-        }
-        while (!m.getClass().getSimpleName().equals("LCAssMsg"));
-        String gm = (String) m.getMessage();
-        gmHostname = gm;
-//        Logger.info("[LC.join] GM assigned: " + m);
+        } while (gmHostname.equals(""));
+        Logger.info("[LC.join] GM assigned: " + m);
 
         // Send GM integration request
         m = new NewLCMsg(host.getName(), AUX.gmInbox(gmHostname), name, inbox);
-//        Logger.info("[LC.join] GM int.: " + m);
+        Logger.info("[LC.join] GM int.: " + m);
         m.send();
 
         // Wait for GM acknowledgement
@@ -155,7 +163,7 @@ public class LocalController extends Process {
 //            Logger.info("[LC.join] Int. msg.: " + m);
         }
         while (!m.getClass().getSimpleName().equals("NewLCMsg"));
-//        Logger.info("[LC.join] Integration acknowledged: " + m);
+        Logger.info("[LC.join] Integration acknowledged: " + m);
         gmBeatTimestamp = new Date();
 
         // Leave GL, join GM multicast group

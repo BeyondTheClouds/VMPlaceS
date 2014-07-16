@@ -31,7 +31,9 @@ public class Multicast extends Process {
     @Override
     public void main(String[] strings) throws MsgException {
         while (true) {
+            //Logger.info("Wait for message");
             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+
             handle(m);
             sleep(AUX.HeartbeatInterval);
         }
@@ -42,6 +44,7 @@ public class Multicast extends Process {
      * @param m
      */
     public void handle(SnoozeMsg m) {
+     //   Logger.info("New message :" + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "BeatGLMsg": handleBeatGL(m);  break;
@@ -65,7 +68,7 @@ public class Multicast extends Process {
             if (glHostname != gl)
                 Logger.err("[GLH] Multiple GLs: " + glHostname + ", " + gl);
             glTimestamp = new Date();
-//                    Logger.info("[MUL(BeatGLMsg)] Beat received");
+              //     Logger.info("[MUL(BeatGLMsg)] Beat received");
             relayGLBeat();
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,7 +106,7 @@ public class Multicast extends Process {
 
     void handleNewGM(SnoozeMsg m) {
         gmInfo.put((String) m.getMessage(), new GMInfo(m.getReplyBox(), new Date()));
-//        Logger.info("[MUL(NewGMMsg)] GM stored: " + m);
+        Logger.info("[MUL(NewGMMsg)] GM stored: " + m);
     }
 
     /**
