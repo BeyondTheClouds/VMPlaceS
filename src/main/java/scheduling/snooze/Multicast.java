@@ -163,17 +163,17 @@ public class Multicast extends Process {
     void relayGLBeat() {
         if (glHostname != "") {
             new RBeatGLMsg(glTimestamp, AUX.epInbox, glHostname, null).send();
-//            Logger.info("[GL.relayGLbeat] Beat relayed to: " + AUX.epInbox);
+            Logger.info("[GL.relayGLbeat] Beat relayed to: " + AUX.epInbox);
             for (String gm : gmInfo.keySet()) {
                 new RBeatGLMsg(glTimestamp, gmInfo.get(gm).replyBox, glHostname, null).send();
-//                Logger.info("[GL.relayGLbeat] Beat relayed to GM: " + gmInfo.get(gm).replyBox);
+                Logger.info("[GL.relayGLbeat] Beat relayed to GM: " + gmInfo.get(gm).replyBox);
             }
             for (String lc : lcInfo.keySet()) {
                 LCInfo lv = lcInfo.get(lc);
                 if (lv.join) {
                     SnoozeMsg m = new RBeatGLMsg(glTimestamp, AUX.lcInbox(lv.lcHost), glHostname, null);
                     m.send();
-//                    Logger.info("[MUL.relayGLBeats] To LC: " + m);
+                    Logger.info("[MUL.relayGLBeats] To LC: " + m);
                 }
             }
         } else Logger.err("[GLH] No GL");

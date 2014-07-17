@@ -27,15 +27,14 @@ public class GroupLeader extends Process {
     public void main(String[] strings) throws MsgException {
         while (true) {
             SnoozeMsg m = AUX.arecv(inbox);
-            if (m != null)
-                handle(m);
+            if (m != null) handle(m);
             beat();
-           sleep(AUX.HeartbeatInterval);
-
+            sleep(AUX.HeartbeatInterval);
         }
     }
 
     void handle(SnoozeMsg m) {
+        Logger.info("[GL.handle] GLIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "LCAssMsg" : handleLCAss(m); break;
@@ -52,7 +51,7 @@ public class GroupLeader extends Process {
         if (gm.equals("")) return;
         m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
         m.send();
-//        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
+        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
     }
 
     void handleGMSum(SnoozeMsg m) {

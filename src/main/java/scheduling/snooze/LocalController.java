@@ -22,29 +22,27 @@ public class LocalController extends Process {
     private String lcCharge; // GM mbox
 
     public LocalController (Host host, String name,String[] args) throws HostNotFoundException, NativeException  {
-
         super(host, name, args);
-
     }
 
     public void init(XHost host, String name)  {
         this.host = host;
         this.name = name;
-        this.inbox = host.getName() + "-lcInbox";
+        this.inbox = AUX.lcInbox(host.getName());
     }
 
     @Override
     public void main(String[] args) throws MsgException {
-//        Logger.info("Start LC "+args[1]);
+//        Logger.info("Start LC " + args[0] + ", " + args[1]);
         init(SimulatorManager.getXHostByName(args[0]), args[1]);
         join();
         while (true) {
             try{
-                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-                handle(m);
-                gmDead();
+                SnoozeMsg m = AUX.arecv(inbox);
+                if (m != null) handle(m);
+//                gmDead();
                 beat();
-                lcChargeToGM();
+//                lcChargeToGM();
                 sleep(AUX.HeartbeatInterval);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -53,6 +51,7 @@ public class LocalController extends Process {
     }
 
     void handle(SnoozeMsg m) {
+//        Logger.info("[LC.handle] LCIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "RBeatGMMsg": handleBeatGM(m); break;
@@ -113,7 +112,7 @@ public class LocalController extends Process {
         // Join GL multicast group
         m = new NewLCMsg(host.getName(), AUX.multicast, name, inbox);
         m.send();
-//        Logger.info("[LC.join] Request sent: " + m);
+//        Logger.info("[LC.join] 1 Request sent: " + m);
         // Wait for GL beat
         do {
             try {
@@ -121,16 +120,16 @@ public class LocalController extends Process {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-           // Logger.info("[LC.join] Ans: " + m);
+//           Logger.info("[LC.join] 2 Ans: " + m);
         }
         while (!m.getClass().getSimpleName().equals("RBeatGLMsg"));
         String gl = m.getOrigin();
-       // Logger.info("[LC.join] Got GL: " + gl);
+//       Logger.info("[LC.join] 3 Got GL: " + gl);
         do {
             gmHostname = "";
             // Send GM assignment req.
             m = new LCAssMsg(host.getName(), AUX.glInbox, host.getName(), inbox);
-            // Logger.info("[LC.join] GM ass. request: " + m);
+//            Logger.info("[LC.join] 4 GM ass. request: " + m);
             m.send();
             // Wait for GM assignment
 
@@ -139,17 +138,17 @@ public class LocalController extends Process {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-//                Logger.info("[LC.join] Ass. msg.: " + m);
+//                Logger.info("[LC.join] 5 Ass. msg.: " + m);
             if (m.getClass().getSimpleName().equals("LCAssMsg")) {
                 String gm = (String) m.getMessage();
                 gmHostname = gm;
             }
         } while (gmHostname.equals(""));
-//        Logger.info("[LC.join] GM assigned: " + m);
+//        Logger.info("[LC.join] 6 GM assigned: " + m);
 
         // Send GM integration request
         m = new NewLCMsg(host.getName(), AUX.gmInbox(gmHostname), name, inbox);
-//        Logger.info("[LC.join] GM int.: " + m);
+//        Logger.info("[LC.join] 7 GM int.: " + m);
         m.send();
 
         // Wait for GM acknowledgement
@@ -159,10 +158,10 @@ public class LocalController extends Process {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-//            Logger.info("[LC.join] Int. msg.: " + m);
+//            Logger.info("[LC.join] 8 Int. msg.: " + m);
         }
         while (!m.getClass().getSimpleName().equals("NewLCMsg"));
-        Logger.info("[LC.join] Integration acknowledged: " + m);
+//        Logger.info("[LC.join] Integration acknowledged: " + m);
         gmBeatTimestamp = new Date();
 
         // Leave GL, join GM multicast group

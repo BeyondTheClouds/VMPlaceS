@@ -42,24 +42,28 @@ public class GroupManager extends Process {
     public void main(String[] strings) throws MsgException {
         join();
         while (true) {
-            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-            handle(m);
+            SnoozeMsg m = AUX.arecv(inbox);
+            if (m != null) handle(m);
             glDead();
-            if (thisGMToBeStopped) break;
-            deadLCs();
-            summaryInfoToGL();
+            if (thisGMToBeStopped) {
+                Logger.err("[GM.main] GM stops: " + m);
+                break;
+            }
+//            deadLCs();
+//            summaryInfoToGL();
             beat();
             // TODO Mario invoke scheduleVMs in another Process
 //            sleep(AUX.SchedulingPeriodicity*1000);
-            sleep(10);
-            scheduleVMs();
-//            sleep(AUX.HeartbeatInterval);
+//            scheduleVMs();
+            sleep(AUX.HeartbeatInterval);
         }
         Logger.info("GM stopped: " + host.getName());
     }
 
     void handle(SnoozeMsg m) {
+//        Logger.info("[GM.handle] GMIn: " + m);
         String cs = m.getClass().getSimpleName();
+
         switch (cs) {
             case "BeatLCMsg":   handleBeatLC(m);   break;
             case "GMElecMsg":   handleGMElec(m);   break;
@@ -129,19 +133,20 @@ public class GroupManager extends Process {
         // Send acknowledgment
         m = new NewLCMsg(host.getName(), AUX.lcInbox(lcHostname), null, null);
         m.send();
-        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
+//        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
     }
 
     void handleRBeatGL(SnoozeMsg m) {
         String gl = (String) m.getOrigin();
-//        Logger.info("[GM(RBeatGL)] Old, new GL: " + glHostname + ", " + gl);
-        if (glHostname.equals("")) {
-            glHostname = gl;
-            join();
-            Logger.info("[GM(RBeatGL)] GL initialized: " + gl + " on " + host);
+        Logger.info("[GM(RBeatGL)] Old, new GL, m: " + glHostname + ", " + gl + " <= " + m);
+        if (glHostname != gl) Logger.err("[GM(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gl);
+        else {
+            glTimestamp = (Date) m.getMessage();
+            if (glHostname.equals("")) {
+                glHostname = gl;
+                Logger.info("[GM(RBeatGL)] GL initialized: " + gl + " on " + host);
+            }
         }
-        else if (glHostname != gl) Logger.err("[GM(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gl);
-        else glTimestamp = (Date) m.getMessage();
     }
 
     /**
@@ -157,7 +162,9 @@ public class GroupManager extends Process {
      * Identify dead GL, request election (not: wait for new GL)
      */
     void glDead() {
+        Logger.info("[GM.gldead] TSs: " + glTimestamp + " => " + new Date());
         if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout) {
+            Logger.info("[GM.gldead] GL dead: " + glTimestamp + " => " + new Date());
             glHostname = "";
             SnoozeMsg m = new GLElecMsg(host.getName(), AUX.multicast, null, null);
             m.send();
