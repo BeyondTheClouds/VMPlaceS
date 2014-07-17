@@ -1,9 +1,8 @@
 package scheduling.snooze;
 
+import org.simgrid.msg.Msg;
 import org.simgrid.msg.Task;
 import scheduling.snooze.msg.SnoozeMsg;
-
-import java.util.Date;
 
 /**
  * Created by sudholt on 06/07/2014.
@@ -18,6 +17,8 @@ public class AUX {
     static final String glElection = "glElection";            // HeartbeatGroup mbox
     static final String gmHeartbeatNew = "gmHeartbeatNew";    // HeartbeatGroup mbox
     static final String gmHeartbeatBeat = "gmHeartbeatBeat";  // HeartbeatGroup mbox
+    static final long DefaultComputeInterval = 10;
+    static final long EntropyComputationTime = 30000;
     static final long HeartbeatInterval = 1000*SnoozeProperties.getHeartBeatPeriodicity();
     static final long HeartbeatTimeout = 1000*SnoozeProperties.getHeartBeatTimeout();
     static final long SchedulingPeriodicity = 1000*SnoozeProperties.getSchedulingPeriodicity();
@@ -38,9 +39,7 @@ public class AUX {
     static String gmInbox(String gmHost) { return gmHost + "-gmInbox"; }
     static String lcInbox(String lcHost) { return lcHost + "-lcInbox"; }
 
-    static long timeDiff(Date d) {
-        long curTime = new Date().getTime();
-        long oldTime = d.getTime();
-        return curTime-oldTime;
+    static double timeDiff(double oldTime) {
+        return Msg.getClock()-oldTime;
     }
 }

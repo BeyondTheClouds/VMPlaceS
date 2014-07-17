@@ -5,15 +5,13 @@ import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
 import scheduling.snooze.msg.*;
 
-import java.util.Date;
-
 /**
  * Created by sudholt on 22/06/2014.
  */
 public class EntryPoint extends Process {
     private Host host;
     private String glHostname;
-    private Date   glTimestamp;
+    private double glTimestamp;
 
     public EntryPoint(Host host, String name) {
         super(host, name);
@@ -42,7 +40,7 @@ public class EntryPoint extends Process {
                     Logger.info("[EP(RBeatGLMsg)] GL initialized: " + gm);
                 }
                 else if (glHostname != gm) Logger.err("[EP(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gm);
-                else glTimestamp = (Date) m.getMessage();
+                else glTimestamp = (double) m.getMessage();
                 break;
             case "SnoozeMsg":
                 Logger.err("[EP(SnoozeMsg)] Unknown message" + m);

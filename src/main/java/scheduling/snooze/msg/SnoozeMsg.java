@@ -1,7 +1,6 @@
 package scheduling.snooze.msg;
 
 
-import org.simgrid.msg.Msg;
 import org.simgrid.msg.Task;
 
 /**
@@ -40,15 +39,6 @@ public class SnoozeMsg extends Task {
 
     public void send() {
 
-//        try {
-//            this.send(this.getSendBox());
-//        } catch (TransferFailureException e) {
-//            e.printStackTrace();
-//        } catch (HostFailureException e) {
-//            e.printStackTrace();
-//        } catch (TimeoutException e) {
-//            e.printStackTrace();
-//        }
 //  Msg.info("SendBox:" + this.getSendBox());
       this.isend(this.getSendBox());
 //        this.dsend(this.getSendBox());

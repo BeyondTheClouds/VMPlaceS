@@ -5,7 +5,6 @@ import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Hashtable;
 
 /**
@@ -16,7 +15,7 @@ public class Multicast extends Process {
     private Host host;
     private String inbox;
     private String glHostname;
-    private Date glTimestamp;
+    private double glTimestamp;
     private Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>();
     private Hashtable<String, LCInfo> lcInfo = new Hashtable<String, LCInfo>();
 
@@ -31,11 +30,9 @@ public class Multicast extends Process {
     @Override
     public void main(String[] strings) throws MsgException {
         while (true) {
-            //Logger.info("Wait for message");
             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-
             handle(m);
-            sleep(AUX.HeartbeatInterval);
+            sleep(AUX.DefaultComputeInterval);
         }
     }
 
@@ -47,11 +44,11 @@ public class Multicast extends Process {
      //   Logger.info("New message :" + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-            case "BeatGLMsg": handleBeatGL(m);  break;
+            case "BeatGLMsg": handleBeatGL(m); break;
             case "BeatGMMsg": handleBeatGM(m); break;
-            case "GLElecMsg": handleGLElec(m);  break;
-            case "NewLCMsg" : handleNewLC(m);   break;
-            case "NewGMMsg" : handleNewGM(m);   break;
+            case "GLElecMsg": handleGLElec(m); break;
+            case "NewLCMsg" : handleNewLC(m);  break;
+            case "NewGMMsg" : handleNewGM(m);  break;
             case "SnoozeMsg":
                 Logger.err("[MUL(SnoozeMsg)] Unknown message" + m);
                 break;
@@ -67,8 +64,7 @@ public class Multicast extends Process {
             }
             if (glHostname != gl)
                 Logger.err("[GLH] Multiple GLs: " + glHostname + ", " + gl);
-            glTimestamp = new Date();
-              //     Logger.info("[MUL(BeatGLMsg)] Beat received");
+            glTimestamp = Msg.getClock();
             relayGLBeat();
         } catch (Exception e) {
             e.printStackTrace();
@@ -77,7 +73,7 @@ public class Multicast extends Process {
 
     void handleBeatGM(SnoozeMsg m) {
         String gm = (String) m.getMessage();
-        gmInfo.put(gm, new GMInfo(gmInfo.get(gm).replyBox, new Date()));
+        gmInfo.put(gm, new GMInfo(gmInfo.get(gm).replyBox, Msg.getClock()));
         relayGMBeats();
     }
 
@@ -88,24 +84,26 @@ public class Multicast extends Process {
         } else {
             // GL still alive
             m = new RBeatGLMsg(glTimestamp, AUX.gmInbox((String) m.getMessage()), glHostname, null);
-            Logger.info("[MUL(GLElecMsg)] GL alive, resend: " + m);
+            Logger.err("[MUL(GLElecMsg)] GL alive, resend: " + m);
         }
     }
 
     void handleNewLC(SnoozeMsg m) {
+        Logger.info("[MUL(NewLCMsg)] " + m.getOrigin().equals("removeLCjoinGM"));
         if (!m.getOrigin().equals("removeLCjoinGM")) {
             // Add LC
-            lcInfo.put((String) m.getMessage(), new LCInfo((String) m.getMessage(), "", new Date(), true));
-//            Logger.info("[MUL(NewLCMsg)] LC stored: " + m);
+            lcInfo.put((String) m.getMessage(), new LCInfo((String) m.getMessage(), "", Msg.getClock(), true));
+            Logger.info("[MUL(NewLCMsg)] LC stored: " + m);
         } else {
             // End LC join phase
-            lcInfo.put((String) m.getMessage(), new LCInfo((String) m.getMessage(), m.getReplyBox(), new Date(), false));
-//            Logger.info("[MUL(NewLCMsg)] LC removed: " + m);
+            lcInfo.put((String) m.getMessage(),
+                    new LCInfo((String) m.getMessage(), m.getReplyBox(), Msg.getClock(), false));
+            Logger.info("[MUL(NewLCMsg)] LC removed: " + m);
         }
     }
 
     void handleNewGM(SnoozeMsg m) {
-        gmInfo.put((String) m.getMessage(), new GMInfo(m.getReplyBox(), new Date()));
+        gmInfo.put((String) m.getMessage(), new GMInfo(m.getReplyBox(), Msg.getClock()));
         Logger.info("[MUL(NewGMMsg)] GM stored: " + m);
     }
 
@@ -123,7 +121,7 @@ public class Multicast extends Process {
             }
             // Deployment on the Multicast node! Where should it be deployed?
             glHostname = gl.getHost().getName();
-            Logger.info("[MUL.leaderElection] New leader ex-nihilo on: " + glHostname);
+            Logger.err("[MUL.leaderElection] New leader ex-nihilo on: " + glHostname);
         } else {
             // Leader election: select GM, send promotion message
             ArrayList<String> gms = new ArrayList<String>(gmInfo.keySet());
@@ -163,20 +161,21 @@ public class Multicast extends Process {
     void relayGLBeat() {
         if (glHostname != "") {
             new RBeatGLMsg(glTimestamp, AUX.epInbox, glHostname, null).send();
-            Logger.info("[GL.relayGLbeat] Beat relayed to: " + AUX.epInbox);
+//            Logger.info("[MUL.relayGLbeat] Beat relayed to: " + AUX.epInbox);
             for (String gm : gmInfo.keySet()) {
                 new RBeatGLMsg(glTimestamp, gmInfo.get(gm).replyBox, glHostname, null).send();
-                Logger.info("[GL.relayGLbeat] Beat relayed to GM: " + gmInfo.get(gm).replyBox);
+//                Logger.info("[MUL.relayGLbeat] Beat relayed to GM: " + gmInfo.get(gm).replyBox);
             }
             for (String lc : lcInfo.keySet()) {
                 LCInfo lv = lcInfo.get(lc);
                 if (lv.join) {
                     SnoozeMsg m = new RBeatGLMsg(glTimestamp, AUX.lcInbox(lv.lcHost), glHostname, null);
                     m.send();
-                    Logger.info("[MUL.relayGLBeats] To LC: " + m);
+//                    Logger.info("[MUL.relayGLBeats] To LC: " + m);
                 }
             }
-        } else Logger.err("[GLH] No GL");
+        } else Logger.err("[MUL] No GL");
+//        Logger.info("[MUL.relayGLbeat] GL beat received/relayed: " + glTimestamp);
     }
 
     /**
@@ -197,9 +196,9 @@ public class Multicast extends Process {
 
     class GMInfo {
         String replyBox;
-        Date timestamp;
+        double timestamp;
 
-        GMInfo(String rb, Date ts) {
+        GMInfo(String rb, double ts) {
             this.replyBox = rb; this.timestamp = ts;
         }
     }
@@ -207,10 +206,10 @@ public class Multicast extends Process {
     class LCInfo {
         String lcHost;
         String gmHost;
-        Date timestamp;
+        double timestamp;
         boolean join;
 
-        LCInfo(String lc, String gm, Date ts, boolean join) {
+        LCInfo(String lc, String gm, double ts, boolean join) {
             this.lcHost = lc; this.gmHost = gm; this.timestamp = ts; this.join = join;
         }
     }
