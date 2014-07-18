@@ -1,4 +1,6 @@
-name := "ImgridInjector"
+import AssemblyKeys._
+
+name := "SimgridInjector"
 
 version := "0.5"
 
@@ -14,4 +16,20 @@ retrieveManaged := true
 excludeFilter in unmanagedSources := new sbt.FileFilter{
   //def accept(f: File): Boolean = "(?s).*scheduling/dvms/.*|.*scheduling/hubis/.*".r.pattern.matcher(f.getAbsolutePath).matches
   def accept(f: File): Boolean = "(?s).*scheduling/entropyBased/dvms/.*".r.pattern.matcher(f.getAbsolutePath).matches
+}
+
+seq(assemblySettings: _*)
+
+mainClass in assembly := Some("simulation.Main")
+
+test in assembly := {}
+
+jarName in assembly := "simulation.jar"
+
+mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
+{
+  case "application.conf" => MergeStrategy.rename
+  case "META-INF/MANIFEST.MF" => old("META-INF/MANIFEST.MF")
+  case x => MergeStrategy.first
+}
 }
