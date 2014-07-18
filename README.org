@@ -30,6 +30,9 @@ According to the investigated algorithm, VMs are relocated through the different
 
 The ultimate objective of the Simgrid Injector VM framework is to deliver a building block that will enable to compare fairly different VM placement algorithms.
 
+** Configure your development environment
+SBT TODO
+
 ** Launcher
 Once you have configured the different parameters of your simulation (config/simulator.properties), you can run the simulation by executing the simulation.Main class.
 As Simgrid requires several parameters to run, we encourage you to use either Eclipse or Intellij.
@@ -50,6 +53,8 @@ WARNING: please keep in mind that due to the fact the capability in terms of cor
 TODO - Describe the process to add a new scheduler into the injector
 
 ** Contributors
-- Adrien Lebre - adrien.lebre@inria.fr - France -  project founder, principal maintainer
-- Flavien Quesnel - xxxx - France - simulator properties, bug fixes, distributed algorithm (based on DVMS proposal)
-- José Simao - jsimao@cc.isel.ipl.pt - Portugal - first beta tester - few bug fixes
+- Adrien Lebre - adrien.lebre@inria.fr - France - Project founder, principal maintainer
+- Jonathan Pastor - jonathan.pastor@inria.fr - France - Implementation of the distributed resolver (based on the DVMS proposal)
+- Flavien Quesnel - xxxx - France - Contributor (simulator properties, bug fixes, distributed resolver)
+- José Simao - jsimao@cc.isel.ipl.pt - Portugal - First beta tester - few bug fixes
+- Mario Sudhol - mario.sudholt@inria.fr - Implementation of the hierarchical resolver (based on the Snooze proposal)
