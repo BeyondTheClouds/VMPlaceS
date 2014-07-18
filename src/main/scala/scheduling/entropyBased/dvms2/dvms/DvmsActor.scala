@@ -34,6 +34,7 @@ import org.simgrid.trace.Trace
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 import scheduling.entropyBased.dvms2.dvms.LoggingActor
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol._
+import scheduling.entropyBased.dvms2.overlay.SimpleOverlay
 
 object DvmsActor {
   val partitionUpdateTimeout: Double = 3.5
@@ -43,7 +44,14 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   /* Local states of a DVMS agent */
 
-  var firstOut: Option[SGNodeRef] = None
+  def firstOut: Option[SGNodeRef] = {
+    val filter: List[String] = currentPartition match {
+      case Some(p) => p.nodes.map(n => n.getName)
+      case None => Nil
+    }
+    SimpleOverlay.giveSomeNeighbour(filter)
+  }
+
   var currentPartition: Option[DvmsPartition] = None
   var lastPartitionUpdateDate: Option[Double] = None
   var lockedForFusion: Boolean = false
@@ -309,7 +317,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     val computationResult = entropyActor.computeReconfigurationPlan(currentPartition.get.nodes)
     val timeAfterComputeEntropy = new java.util.Date().getTime()
 
-    LoggingActor.write(ComputingSomeReconfigurationPlan(Msg.getClock, s"${applicationRef.getId}", timeAfterComputeEntropy-timeBeforeComputeEntropy, computationResult.toString))
+    LoggingActor.write(ComputingSomeReconfigurationPlan(Msg.getClock, s"${applicationRef.getId}", timeAfterComputeEntropy-timeBeforeComputeEntropy, currentPartition.get.nodes.size, computationResult.toString))
     computationResult
   }
 
@@ -511,7 +519,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       }
 
     case ThisIsYourNeighbor(node) =>
-      firstOut = Some(node)
+//      firstOut = Some(node)
 
     case msg => forward(applicationRef, sender, msg)
   }

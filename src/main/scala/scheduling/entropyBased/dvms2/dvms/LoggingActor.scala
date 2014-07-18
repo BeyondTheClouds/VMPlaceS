@@ -29,7 +29,9 @@ case class LoggingPartition(initiator: String, leader: String, nodes: List[Strin
 
 object LoggingProtocol {
 
-  case class ComputingSomeReconfigurationPlan(time: Double, origin: String, duration: Double, result: String) extends LoggingMessage
+  case class ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) extends LoggingMessage
+
+  case class ComputingSomeReconfigurationPlan(time: Double, origin: String, duration: Double, psize: Int, result: String) extends LoggingMessage
 
   case class ApplyingSomeReconfigurationPlan(time: Double, origin: String) extends LoggingMessage
 
@@ -66,8 +68,12 @@ object LoggingActor {
 
   def write(message: LoggingMessage) = message match {
 
-    case ComputingSomeReconfigurationPlan(time: Double, origin: String, duration: Double, result: String) =>
-      writer.write( s"""{"event": "computing_reconfiguration_plan", "origin": "$origin", "time": "$time", "duration": $duration, "result": "$result"}\n""")
+    case ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) =>
+      writer.write( s"""{"event": "start_experiment", "origin": "$origin", "time": "$time", "server_count": $serverCount, "vm_count": $vmCount, "algo": "$algo"}\n""")
+      writer.flush()
+
+    case ComputingSomeReconfigurationPlan(time: Double, origin: String, duration: Double, psize: Int, result: String) =>
+      writer.write( s"""{"event": "computing_reconfiguration_plan", "origin": "$origin", "time": "$time", "psize": $psize, "duration": $duration, "result": "$result"}\n""")
       writer.flush()
 
     case ApplyingSomeReconfigurationPlan(time: Double, origin: String) =>

@@ -7,6 +7,7 @@ import org.simgrid.msg.Process;
 import scheduling.entropyBased.dvms2.DVMSProcess;
 import scheduling.entropyBased.dvms2.MonitorProcess;
 import scheduling.entropyBased.dvms2.TimeoutProcess;
+import scheduling.entropyBased.dvms2.overlay.SimpleOverlay;
 
 
 /** This class is in charge of launching the latest version of DVMs (currently DVMS V2 implemented in SCALA)
@@ -36,7 +37,20 @@ public class DistributedResolver extends Process {
 
             Msg.info("Agent "+nodeId+" started");
 
+            // Register in the Overlay the current nodeRef
+            SimpleOverlay.register(nodeId, dmvsProcess.self(), this);
+
             while (!SimulatorManager.isEndOfInjection()) {
+
+                if(Msg.getClock() > 400 && nodeId.equals("node4")) {
+                    dmvsProcess.suspend();
+                    monitorProcess.suspend();
+                    timeoutProcess.suspend();
+
+                    SimpleOverlay.setCrashed(nodeId);
+//                    host.off();
+                }
+
                 waitFor(3);
 
             }

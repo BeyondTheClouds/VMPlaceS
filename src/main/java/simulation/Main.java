@@ -33,10 +33,13 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 import configuration.SimulatorProperties;
+import scheduling.entropyBased.dvms2.dvms.LoggingActor;
+import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
+
+import javax.security.auth.login.Configuration;
 
 
-
-public class Main {
+ public class Main {
 
     /**
      * The Simulator launcher
@@ -68,7 +71,7 @@ public class Main {
 
         // Init. internal values
 	    Msg.init(args);
-		
+
         // Automatically generate deployment file that is mandatory for launching the simgrid simulation.
         try {
        
@@ -97,6 +100,8 @@ public class Main {
        	} catch (IOException e) {
        		e.printStackTrace();
    		}
+
+        LoggingActor.write(new LoggingProtocol.ExperimentInformation(0, "main", SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(), SimulatorProperties.getAlgo()));
 
 
         /* construct the platform and deploy the application */
