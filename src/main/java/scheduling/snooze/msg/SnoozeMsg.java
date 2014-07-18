@@ -39,16 +39,8 @@ public class SnoozeMsg extends Task {
 
     public void send() {
 
-//        try {
-//            this.send(this.getSendBox());
-//        } catch (TransferFailureException e) {
-//            e.printStackTrace();
-//        } catch (HostFailureException e) {
-//            e.printStackTrace();
-//        } catch (TimeoutException e) {
-//            e.printStackTrace();
-//        }
-        this.isend(this.getSendBox());
+//  Msg.info("SendBox:" + this.getSendBox());
+      this.isend(this.getSendBox());
 //        this.dsend(this.getSendBox());
     }
 

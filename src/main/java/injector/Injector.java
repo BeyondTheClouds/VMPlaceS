@@ -26,13 +26,13 @@ public class Injector extends Process {
 
 	Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
 	    super(host, name, args);
-        System.out.println("Create the event queues");
+       // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
-        System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
+       // System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
         faultQueue =generateFaultQueue(SimulatorManager.getSGHosts().toArray(new XHost[SimulatorManager.getSGHosts().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
-        System.out.println("Size of fault queue:"+faultQueue.size());
+       // System.out.println("Size of fault queue:"+faultQueue.size());
         evtQueue = mergeQueues(loadQueue,faultQueue);
-        System.out.println("Size of event queue:"+evtQueue.size());
+       // System.out.println("Size of event queue:"+evtQueue.size());
     }
 
 
@@ -164,7 +164,7 @@ public class Injector extends Process {
 	public void main(String[] args) throws MsgException {
 
         for(InjectorEvent evt: this.evtQueue){
-            System.out.println(evt);
+         //   System.out.println(evt);
         }
 
 		/* Initialization is done in Main */

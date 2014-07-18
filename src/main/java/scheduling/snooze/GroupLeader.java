@@ -1,11 +1,9 @@
 package scheduling.snooze;
 
-import org.simgrid.msg.Host;
-import org.simgrid.msg.MsgException;
+import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
 
-import java.util.Date;
 import java.util.Hashtable;
 
 /**
@@ -25,15 +23,16 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
+        startBeats();
         while (true) {
             SnoozeMsg m = AUX.arecv(inbox);
             if (m != null) handle(m);
-            beat();
-            sleep(AUX.HeartbeatInterval);
+            sleep(AUX.DefaultComputeInterval);
         }
     }
 
     void handle(SnoozeMsg m) {
+//        Logger.info("[GL.handle] GLIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "LCAssMsg" : handleLCAss(m); break;
@@ -56,9 +55,9 @@ public class GroupLeader extends Process {
     void handleGMSum(SnoozeMsg m) {
         try {
             GMSumMsg.GMSum s = (GMSumMsg.GMSum) m.getMessage();
-            GMSum sum = new GMSum(s.getProcCharge(), s.getMemUsed(), new Date());
+            GMSum sum = new GMSum(s.getProcCharge(), s.getMemUsed(), Msg.getClock());
             gmInfo.put(m.getOrigin(), sum);
-//            Logger.info("[GL(GMSum] " + m.getOrigin() + ": " + sum);
+//            Logger.info("[GL(GMSum)] " + m.getOrigin() + ": " + sum + ", " + m);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -68,14 +67,17 @@ public class GroupLeader extends Process {
         String gmHostname = (String) m.getMessage();
         if (gmInfo.containsKey(gmHostname)) Logger.err("[GL.handle] GM " + gmHostname + " exists already");
         // Add GM
-        GMSum gi = new GMSum(0, 0, new Date());
+        GMSum gi = new GMSum(0, 0, Msg.getClock());
         gmInfo.put(gmHostname, gi);
         // Acknowledge integration
         m = new NewGMMsg((String) host.getName(), m.getReplyBox(), null, null);
-        Logger.info("[GL(NewGMMsg)] GM added: " + m);
+//        Logger.info("[GL(NewGMMsg)] GM added: " + m);
         m.send();
     }
 
+    /**
+     * Beats to multicast group
+     */
     String lcAssignment(String lc) {
         if (gmInfo.size()==0) return "";
         String gmHost = "";
@@ -86,8 +88,26 @@ public class GroupLeader extends Process {
             curCharge = cs.procCharge + cs.memUsed;
             if (minCharge > curCharge) { minCharge = curCharge; gmHost = s; }
         };
-//        Logger.info("[GL.lcAssignment] GM selected: " + gmHost);
+//       Logger.info("[GL.lcAssignment] GM selected: " + gmHost);
         return gmHost;
+    }
+
+
+    /**
+     * Sends beats to multicast group
+     */
+    void startBeats() throws HostNotFoundException {
+        new Process(host, host.getName()+"-glBeats") {
+            public void main(String[] args) throws HostFailureException {
+                String glHostname = host.getName();
+                while (true) {
+                    BeatGLMsg m = new BeatGLMsg(glHostname, AUX.multicast, null, null);
+                    m.send();
+//                    Logger.info("[GL.beat] " + m);
+                    sleep(AUX.HeartbeatInterval);
+                }
+            }
+        }.start();
     }
 
     void dispatchVMRequest() {
@@ -99,25 +119,14 @@ public class GroupLeader extends Process {
     }
 
     /**
-     * Beats to multicast group
-     */
-    void beat() {
-        String glHostname = host.getName();
-        // Beat to HB
-        BeatGLMsg m = new BeatGLMsg(glHostname, AUX.multicast, null, null);
-        m.send();
-//        Logger.info("[GL.beat] Beat sent");
-    }
-
-    /**
      * GM charge summary info
      */
     public class GMSum {
         double procCharge;
         int    memUsed;
-        Date   timestamp;
+        double   timestamp;
 
-        GMSum(double p, int m, Date ts) {
+        GMSum(double p, int m, double ts) {
             this.procCharge = p; this.memUsed = m; this.timestamp = ts;
         }
     }

@@ -11,8 +11,8 @@ import scheduling.entropyBased.dvms2.overlay.SimpleOverlay;
 
 
 /** This class is in charge of launching the latest version of DVMs (currently DVMS V2 implemented in SCALA)
- * @author Jonathan Pastor
- */
+* @author Jonathan Pastor
+*/
 public class DistributedResolver extends Process {
 
     DistributedResolver(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
@@ -23,7 +23,7 @@ public class DistributedResolver extends Process {
             String nodeId, int nbCPUs, int cpuCapacity, int memoryTotal,//Information for DVMSNode
             int port,//Information for associated DVMSServer
             String neighborHostname, int neighborPort){//Information for neighbor DVMSServer
-	
+
         try {
 
             DVMSProcess dmvsProcess = new DVMSProcess(this.getHost(), name, nodeId, port, neighborHostname, neighborPort);

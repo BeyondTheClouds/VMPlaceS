@@ -8,37 +8,40 @@ import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
-
-import java.net.UnknownHostException;
-import java.util.Date;
+import simulation.SimulatorManager;
 
 public class LocalController extends Process {
     private String name;
     private XHost host;
-    private String gmHostname;
-    private Date gmBeatTimestamp = null;
+    private String gmHostname = "";
+    private double gmTimestamp;
     private int procCharge = 0;
     private String inbox;
     private String lcCharge; // GM mbox
 
-    public LocalController(XHost host, String name) throws UnknownHostException {
-        super(host.getSGHost(), name);
+    public LocalController (Host host, String name,String[] args) throws HostNotFoundException, NativeException  {
+        super(host, name, args);
+    }
+
+    public void init(XHost host, String name)  {
         this.host = host;
         this.name = name;
-        this.inbox = host.getName() + "-lcInbox";
+        this.inbox = AUX.lcInbox(host.getName());
     }
 
     @Override
     public void main(String[] args) throws MsgException {
+//        Logger.info("Start LC " + args[0] + ", " + args[1]);
+        init(SimulatorManager.getXHostByName(args[0]), args[1]);
         join();
+        startBeats();
+        startLCChargeToGM();
         while (true) {
             try{
-                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-                handle(m);
+                SnoozeMsg m = AUX.arecv(inbox);
+                if (m != null) handle(m);
                 gmDead();
-                beat();
-                lcChargeToGM();
-//                sleep(AUX.HeartbeatInterval);
+                sleep(AUX.DefaultComputeInterval);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -46,6 +49,7 @@ public class LocalController extends Process {
     }
 
     void handle(SnoozeMsg m) {
+//        Logger.info("[LC.handle] LCIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "RBeatGMMsg": handleBeatGM(m); break;
@@ -58,10 +62,10 @@ public class LocalController extends Process {
 
     void handleBeatGM(SnoozeMsg m) {
         String gm = (String) m.getOrigin();
-        if      (gmHostname == null) Logger.err("[LC(BeatGMMsg)] No GM");
+        if      (gmHostname.equals("")) Logger.err("[LC(BeatGMMsg)] No GM");
         else if (gmHostname != gm)   Logger.err("[LC(BeatGMMsg)] Multiple GMs");
-        else gmBeatTimestamp = (Date) m.getMessage();
-//        Logger.info("[LC(BeatGMMsg)] GM " + gmHostname + " TS: " + gmBeatTimestamp);
+        else gmTimestamp = (double) m.getMessage();
+//        Logger.info("[LC(BeatGMMsg)] GM " + gmHostname + " TS: " + gmTimestamp);
     }
 
     /**
@@ -72,30 +76,23 @@ public class LocalController extends Process {
         rejoin();
     }
 
-    /**
-     * Send LC beat to GM
-     */
-    void beat() {
-        BeatLCMsg m = new BeatLCMsg(host.getName(), AUX.gmInbox(gmHostname), null, null);
-        m.send();
-//        Logger.info("[LC.beat] " + m);
-    }
 
     /**
      * GM dead: rejoin
      */
     void gmDead() {
-        if (AUX.timeDiff(gmBeatTimestamp) > AUX.HeartbeatTimeout) {
-            Logger.info("[LC.gmDead] GM dead: " + gmHostname);
+        if (gmHostname.equals("")) {
+//            Logger.err("[LC.gmDead] gmHostname == \"\"");
+            return;
+        }
+        if (gmTimestamp == 0) {
+//            Logger.err("[LC.gmDead] gmTimestamp == null");
+            return;
+        }
+        if (AUX.timeDiff(gmTimestamp) > AUX.HeartbeatTimeout) {
+            Logger.err("[LC.gmDead] GM dead: " + gmHostname);
             rejoin();
         }
-    }
-
-    void lcChargeToGM() {
-        LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(host.getCPUDemand(), host.getMemDemand());
-        LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), host.getName(), null);
-        m.send();
-//        Logger.info("[LC.lcChargeToGM] Charge sent: " + m);
     }
 
     /**
@@ -106,7 +103,7 @@ public class LocalController extends Process {
         // Join GL multicast group
         m = new NewLCMsg(host.getName(), AUX.multicast, name, inbox);
         m.send();
-//        Logger.info("[LC.join] Request sent: " + m);
+//        Logger.info("[LC.join] 1 Request sent: " + m);
         // Wait for GL beat
         do {
             try {
@@ -114,35 +111,36 @@ public class LocalController extends Process {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-//            Logger.info("[LC.join] Ans: " + m);
+//           Logger.info("[LC.join] 2 Ans: " + m);
         }
         while (!m.getClass().getSimpleName().equals("RBeatGLMsg"));
         String gl = m.getOrigin();
-//        Logger.info("[LC.join] Got GL: " + gl);
-
-
-        // Send GM assignment req.
-        m = new LCAssMsg(host.getName(), AUX.glInbox, host.getName(), inbox);
-//        Logger.info("[LC.join] GM ass. request: " + m);
-        m.send();
-
-        // Wait for GM assigment
+//       Logger.info("[LC.join] 3 Got GL: " + gl);
         do {
-            try {
-                m = (SnoozeMsg) Task.receive(inbox);
-            } catch (Exception e) {
-                e.printStackTrace();
+            gmHostname = "";
+            // Send GM assignment req.
+            m = new LCAssMsg(host.getName(), AUX.glInbox, host.getName(), inbox);
+//            Logger.info("[LC.join] 4 GM ass. request: " + m);
+            m.send();
+            // Wait for GM assignment
+
+                 try {
+                    m = (SnoozeMsg) Task.receive(inbox);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+//                Logger.info("[LC.join] 5 Ass. msg.: " + m);
+            if (m.getClass().getSimpleName().equals("LCAssMsg")) {
+                String gm = (String) m.getMessage();
+                gmHostname = gm;
+                gmTimestamp = Msg.getClock();
             }
-//            Logger.info("[LC.join] Ass. msg.: " + m);
-        }
-        while (!m.getClass().getSimpleName().equals("LCAssMsg"));
-        String gm = (String) m.getMessage();
-        gmHostname = gm;
-//        Logger.info("[LC.join] GM assigned: " + m);
+        } while (gmHostname.equals(""));
+//        Logger.info("[LC.join] 6 GM assigned: " + m);
 
         // Send GM integration request
         m = new NewLCMsg(host.getName(), AUX.gmInbox(gmHostname), name, inbox);
-//        Logger.info("[LC.join] GM int.: " + m);
+//        Logger.info("[LC.join] 7 GM int.: " + m);
         m.send();
 
         // Wait for GM acknowledgement
@@ -152,20 +150,56 @@ public class LocalController extends Process {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-//            Logger.info("[LC.join] Int. msg.: " + m);
+//            Logger.info("[LC.join] 8 Int. msg.: " + m);
         }
         while (!m.getClass().getSimpleName().equals("NewLCMsg"));
 //        Logger.info("[LC.join] Integration acknowledged: " + m);
-        gmBeatTimestamp = new Date();
+        gmTimestamp = Msg.getClock();
 
-        // Leave GL, join GM multicast group
+        // Leave GL multicast, join GM multicast group
         m = new NewLCMsg(host.getName(), AUX.multicast, "removeLCjoinGM", gmHostname);
         m.send();
-        Logger.info("[LC.join] Finished: LC removed, GM multicast joined: " + m);
+        Logger.info("[LC.join] Finished: GL removed, GM multicast joined: " + m);
     }
 
     void rejoin() {
         join();
+    }
+
+    /**
+     * Send LC beat to GM
+     */
+    void startBeats() throws HostNotFoundException {
+        new Process(host.getSGHost(), host.getSGHost().getName()+"-lcBeats") {
+            public void main(String[] args) throws HostFailureException {
+                String glHostname = host.getName();
+                while (true) {
+                    BeatLCMsg m = new BeatLCMsg(host.getName(), AUX.gmInbox(gmHostname), null, null);
+                    m.send();
+//                    Logger.info("[LC.beat] " + m);
+                    sleep(AUX.HeartbeatInterval);
+                }
+            }
+        }.start();
+    }
+
+
+    /**
+     * Send LC beats to GM
+     */
+    void startLCChargeToGM() throws HostNotFoundException {
+        final XHost h = host;
+        new Process(host.getSGHost(), host.getSGHost().getName() + "-lcCharge") {
+            public void main(String[] args) throws HostFailureException {
+                while (true) {
+                    LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand());
+                    LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
+                    m.send();
+//                    Logger.info("[LC.startLCChargeToGM] Charge sent: " + m);
+                    sleep(AUX.HeartbeatInterval);
+                }
+            }
+        }.start();
     }
 
     void totalHostCapacity() {
