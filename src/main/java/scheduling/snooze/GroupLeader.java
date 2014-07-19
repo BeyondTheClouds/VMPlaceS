@@ -4,6 +4,7 @@ import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 
 /**
@@ -13,12 +14,15 @@ public class GroupLeader extends Process {
     private Host host;
     private Hashtable<String, GMSum> gmInfo = new Hashtable<String, GMSum>(); // ConcurrentHashMap more efficient
     private String inbox;
-    private String glSummary = "glSummary";
+    private boolean thisGLToBeTerminated = false;
+
+    static enum AssignmentAlg { BESTFIT, ROUNDROBIN };
+    private int roundRobin = 0;
 
     public GroupLeader(Host host, String name) {
         super(host, name);
         this.host = host;
-        this.inbox = AUX.glInbox;
+        this.inbox = AUX.glInbox(host.getName());
     }
 
     @Override
@@ -27,6 +31,10 @@ public class GroupLeader extends Process {
         while (true) {
             SnoozeMsg m = AUX.arecv(inbox);
             if (m != null) handle(m);
+            if (thisGLToBeTerminated) {
+                Logger.err("[GL.main] TBTerminated: " + host.getName());
+                break;
+            }
             sleep(AUX.DefaultComputeInterval);
         }
     }
@@ -38,6 +46,7 @@ public class GroupLeader extends Process {
             case "LCAssMsg" : handleLCAss(m); break;
             case "GMSumMsg" : handleGMSum(m); break;
             case "NewGMMsg" : handleNewGM(m); break;
+            case "TermGLMsg": thisGLToBeTerminated = true; break;
             case "SnoozeMsg":
                 Logger.err("[GL(SnoozeMsg)] Unknown message" + m);
                 break;
@@ -80,16 +89,30 @@ public class GroupLeader extends Process {
      */
     String lcAssignment(String lc) {
         if (gmInfo.size()==0) return "";
-        String gmHost = "";
-        double minCharge = 2, curCharge;
-        GMSum cs;
-        for (String s: gmInfo.keySet()) {
-            cs        = gmInfo.get(s);
-            curCharge = cs.procCharge + cs.memUsed;
-            if (minCharge > curCharge) { minCharge = curCharge; gmHost = s; }
-        };
-//       Logger.info("[GL.lcAssignment] GM selected: " + gmHost);
-        return gmHost;
+        String gm = "";
+        switch (AUX.assignmentAlg) {
+            case BESTFIT:
+                double minCharge = 2, curCharge;
+                GMSum cs;
+                for (String s : gmInfo.keySet()) {
+                    cs = gmInfo.get(s);
+                    curCharge = cs.procCharge;
+                    if (minCharge > curCharge) {
+                        minCharge = curCharge;
+                        gm = s;
+                    }
+                }
+//                Logger.info("[GL.lcAssignment] GM selected (BESTFIT): " + gm);
+                break;
+            case ROUNDROBIN:
+                roundRobin = roundRobin % gmInfo.size(); // GMs may have died in the meantime
+                ArrayList<String> gms = new ArrayList<>(gmInfo.keySet());
+                gm = gms.get(roundRobin);
+                roundRobin++;
+//                Logger.info("[GL.lcAssignment] GM selected (ROUNDROBIN): " + gm);
+                break;
+        }
+        return gm;
     }
 
 
@@ -100,7 +123,7 @@ public class GroupLeader extends Process {
         new Process(host, host.getName()+"-glBeats") {
             public void main(String[] args) throws HostFailureException {
                 String glHostname = host.getName();
-                while (true) {
+                while (!thisGLToBeTerminated) {
                     BeatGLMsg m = new BeatGLMsg(glHostname, AUX.multicast, null, null);
                     m.send();
 //                    Logger.info("[GL.beat] " + m);

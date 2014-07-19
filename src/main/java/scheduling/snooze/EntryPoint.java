@@ -1,14 +1,14 @@
 package scheduling.snooze;
 
-import org.simgrid.msg.Host;
+import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import org.simgrid.msg.Task;
 import scheduling.snooze.msg.*;
 
 /**
  * Created by sudholt on 22/06/2014.
  */
 public class EntryPoint extends Process {
+    private String name;
     private Host host;
     private String glHostname;
     private double glTimestamp;
@@ -16,6 +16,7 @@ public class EntryPoint extends Process {
     public EntryPoint(Host host, String name) {
         super(host, name);
         this.host = host;
+        this.name = name;
     }
 
     public void main(String args[]) {
@@ -33,54 +34,45 @@ public class EntryPoint extends Process {
     void handle(SnoozeMsg m) {
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-            case "RBeatGLMsg":
-                String gm = (String) m.getOrigin();
-                if (glHostname == null) {
-                    glHostname = gm;
-                    Logger.info("[EP(RBeatGLMsg)] GL initialized: " + gm);
-                }
-                else if (glHostname != gm) Logger.err("[EP(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gm);
-                else glTimestamp = (double) m.getMessage();
-                break;
+            case "NewGMMsg" : handleNewGM(m); break;
+            case "NewLCMsg" : handleNewLC(m); break;
+            case "RBeatMsg" : handleRBeatGL(m); break;
             case "SnoozeMsg":
                 Logger.err("[EP(SnoozeMsg)] Unknown message" + m);
                 break;
         }
     }
 
-    void handle(NewGLMsg m) {
-        glHostname = (String) m.getMessage();
+    void handleRBeatGL(SnoozeMsg m) {
+        String gl = (String) m.getOrigin();
+        if (glHostname.equals("")) {
+            glHostname = gl;
+            Logger.info("[EP(RBeatGLMsg)] GL initialized: " + gl);
+        }
+        else if (glHostname != gl) {
+            glHostname = gl;
+            Logger.err("[EP(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gl);
+        }
+        glTimestamp = (double) m.getMessage();
     }
 
-    void handle (NewGMMsg m) {
-        if (glHostname != "") {
-            NewGMMsg mGl = new NewGMMsg((String) m.getMessage(), AUX.glInbox, m.getOrigin(), m.getReplyBox());
-            mGl.send();
+    void handleNewGM(SnoozeMsg m) {
+        if (!glHostname.equals(""))
+            new NewGMMsg((String) m.getMessage(), AUX.glInbox(glHostname), m.getOrigin(), m.getReplyBox()).send();
+        else {
+            // Send failure message back
+            new NewGMMsg((String) m.getMessage(), m.getReplyBox(), name, AUX.epInbox).send();
+            Logger.err("[EP.handle] New GM without GroupLeader");
+        }
+    }
+
+    void handleNewLC(SnoozeMsg m) { // Join/rejoin LC
+        if (!glHostname.equals("")) {
+            new NewLCMsg((String) m.getMessage(), AUX.glInbox(glHostname), m.getOrigin(), m.getReplyBox()).send();
         } else {
-            leaderElection();
+            // Send failure message back
+            new NewLCMsg((String) m.getMessage(), m.getReplyBox(), name, AUX.epInbox).send();
+            Logger.err("[EP.handle] New LC without GroupLeader");
         }
-    }
-
-    void handle(NewLCMsg m) { // Join/rejoin LC
-        if (glHostname != "") {
-            NewLCMsg mGl = new NewLCMsg((String) m.getMessage(), AUX.glInbox, m.getOrigin(), m.getReplyBox());
-            mGl.send();
-        } else Logger.err("[EP.handle] New LC without GroupLeader");
-    }
-
-    void glDead() {
-        if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout) leaderElection();
-    }
-
-    void leaderElection() {
-        GLElecMsg m = new GLElecMsg(null, AUX.glElection, null, AUX.epGLElection);
-        m.send();
-        try {
-            m = (GLElecMsg) Task.receive(AUX.epGLElection, AUX.GLCreationTimeout);
-            glHostname = (String) m.getMessage();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
     }
 }

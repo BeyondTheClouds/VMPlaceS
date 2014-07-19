@@ -49,7 +49,7 @@ public class LocalController extends Process {
     }
 
     void handle(SnoozeMsg m) {
-//        Logger.info("[LC.handle] LCIn: " + m);
+        Logger.info("[LC.handle] LCIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "RBeatGMMsg": handleBeatGM(m); break;
@@ -63,9 +63,12 @@ public class LocalController extends Process {
     void handleBeatGM(SnoozeMsg m) {
         String gm = (String) m.getOrigin();
         if      (gmHostname.equals("")) Logger.err("[LC(BeatGMMsg)] No GM");
-        else if (gmHostname != gm)   Logger.err("[LC(BeatGMMsg)] Multiple GMs");
+        else if (gmHostname != gm)   {
+            Logger.err("[LC(BeatGMMsg)] Multiple GMs" + gmHostname + ", " + gm);
+            gmHostname = gm;
+        }
         else gmTimestamp = (double) m.getMessage();
-//        Logger.info("[LC(BeatGMMsg)] GM " + gmHostname + " TS: " + gmTimestamp);
+        Logger.info("[LC(BeatGMMsg)] GM " + gmHostname + " TS: " + gmTimestamp);
     }
 
     /**
@@ -73,6 +76,7 @@ public class LocalController extends Process {
      */
     void handleGMStop(SnoozeMsg m) {
         // TODO: stop LC activity
+        Logger.err("[LC.handleGMStop] GM stopped, LC rejoins: " + m);
         rejoin();
     }
 
@@ -119,7 +123,7 @@ public class LocalController extends Process {
         do {
             gmHostname = "";
             // Send GM assignment req.
-            m = new LCAssMsg(host.getName(), AUX.glInbox, host.getName(), inbox);
+            m = new LCAssMsg(host.getName(), AUX.glInbox(gl), host.getName(), inbox);
 //            Logger.info("[LC.join] 4 GM ass. request: " + m);
             m.send();
             // Wait for GM assignment
@@ -143,23 +147,23 @@ public class LocalController extends Process {
 //        Logger.info("[LC.join] 7 GM int.: " + m);
         m.send();
 
-        // Wait for GM acknowledgement
-        do {
-            try {
-                m = (SnoozeMsg) Task.receive(inbox);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-//            Logger.info("[LC.join] 8 Int. msg.: " + m);
-        }
-        while (!m.getClass().getSimpleName().equals("NewLCMsg"));
-//        Logger.info("[LC.join] Integration acknowledged: " + m);
+//        // Wait for GM acknowledgement
+//        do {
+//            try {
+//                m = (SnoozeMsg) Task.receive(inbox);
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+////            Logger.info("[LC.join] 8 Int. msg.: " + m);
+//        }
+//        while (!m.getClass().getSimpleName().equals("NewLCMsg"));
+////        Logger.info("[LC.join] Integration acknowledged: " + m);
         gmTimestamp = Msg.getClock();
 
         // Leave GL multicast, join GM multicast group
         m = new NewLCMsg(host.getName(), AUX.multicast, "removeLCjoinGM", gmHostname);
         m.send();
-        Logger.info("[LC.join] Finished: GL removed, GM multicast joined: " + m);
+        Logger.info("[LC.join] Finished: " + m);
     }
 
     void rejoin() {

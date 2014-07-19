@@ -16,6 +16,7 @@ import java.util.*;
  * Created by sudholt on 25/05/2014.
  */
 public class GroupManager extends Process {
+    static int maxElections = 1;
     static int noAllManagedLCs = 0;
     private String name;
     private Host host;
@@ -87,6 +88,7 @@ public class GroupManager extends Process {
 
     void handleGMElec(SnoozeMsg m) {
         // Ex-nihilo GL creation
+        Logger.info("[GM(GMElec)] " + m);
         GroupLeader gl = new GroupLeader(Host.currentHost(), "groupLeader");
         try {
             gl.start();
@@ -129,24 +131,24 @@ public class GroupManager extends Process {
         LCInfo    lci = new LCInfo(new LCCharge(0, 0, ts), ts);
         lcInfo.put(lcHostname, lci);
         noAllManagedLCs++;
-        // Send acknowledgment
-        m = new NewLCMsg(host.getName(), AUX.lcInbox(lcHostname), null, null);
-        m.send();
-//        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
+//        // Send acknowledgment
+//        m = new NewLCMsg(host.getName(), AUX.lcInbox(lcHostname), null, null);
+//        m.send();
+////        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
     }
 
     void handleRBeatGL(SnoozeMsg m) {
         String gl = (String) m.getOrigin();
-//        Logger.info("[GM(RBeatGL)] Old, new ts: " + glTimestamp + ", " + (double) m.getMessage());
-        if (!glHostname.equals("") && glHostname != gl) Logger.err("[GM(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gl);
-        else {
-            glTimestamp = (double) m.getMessage();
-//            Logger.info("[GM(RBeatGL)] TS updated: " + glTimestamp);
-            if (glHostname.equals("")) {
-                glHostname = gl;
-                Logger.err("[GM(RBeatGL)] GL initialized: " + gl + " on " + host);
-            }
+        //        Logger.info("[GM(RBeatGL)] Old, new ts: " + glTimestamp + ", " + (double) m.getMessage());
+        if (glHostname.equals("")) {
+            glHostname = gl;
+            Logger.err("[GM(RBeatGL)] GL initialized: " + gl + " on " + host);
+        } else if (!glHostname.equals("") && glHostname != gl) {
+            Logger.err("[GM(RBeatGLMsg)] Multiple GLs: " + glHostname + ", " + gl);
+            join();
         }
+        glTimestamp = (double) m.getMessage();
+        //            Logger.info("[GM(RBeatGL)] TS updated: " + glTimestamp);
     }
 
     /**
@@ -164,10 +166,8 @@ public class GroupManager extends Process {
                 Logger.err("[GM.deadLCs] " + lcHostname);
             }
         }
-
-        if (noAllManagedLCs != 39)
-            Logger.info("[GM.deadLCs] No all GMs: " + noAllManagedLCs + " | This GM, initial: " + no + ", dead: "
-                    + deadLCs.size());
+        Logger.info("[GM.deadLCs] No all GMs: " + noAllManagedLCs + " | This GM, initial: " + no + ", dead: "
+                + deadLCs.size());
 
         // Remove dead LCs
         for (String lcHostname: deadLCs) lcInfo.remove(lcHostname);
@@ -215,6 +215,12 @@ public class GroupManager extends Process {
             } while (!m.getClass().getSimpleName().equals("NewGMMsg"));
             glHostname = (String) m.getMessage();
             Logger.info("[GM.join] Finished: " + m);
+            if (maxElections > 0 && AUX.GLElectionForEachNewGM) {
+                maxElections--;
+                m = new GLElecMsg(host.getName(), AUX.multicast, null, null);
+                m.send();
+                Logger.info("[GM.join] Leader election: " + m);
+            }
         } catch (TimeoutException e) {
             Logger.err("[GM.join] No joining" + host.getName());
             e.printStackTrace();
@@ -229,10 +235,10 @@ public class GroupManager extends Process {
     void startBeats() throws HostNotFoundException {
         new Process(host, host.getName()+"-gmBeats") {
             public void main(String[] args) throws HostFailureException {
-                while (true) {
+                while (!thisGMToBeStopped) {
                     BeatGMMsg m = new BeatGMMsg(host.getName(), AUX.multicast, null, null);
                     m.send();
-//                    Logger.info("[GL.beat] " + m);
+                    Logger.info("[GL.beat] " + m);
                     sleep(AUX.HeartbeatInterval);
                 }
             }
@@ -245,7 +251,7 @@ public class GroupManager extends Process {
     void startScheduling() throws HostNotFoundException {
         new Process(host, host.getName()+"-gmScheduling") {
             public void main(String[] args) throws HostFailureException {
-                while (true) {
+                while (!thisGMToBeStopped) {
                     scheduleVMs();
                     sleep(AUX.DefaultComputeInterval);
                 }
@@ -253,15 +259,15 @@ public class GroupManager extends Process {
         }.start();
     }
 
-
     /**
      * Sends GM charge summary info to GL
      */
     void startSummaryInfoToGL() throws HostNotFoundException {
         new Process(host, host.getName()+"-gmSummaryInfoToGL") {
             public void main(String[] args) throws HostFailureException {
-                while (true) {
+                while (!thisGMToBeStopped) {
                     summaryInfoToGL();
+                    Logger.info("[GM.startSummaryInfoToGL] No all GMs: " + noAllManagedLCs + ", GL: " + glHostname);
                     sleep(AUX.HeartbeatInterval);
                 }
             }
@@ -275,9 +281,11 @@ public class GroupManager extends Process {
         if (lcInfo.isEmpty()) return;
         updateChargeSummary();
         GMSumMsg.GMSum c = new GMSumMsg.GMSum(procSum, memSum);
-        GMSumMsg m = new GMSumMsg(c, AUX.glInbox, host.getName(), null);
-        m.send();
+        if (!glHostname.equals("")) {
+            GMSumMsg m = new GMSumMsg(c, AUX.glInbox(glHostname), host.getName(), null);
+            m.send();
 //        Logger.info("[GM.summaryInfoToGL] " + m);
+        }
     }
 
     /**

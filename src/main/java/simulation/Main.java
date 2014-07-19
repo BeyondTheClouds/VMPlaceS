@@ -18,25 +18,20 @@
 
 package simulation;
 
-import java.io.IOException;
-
-import org.simgrid.msg.*;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
+import configuration.SimulatorProperties;
+import org.simgrid.msg.Msg;
+import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
 import org.simgrid.trace.Trace;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.core.util.StatusPrinter;
-
+import java.io.IOException;
 import java.util.Date;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 
-import configuration.SimulatorProperties;
-import scheduling.entropyBased.dvms2.dvms.LoggingActor;
-import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
-
-import javax.security.auth.login.Configuration;
+//import scheduling.entropyBased.dvms2.dvms.LoggingActor;
+//import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
 
 
  public class Main {
@@ -101,7 +96,7 @@ import javax.security.auth.login.Configuration;
        		e.printStackTrace();
    		}
 
-        LoggingActor.write(new LoggingProtocol.ExperimentInformation(0, "main", SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(), SimulatorProperties.getAlgo()));
+//        LoggingActor.write(new LoggingProtocol.ExperimentInformation(0, "main", SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(), SimulatorProperties.getAlgo()));
 
 
         /* construct the platform and deploy the application */

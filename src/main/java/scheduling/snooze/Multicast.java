@@ -62,8 +62,10 @@ public class Multicast extends Process {
                 glHostname = gl;
                 Logger.info("[MUL(BeatGLMsg)] GL initialized: " + gl);
             }
-            if (glHostname != gl)
+            if (glHostname != gl) {
                 Logger.err("[GLH] Multiple GLs: " + glHostname + ", " + gl);
+                glHostname = gl;
+            }
             glTimestamp = Msg.getClock();
             relayGLBeat();
         } catch (Exception e) {
@@ -73,12 +75,15 @@ public class Multicast extends Process {
 
     void handleBeatGM(SnoozeMsg m) {
         String gm = (String) m.getMessage();
-        gmInfo.put(gm, new GMInfo(gmInfo.get(gm).replyBox, Msg.getClock()));
-        relayGMBeats();
+        if (gmInfo.get(gm) == null) Logger.err("[MUL(BeatGM)] GM unknown: " + gm);
+        else {
+            gmInfo.put(gm, new GMInfo(gmInfo.get(gm).replyBox, Msg.getClock()));
+            relayGMBeats();
+        }
     }
 
     synchronized void handleGLElec(SnoozeMsg m) {
-        if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout) {
+        if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout || AUX.GLElectionForEachNewGM) {
             // GL dead
             leaderElection();
         } else {
@@ -89,16 +94,16 @@ public class Multicast extends Process {
     }
 
     void handleNewLC(SnoozeMsg m) {
-        Logger.info("[MUL(NewLCMsg)] " + m.getOrigin().equals("removeLCjoinGM"));
+//        Logger.info("[MUL(NewLCMsg)] " + m);
         if (!m.getOrigin().equals("removeLCjoinGM")) {
             // Add LC
             lcInfo.put((String) m.getMessage(), new LCInfo((String) m.getMessage(), "", Msg.getClock(), true));
-            Logger.info("[MUL(NewLCMsg)] LC stored: " + m);
+//            Logger.info("[MUL(NewLCMsg)] LC stored: " + m);
         } else {
             // End LC join phase
             lcInfo.put((String) m.getMessage(),
                     new LCInfo((String) m.getMessage(), m.getReplyBox(), Msg.getClock(), false));
-            Logger.info("[MUL(NewLCMsg)] LC removed: " + m);
+//            Logger.info("[MUL(NewLCMsg)] LC removed: " + m);
         }
     }
 
@@ -127,12 +132,13 @@ public class Multicast extends Process {
             ArrayList<String> gms = new ArrayList<String>(gmInfo.keySet());
             int i = 0;
             boolean success = false;
+            String oldGL = "";
             do {
                 String gm = gms.get(i % gms.size());
                 // Send GL creation request to GM
                 SnoozeMsg m = new GMElecMsg(null, AUX.gmInbox(gm), null, null);
                 m.send();
-//                Logger.info("[MUL.leaderElection] GM notified: " + m);
+                Logger.info("[MUL.leaderElection] GM notified: " + m);
 
                 boolean msgReceived = true;
                 try {
@@ -142,6 +148,7 @@ public class Multicast extends Process {
                 } catch (Exception e) { msgReceived = false; }
                 if (msgReceived) {
                     Logger.info("[MUL.leaderElection] GM->GL: " + m);
+                    oldGL = glHostname;
                     glHostname = (String) m.getMessage();   // glHostname == gm
                     gmInfo.remove(gm);
                     success = true;
@@ -152,9 +159,11 @@ public class Multicast extends Process {
                 i++;
             } while (i<10 && !success);
             if (!success) Logger.err("MUL(GLElec)] Leader election failed 10 times");
-
+            new TermGLMsg(name, AUX.glInbox(oldGL), host.getName(), null).send();
+            Logger.info("[MUL.leaderElection] New leader elected: " + glHostname);
         }
     }
+
     /**
      * Relay GL beats to EP, GMs and joining LCs
      */
@@ -186,7 +195,7 @@ public class Multicast extends Process {
             LCInfo lv = lcInfo.get(lc);
             String gm = lv.gmHost;
             GMInfo gv = gmInfo.get(gm);
-            if (!lv.join) {
+            if (!lv.join && gv != null) {
                 SnoozeMsg m = new RBeatGMMsg(gv.timestamp, AUX.lcInbox(lv.lcHost), gm, null);
                 m.send();
 //                Logger.info("[MUL.relayGMBeats] To LC: " + m);
