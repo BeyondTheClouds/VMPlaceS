@@ -2,68 +2,45 @@
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
 <platform version="3">
   <process host="node0" function="injector.Injector"> </process>
-  <process host="node1" function="simulation.DistributedResolver">
- 		<argument value="node1" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23000" />
- 		<argument value="node2" /><argument value="23001" />
- 		</process>
-  <process host="node2" function="simulation.DistributedResolver">
- 		<argument value="node2" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23001" />
- 		<argument value="node3" /><argument value="23002" />
- 		</process>
-  <process host="node3" function="simulation.DistributedResolver">
- 		<argument value="node3" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23002" />
- 		<argument value="node4" /><argument value="23003" />
- 		</process>
-  <process host="node4" function="simulation.DistributedResolver">
- 		<argument value="node4" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23003" />
- 		<argument value="node5" /><argument value="23004" />
- 		</process>
-  <process host="node5" function="simulation.DistributedResolver">
- 		<argument value="node5" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23004" />
- 		<argument value="node6" /><argument value="23005" />
- 		</process>
-  <process host="node6" function="simulation.DistributedResolver">
- 		<argument value="node6" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23005" />
- 		<argument value="node7" /><argument value="23006" />
- 		</process>
-  <process host="node7" function="simulation.DistributedResolver">
- 		<argument value="node7" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23006" />
- 		<argument value="node8" /><argument value="23007" />
- 		</process>
-  <process host="node8" function="simulation.DistributedResolver">
- 		<argument value="node8" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23007" />
- 		<argument value="node9" /><argument value="23008" />
- 		</process>
-  <process host="node9" function="simulation.DistributedResolver">
- 		<argument value="node9" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23008" />
- 		<argument value="node10" /><argument value="23009" />
- 		</process>
-  <process host="node10" function="simulation.DistributedResolver">
- 		<argument value="node10" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23009" />
- 		<argument value="node11" /><argument value="23010" />
- 		</process>
-  <process host="node11" function="simulation.DistributedResolver">
- 		<argument value="node11" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23010" />
- 		<argument value="node12" /><argument value="23011" />
- 		</process>
-  <process host="node12" function="simulation.DistributedResolver">
- 		<argument value="node12" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23011" />
- 		<argument value="node13" /><argument value="23012" />
- 		</process>
-  <process host="node13" function="simulation.DistributedResolver">
- 		<argument value="node13" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23012" />
- 		<argument value="node14" /><argument value="23013" />
- 		</process>
-  <process host="node14" function="simulation.DistributedResolver">
- 		<argument value="node14" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23013" />
- 		<argument value="node15" /><argument value="23014" />
- 		</process>
-  <process host="node15" function="simulation.DistributedResolver">
- 		<argument value="node15" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23014" />
- 		<argument value="node16" /><argument value="23015" />
- 		</process>
-  <process host="node16" function="simulation.DistributedResolver">
- 	<argument value="node16" /><argument value="4" /><argument value="400" /><argument value="16384" /><argument value="23015" />
- 	<argument value="node1" /><argument value="23000" />
- 	</process>
+  <process host="node0" function="simulation.HierarchicalResolver"> </process>
+  <process host="node1" function="scheduling.snooze.LocalController"><argument value="node1" /><argument value="localController-1" /></process>
+  <process host="node2" function="scheduling.snooze.LocalController"><argument value="node2" /><argument value="localController-2" /></process>
+  <process host="node3" function="scheduling.snooze.LocalController"><argument value="node3" /><argument value="localController-3" /></process>
+  <process host="node4" function="scheduling.snooze.LocalController"><argument value="node4" /><argument value="localController-4" /></process>
+  <process host="node5" function="scheduling.snooze.LocalController"><argument value="node5" /><argument value="localController-5" /></process>
+  <process host="node6" function="scheduling.snooze.LocalController"><argument value="node6" /><argument value="localController-6" /></process>
+  <process host="node7" function="scheduling.snooze.LocalController"><argument value="node7" /><argument value="localController-7" /></process>
+  <process host="node8" function="scheduling.snooze.LocalController"><argument value="node8" /><argument value="localController-8" /></process>
+  <process host="node9" function="scheduling.snooze.LocalController"><argument value="node9" /><argument value="localController-9" /></process>
+  <process host="node10" function="scheduling.snooze.LocalController"><argument value="node10" /><argument value="localController-10" /></process>
+  <process host="node11" function="scheduling.snooze.LocalController"><argument value="node11" /><argument value="localController-11" /></process>
+  <process host="node12" function="scheduling.snooze.LocalController"><argument value="node12" /><argument value="localController-12" /></process>
+  <process host="node13" function="scheduling.snooze.LocalController"><argument value="node13" /><argument value="localController-13" /></process>
+  <process host="node14" function="scheduling.snooze.LocalController"><argument value="node14" /><argument value="localController-14" /></process>
+  <process host="node15" function="scheduling.snooze.LocalController"><argument value="node15" /><argument value="localController-15" /></process>
+  <process host="node16" function="scheduling.snooze.LocalController"><argument value="node16" /><argument value="localController-16" /></process>
+  <process host="node17" function="scheduling.snooze.LocalController"><argument value="node17" /><argument value="localController-17" /></process>
+  <process host="node18" function="scheduling.snooze.LocalController"><argument value="node18" /><argument value="localController-18" /></process>
+  <process host="node19" function="scheduling.snooze.LocalController"><argument value="node19" /><argument value="localController-19" /></process>
+  <process host="node20" function="scheduling.snooze.LocalController"><argument value="node20" /><argument value="localController-20" /></process>
+  <process host="node21" function="scheduling.snooze.LocalController"><argument value="node21" /><argument value="localController-21" /></process>
+  <process host="node22" function="scheduling.snooze.LocalController"><argument value="node22" /><argument value="localController-22" /></process>
+  <process host="node23" function="scheduling.snooze.LocalController"><argument value="node23" /><argument value="localController-23" /></process>
+  <process host="node24" function="scheduling.snooze.LocalController"><argument value="node24" /><argument value="localController-24" /></process>
+  <process host="node25" function="scheduling.snooze.LocalController"><argument value="node25" /><argument value="localController-25" /></process>
+  <process host="node26" function="scheduling.snooze.LocalController"><argument value="node26" /><argument value="localController-26" /></process>
+  <process host="node27" function="scheduling.snooze.LocalController"><argument value="node27" /><argument value="localController-27" /></process>
+  <process host="node28" function="scheduling.snooze.LocalController"><argument value="node28" /><argument value="localController-28" /></process>
+  <process host="node29" function="scheduling.snooze.LocalController"><argument value="node29" /><argument value="localController-29" /></process>
+  <process host="node30" function="scheduling.snooze.LocalController"><argument value="node30" /><argument value="localController-30" /></process>
+  <process host="node31" function="scheduling.snooze.LocalController"><argument value="node31" /><argument value="localController-31" /></process>
+  <process host="node32" function="scheduling.snooze.LocalController"><argument value="node32" /><argument value="localController-32" /></process>
+  <process host="node33" function="scheduling.snooze.LocalController"><argument value="node33" /><argument value="localController-33" /></process>
+  <process host="node34" function="scheduling.snooze.LocalController"><argument value="node34" /><argument value="localController-34" /></process>
+  <process host="node35" function="scheduling.snooze.LocalController"><argument value="node35" /><argument value="localController-35" /></process>
+  <process host="node36" function="scheduling.snooze.LocalController"><argument value="node36" /><argument value="localController-36" /></process>
+  <process host="node37" function="scheduling.snooze.LocalController"><argument value="node37" /><argument value="localController-37" /></process>
+  <process host="node38" function="scheduling.snooze.LocalController"><argument value="node38" /><argument value="localController-38" /></process>
+   <process host="node39" function="scheduling.snooze.LocalController"><argument value="node39" /><argument value="localController-39" /></process>
+   <process host="node40" function="scheduling.snooze.LocalController"><argument value="node40" /><argument value="localController-40" /></process>
 </platform>
