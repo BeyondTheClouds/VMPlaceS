@@ -41,6 +41,6 @@
   <process host="node36" function="scheduling.snooze.LocalController"><argument value="node36" /><argument value="localController-36" /></process>
   <process host="node37" function="scheduling.snooze.LocalController"><argument value="node37" /><argument value="localController-37" /></process>
   <process host="node38" function="scheduling.snooze.LocalController"><argument value="node38" /><argument value="localController-38" /></process>
-   <process host="node39" function="scheduling.snooze.LocalController"><argument value="node39" /><argument value="localController-39" /></process>
-   <process host="node40" function="scheduling.snooze.LocalController"><argument value="node40" /><argument value="localController-40" /></process>
+  <process host="node39" function="scheduling.snooze.LocalController"><argument value="node39" /><argument value="localController-39" /></process>
+  <process host="node40" function="scheduling.snooze.LocalController"><argument value="node40" /><argument value="localController-40" /></process>
 </platform>
