@@ -14,10 +14,10 @@ public class Multicast extends Process {
     private String name;
     private Host host;
     private String inbox;
-    private String glHostname;
+    String glHostname;  //@ Make private
     private double glTimestamp;
-    private Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>();
-    private Hashtable<String, LCInfo> lcInfo = new Hashtable<String, LCInfo>();
+    Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>();  //@ Make private
+    Hashtable<String, LCInfo> lcInfo = new Hashtable<String, LCInfo>();  //@ Make private
 
     public Multicast(Host host, String name) {
         super(host, name);
@@ -25,13 +25,17 @@ public class Multicast extends Process {
         this.name = name;
         this.inbox = AUX.multicast;
         this.glHostname = "";
+        AUX.multicastHost = host;
     }
 
     @Override
     public void main(String[] strings) throws MsgException {
+        Test.multicast = this;
         while (true) {
             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
             handle(m);
+            glDead();
+            gmDead();
             sleep(AUX.DefaultComputeInterval);
         }
     }
@@ -49,6 +53,7 @@ public class Multicast extends Process {
             case "GLElecMsg": handleGLElec(m); break;
             case "NewLCMsg" : handleNewLC(m);  break;
             case "NewGMMsg" : handleNewGM(m);  break;
+            case "TermGMMsg": handleTermGM(m); break;
             case "SnoozeMsg":
                 Logger.err("[MUL(SnoozeMsg)] Unknown message" + m);
                 break;
@@ -60,11 +65,11 @@ public class Multicast extends Process {
             String gl = (String) m.getMessage();
             if (glHostname == "") {
                 glHostname = gl;
-                Logger.info("[MUL(BeatGLMsg)] GL initialized: " + gl);
+                Logger.info("[MUL(BeatGL)] GL initialized: " + gl);
             }
             if (glHostname != gl) {
-                Logger.err("[GLH] Multiple GLs: " + glHostname + ", " + gl);
-                glHostname = gl;
+                Logger.err("[MUL(BeatGL)] Multiple GLs: " + glHostname + ", " + gl);
+//                glHostname = gl;
             }
             glTimestamp = Msg.getClock();
             relayGLBeat();
@@ -75,22 +80,34 @@ public class Multicast extends Process {
 
     void handleBeatGM(SnoozeMsg m) {
         String gm = (String) m.getMessage();
-        if (gmInfo.get(gm) == null) Logger.err("[MUL(BeatGM)] GM unknown: " + gm);
-        else {
-            gmInfo.put(gm, new GMInfo(gmInfo.get(gm).replyBox, Msg.getClock()));
-            relayGMBeats();
+        if (gmInfo.get(gm) == null) {
+            Logger.err("[MUL(BeatGM)] GM unknown: " + gm);
+            return;
         }
+        gmInfo.put(gm, new GMInfo(gmInfo.get(gm).replyBox, Msg.getClock()));
+        relayGMBeats();
     }
 
     synchronized void handleGLElec(SnoozeMsg m) {
         if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout || AUX.GLElectionForEachNewGM) {
-            // GL dead
+           // GL dead
+//            Logger.info("[MUL(GLElecMsg)] Start election: glTimestamp: " + glTimestamp + ", " + m);
             leaderElection();
         } else {
             // GL still alive
-            m = new RBeatGLMsg(glTimestamp, AUX.gmInbox((String) m.getMessage()), glHostname, null);
+            m = new RBeatGLMsg(glTimestamp, m.getReplyBox(), glHostname, null);
+            m.send();
             Logger.err("[MUL(GLElecMsg)] GL alive, resend: " + m);
         }
+    }
+
+    void handleNewGM(SnoozeMsg m) {
+        String gm = (String) m.getMessage();
+        gmInfo.put(gm, new GMInfo(AUX.gmInbox(gm), Msg.getClock()));
+//        Logger.info("[MUL(NewGMMsg)] GM stored: " + m);
+        m = new RBeatGLMsg(glTimestamp, m.getReplyBox(), glHostname, null);
+        m.send();
+//        Logger.info("[MUL(NewGMMsg)] GL beat sent: " + m);
     }
 
     void handleNewLC(SnoozeMsg m) {
@@ -98,18 +115,75 @@ public class Multicast extends Process {
         if (!m.getOrigin().equals("removeLCjoinGM")) {
             // Add LC
             lcInfo.put((String) m.getMessage(), new LCInfo((String) m.getMessage(), "", Msg.getClock(), true));
-//            Logger.info("[MUL(NewLCMsg)] LC stored: " + m);
+            m = new RBeatGLMsg(glTimestamp, m.getReplyBox(), glHostname, null);
+            m.send();
+            Logger.info("[MUL(NewGMMsg)] LC stored, GL beat sent: " + m);
         } else {
             // End LC join phase
             lcInfo.put((String) m.getMessage(),
                     new LCInfo((String) m.getMessage(), m.getReplyBox(), Msg.getClock(), false));
-//            Logger.info("[MUL(NewLCMsg)] LC removed: " + m);
+            //            Logger.info("[MUL(NewLCMsg)] LC removed: " + m);
         }
     }
 
-    void handleNewGM(SnoozeMsg m) {
-        gmInfo.put((String) m.getMessage(), new GMInfo(m.getReplyBox(), Msg.getClock()));
-        Logger.info("[MUL(NewGMMsg)] GM stored: " + m);
+    void handleTermGM(SnoozeMsg m) {
+        ArrayList<String> orphanLCs = new ArrayList<String>();
+
+        String gm = (String) m.getMessage();
+        gmInfo.remove(gm);
+        Logger.err("[MUL(StopGM)] GM: " + gm + " stops");
+        for (String lc: lcInfo.keySet()) {
+            if (lcInfo.get(lc).equals(gm)) orphanLCs.add(lc);
+        }
+        for (String lc: orphanLCs) {
+            lcInfo.remove(lc);
+            Logger.err("[MUL(StopGM)] LC: " + lc);
+        }
+    }
+
+    /**
+     * GL dead
+     */
+    void glDead() {
+        if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout) {
+            Logger.err("[MUL.glDead] GL dead, trigger leader election: " + glHostname);
+            leaderElection();
+        }
+    }
+
+    /**
+     * GM dead
+     */
+    void gmDead() {
+        ArrayList<String> deadGMs = new ArrayList<String>();
+        ArrayList<String> orphanLCs = new ArrayList<String>();
+
+        for (String gm: gmInfo.keySet()) {
+            if (gmInfo.get(gm).timestamp == 0) {
+//            Logger.err("[MUL.gmDead] GM: " + gm + " gmTimestamp == null");
+                return;
+            }
+            if (AUX.timeDiff(gmInfo.get(gm).timestamp) > AUX.HeartbeatTimeout) {
+                deadGMs.add(gm);
+
+                // Identify LCs of dead GMs
+                for (String lc: lcInfo.keySet()) {
+                    if (lcInfo.get(lc).equals(gm)) orphanLCs.add(lc);
+                }
+            }
+        }
+
+        // Remove dead GMs and associated LCs
+        for (String gm: deadGMs) {
+            gmInfo.remove(gm);
+            Logger.err("[MUL.gmDead] GM: " + gm + " dead; new leader to be elected");
+            leaderElection();
+            Test.dispInfo();
+        }
+        for (String lc: orphanLCs) {
+            lcInfo.remove(lc);
+            Logger.err("[MUL.gmDead] LC: " + lc);
+        }
     }
 
     /**
@@ -124,43 +198,57 @@ public class Multicast extends Process {
             } catch (HostNotFoundException e) {
                 e.printStackTrace();
             }
+            Test.gl = gl;
             // Deployment on the Multicast node! Where should it be deployed?
             glHostname = gl.getHost().getName();
             Logger.err("[MUL.leaderElection] New leader ex-nihilo on: " + glHostname);
         } else {
+            SnoozeMsg m = null;
             // Leader election: select GM, send promotion message
             ArrayList<String> gms = new ArrayList<String>(gmInfo.keySet());
             int i = 0;
             boolean success = false;
             String oldGL = "";
+            String gm = "";
             do {
-                String gm = gms.get(i % gms.size());
-                // Send GL creation request to GM
-                SnoozeMsg m = new GMElecMsg(null, AUX.gmInbox(gm), null, null);
-                m.send();
-                Logger.info("[MUL.leaderElection] GM notified: " + m);
+//                Logger.info("[MUL.leaderElection] Round: " + i);
+                gm = gms.get(i % gms.size());
+                String elecMBox = AUX.gmInbox(gm) + "-MulticastElection";
 
-                boolean msgReceived = true;
+                // Send GL creation request to GM
+                m = new GMElecMsg(null, AUX.gmInbox(gm), null, elecMBox);
+                m.send();
+//                Logger.info("[MUL.leaderElection] GM notified: " + m);
+
+                boolean msgReceived = false;
                 try {
-//                    m = (SnoozeMsg) Task.receive(AUX.glElection);
-                    m = (SnoozeMsg) Task.receive(AUX.glElection, AUX.GLCreationTimeout);
-//                    Logger.info("[MUL.leaderElection] Msg: " + m);
-                } catch (Exception e) { msgReceived = false; }
+                    m = (SnoozeMsg) Task.receive(elecMBox, AUX.MessageReceptionTimeout);
+                    Logger.info("[MUL.leaderElection] Msg.received for GM: " + gm + ", " + m);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                msgReceived =
+                        m.getClass().getSimpleName().equals("GLElecStopGMMsg") && gm.equals((String) m.getMessage());
+//                Logger.info("[MUL.leaderElection] GM->GL: " + m);
                 if (msgReceived) {
-                    Logger.info("[MUL.leaderElection] GM->GL: " + m);
                     oldGL = glHostname;
                     glHostname = (String) m.getMessage();   // glHostname == gm
+                    glTimestamp = Msg.getClock();
                     gmInfo.remove(gm);
                     success = true;
+                    m = new GLElecStopGMMsg(name, AUX.gmInbox(gm), null, null);
+                    m.send();
+                    Logger.info("[MUL.leaderElection] New leader elected: " + m);
                 } else {
                     // Ignore other messages on mbox AUX.glElection
                     Logger.err("[MUL.leaderElection] GM promotion failed: " + gm);
                 }
                 i++;
             } while (i<10 && !success);
-            if (!success) Logger.err("MUL(GLElec)] Leader election failed 10 times");
-            new TermGLMsg(name, AUX.glInbox(oldGL), host.getName(), null).send();
-            Logger.info("[MUL.leaderElection] New leader elected: " + glHostname);
+            if (!success) {
+                Logger.err("MUL(GLElec)] Leader election failed 10 times");
+                return;
+            }
         }
     }
 
@@ -168,17 +256,19 @@ public class Multicast extends Process {
      * Relay GL beats to EP, GMs and joining LCs
      */
     void relayGLBeat() {
+        SnoozeMsg m = null;
         if (glHostname != "") {
             new RBeatGLMsg(glTimestamp, AUX.epInbox, glHostname, null).send();
 //            Logger.info("[MUL.relayGLbeat] Beat relayed to: " + AUX.epInbox);
             for (String gm : gmInfo.keySet()) {
-                new RBeatGLMsg(glTimestamp, gmInfo.get(gm).replyBox, glHostname, null).send();
-//                Logger.info("[MUL.relayGLbeat] Beat relayed to GM: " + gmInfo.get(gm).replyBox);
+                m = new RBeatGLMsg(glTimestamp, gmInfo.get(gm).replyBox, glHostname, null);
+                m.send();
+//                Logger.info("[MUL.relayGLbeat] Beat relayed to GM: " + m);
             }
             for (String lc : lcInfo.keySet()) {
                 LCInfo lv = lcInfo.get(lc);
                 if (lv.join) {
-                    SnoozeMsg m = new RBeatGLMsg(glTimestamp, AUX.lcInbox(lv.lcHost), glHostname, null);
+                    m = new RBeatGLMsg(glTimestamp, AUX.lcInbox(lv.lcHost), glHostname, null);
                     m.send();
 //                    Logger.info("[MUL.relayGLBeats] To LC: " + m);
                 }

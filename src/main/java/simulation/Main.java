@@ -83,7 +83,7 @@ import java.util.Date;
                 Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
 
                 //"Usage: python generate.py nb_nodes
-                String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
+                String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+(SimulatorProperties.getNbOfNodes()/2+1)+" > config/generated_deploy.xml"};
                 Runtime.getRuntime().exec(cmd);
             } else { //(SimulatorProperties.getAlgo().equals("centralized"))
     		    Msg.info("Default selected (generating deployment file for centralized approach)");

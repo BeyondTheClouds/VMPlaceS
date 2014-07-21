@@ -1,5 +1,6 @@
 package scheduling.snooze;
 
+import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.Task;
 import scheduling.snooze.msg.SnoozeMsg;
@@ -11,6 +12,7 @@ public class AUX {
     static final String epInbox = "epInbox";                  // EP mbox
 //    static final String epGLElection = "epGLElection";        // EP mbox
     static final String multicast = "multicast";              // GL/GM multicast mbox
+    static Host multicastHost = null;
 //    static final String glHeartbeatNew = "glHeartbeatNew";    // HeartbeatGroup mbox
 //    static final String glHeartbeatBeat = "glHeartbeatBeat";  // HeartbeatGroup mbox
     static final String glElection = "glElection";            // HeartbeatGroup mbox
@@ -22,10 +24,11 @@ public class AUX {
     static final long HeartbeatTimeout = 1000*SnoozeProperties.getHeartBeatTimeout();
     static final long SchedulingPeriodicity = 1000*SnoozeProperties.getSchedulingPeriodicity();
     static final long JoinAcknowledgementTimeout = 5000;
-    static final long GLCreationTimeout = 5000;
+    static final long GLCreationTimeout = 1000;
+    static final double MessageReceptionTimeout = 0.2;
 
     static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
-    static final boolean GLElectionForEachNewGM = true;
+    static final boolean GLElectionForEachNewGM = false;
 
     static SnoozeMsg arecv(String mbox) {
         if (Task.listen(mbox))

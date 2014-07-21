@@ -31,7 +31,7 @@ public class SnoozeProperties extends GeneralProperties {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Property default values
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        public final static int DEFAULT_GM_NUMBER = ((SimulatorProperties.getNbOfNodes()/10) < 1) ? 1 : SimulatorProperties.getNbOfNodes()/10 ;
+        public final static int DEFAULT_GM_NUMBER = ((SimulatorProperties.getNbOfNodes()/10) < 1) ? 1 : SimulatorProperties.getNbOfNodes()/5 ;
         public final static long DEFAULT_HEARTBEAT_PERIODICITY = 2;
         public final static long DEFAULT_SCHEDULING_PERIODICITY = 30;
         public static final long DEFAULT_HEARTBEAT_TIMEOUT = 5;

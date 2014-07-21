@@ -11,8 +11,8 @@ import java.util.Hashtable;
  * Created by sudholt on 25/05/2014.
  */
 public class GroupLeader extends Process {
-    private Host host;
-    private Hashtable<String, GMSum> gmInfo = new Hashtable<String, GMSum>(); // ConcurrentHashMap more efficient
+    Host host; //@ Make private
+    Hashtable<String, GMSum> gmInfo = new Hashtable<String, GMSum>(); //@ Make private
     private String inbox;
     private boolean thisGLToBeTerminated = false;
 
@@ -27,6 +27,8 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
+        Test.gl = this;
+        Logger.info("[GL.main] GL started: " + host.getName());
         startBeats();
         while (true) {
             SnoozeMsg m = AUX.arecv(inbox);
@@ -43,30 +45,36 @@ public class GroupLeader extends Process {
 //        Logger.info("[GL.handle] GLIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-            case "LCAssMsg" : handleLCAss(m); break;
-            case "GMSumMsg" : handleGMSum(m); break;
-            case "NewGMMsg" : handleNewGM(m); break;
-            case "TermGLMsg": thisGLToBeTerminated = true; break;
+            case "LCAssMsg" : handleLCAss(m);  break;
+            case "GMSumMsg" : handleGMSum(m);  break;
+            case "NewGMMsg" : handleNewGM(m);  break;
+            case "TermGMMsg": handleTermGM(m); break;
+            case "TermGLMsg": handleTermGL(m); break;
             case "SnoozeMsg":
                 Logger.err("[GL(SnoozeMsg)] Unknown message" + m);
                 break;
+
+            case "TestFailGLMsg":
+                Logger.err("[GL.main] thisGLToBeTerminated: " + host.getName());
+                thisGLToBeTerminated = true; break;
         }
     }
 
     void handleLCAss(SnoozeMsg m) {
         String gm = lcAssignment((String) m.getMessage());
-        if (gm.equals("")) return;
         m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
         m.send();
-//        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
+        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
     }
 
     void handleGMSum(SnoozeMsg m) {
         try {
+            String gm = m.getOrigin();
+            if (!gmInfo.contains(m.getOrigin())) return;
             GMSumMsg.GMSum s = (GMSumMsg.GMSum) m.getMessage();
             GMSum sum = new GMSum(s.getProcCharge(), s.getMemUsed(), Msg.getClock());
-            gmInfo.put(m.getOrigin(), sum);
-//            Logger.info("[GL(GMSum)] " + m.getOrigin() + ": " + sum + ", " + m);
+            gmInfo.put(gm, sum);
+//            Logger.info("[GL(GMSum)] " + gm + ": " + sum + ", " + m);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -74,7 +82,7 @@ public class GroupLeader extends Process {
 
     void handleNewGM(SnoozeMsg m) {
         String gmHostname = (String) m.getMessage();
-        if (gmInfo.containsKey(gmHostname)) Logger.err("[GL.handle] GM " + gmHostname + " exists already");
+        if (gmInfo.containsKey(gmHostname)) Logger.err("[GL(NewGM)] GM " + gmHostname + " exists already");
         // Add GM
         GMSum gi = new GMSum(0, 0, Msg.getClock());
         gmInfo.put(gmHostname, gi);
@@ -82,6 +90,17 @@ public class GroupLeader extends Process {
         m = new NewGMMsg((String) host.getName(), m.getReplyBox(), null, null);
 //        Logger.info("[GL(NewGMMsg)] GM added: " + m);
         m.send();
+    }
+
+    void handleTermGL(SnoozeMsg m) {
+        Logger.info("[GL(TermGL)] GL to be terminated: " + host.getName());
+        thisGLToBeTerminated = true;
+    }
+
+    void handleTermGM(SnoozeMsg m) {
+        String gm = (String) m.getMessage();
+        gmInfo.remove(gm);
+        Logger.info("[GL(TermGM)] GM removed: " + gm);
     }
 
     /**
@@ -109,7 +128,7 @@ public class GroupLeader extends Process {
                 ArrayList<String> gms = new ArrayList<>(gmInfo.keySet());
                 gm = gms.get(roundRobin);
                 roundRobin++;
-//                Logger.info("[GL.lcAssignment] GM selected (ROUNDROBIN): " + gm);
+                Logger.info("[GL.lcAssignment] GM selected (ROUNDROBIN): " + gm + ", #GMs: " + gmInfo.size());
                 break;
         }
         return gm;
