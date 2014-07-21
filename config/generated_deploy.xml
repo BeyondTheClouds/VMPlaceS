@@ -23,24 +23,4 @@
   <process host="node18" function="scheduling.snooze.LocalController"><argument value="node18" /><argument value="localController-18" /></process>
   <process host="node19" function="scheduling.snooze.LocalController"><argument value="node19" /><argument value="localController-19" /></process>
   <process host="node20" function="scheduling.snooze.LocalController"><argument value="node20" /><argument value="localController-20" /></process>
-  <process host="node21" function="scheduling.snooze.LocalController"><argument value="node21" /><argument value="localController-21" /></process>
-  <process host="node22" function="scheduling.snooze.LocalController"><argument value="node22" /><argument value="localController-22" /></process>
-  <process host="node23" function="scheduling.snooze.LocalController"><argument value="node23" /><argument value="localController-23" /></process>
-  <process host="node24" function="scheduling.snooze.LocalController"><argument value="node24" /><argument value="localController-24" /></process>
-  <process host="node25" function="scheduling.snooze.LocalController"><argument value="node25" /><argument value="localController-25" /></process>
-  <process host="node26" function="scheduling.snooze.LocalController"><argument value="node26" /><argument value="localController-26" /></process>
-  <process host="node27" function="scheduling.snooze.LocalController"><argument value="node27" /><argument value="localController-27" /></process>
-  <process host="node28" function="scheduling.snooze.LocalController"><argument value="node28" /><argument value="localController-28" /></process>
-  <process host="node29" function="scheduling.snooze.LocalController"><argument value="node29" /><argument value="localController-29" /></process>
-  <process host="node30" function="scheduling.snooze.LocalController"><argument value="node30" /><argument value="localController-30" /></process>
-  <process host="node31" function="scheduling.snooze.LocalController"><argument value="node31" /><argument value="localController-31" /></process>
-  <process host="node32" function="scheduling.snooze.LocalController"><argument value="node32" /><argument value="localController-32" /></process>
-  <process host="node33" function="scheduling.snooze.LocalController"><argument value="node33" /><argument value="localController-33" /></process>
-  <process host="node34" function="scheduling.snooze.LocalController"><argument value="node34" /><argument value="localController-34" /></process>
-  <process host="node35" function="scheduling.snooze.LocalController"><argument value="node35" /><argument value="localController-35" /></process>
-  <process host="node36" function="scheduling.snooze.LocalController"><argument value="node36" /><argument value="localController-36" /></process>
-  <process host="node37" function="scheduling.snooze.LocalController"><argument value="node37" /><argument value="localController-37" /></process>
-  <process host="node38" function="scheduling.snooze.LocalController"><argument value="node38" /><argument value="localController-38" /></process>
-  <process host="node39" function="scheduling.snooze.LocalController"><argument value="node39" /><argument value="localController-39" /></process>
-  <process host="node40" function="scheduling.snooze.LocalController"><argument value="node40" /><argument value="localController-40" /></process>
 </platform>
