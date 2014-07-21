@@ -37,8 +37,8 @@ public class Test extends Process {
     public void main(String[] strings) throws MsgException {
         sleep(5000);
         procFailGLs();
-//        procTerminateGMs();
-//        procAddLCs();
+        procTerminateGMs();
+        procAddLCs();
         while (!testsToBeTerminated) {
             dispInfo();
             sleep(1000);
@@ -67,7 +67,7 @@ public class Test extends Process {
     void procAddLCs() throws HostNotFoundException {
         new Process(host, host.getName() + "-addLCs") {
             public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
-                sleep(3000);
+                sleep(5000);
                 int lcNo = 21; // no. of statically allocated LCs
 //                while (!testsToBeTerminated) {
                 for (int i=0; i<20; i++) {
@@ -77,7 +77,7 @@ public class Test extends Process {
                     lc.start();
                     Logger.info("[Test.procAddLCs] Dyn. LC added: " + lcArgs[1]);
                     lcNo++;
-                    sleep(3000);
+                    sleep(5000);
                 }
                 sleep(AUX.DefaultComputeInterval);
             }
@@ -106,7 +106,7 @@ public class Test extends Process {
     void procTerminateGMs() throws HostNotFoundException {
         new Process(host, host.getName() + "-terminateGMs") {
             public void main(String[] args) throws HostFailureException {
-                sleep(10000);
+                sleep(5000);
                 while (!testsToBeTerminated) {
                     if (multicast.gmInfo.size() < 3) {
                         Logger.info("[Test.terminateGMs] #GMs: " + multicast.gmInfo.size());
