@@ -77,7 +77,7 @@ public class SimulatorManager {
 	public static void setEndOfInjection(){
 		endOfInjection=true;
 
-        Msg.info(sgHostsOn.size()+"/"+ getSGHostingHosts().size()+"are up");
+        Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
         Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
 
         for (XHost host : SimulatorManager.getSGHostingHosts()) {

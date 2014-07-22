@@ -5,6 +5,8 @@
  * under the terms of the license (GNU LGPL) which comes with this package.
  *
  * This class is an extension of the usual VM of the Simgrid MSG abstraction
+ * Note that the extension is done by aggregation instead of inheritance. This enables to create/destroy the sg VM while
+ * manipulating the same XVM at the java level.
  *
  * @author: adrien.lebre@inria.fr
  */
@@ -13,8 +15,14 @@ package configuration;
 
 import org.simgrid.msg.*;
 
-public class XVM extends VM{
+import java.sql.Timestamp;
 
+public class XVM {
+
+    /**
+     * The MSG VM to extend (extension by aggregation)
+     */
+    private VM vm;
     /**
      * The dirty page intensity of the VM (currently determined by the class of the VM, see the configureHostsAndVMs method).
      * Expressed as a percentage of the netBW (i.e. an integer between 0 and 100)
@@ -84,17 +92,32 @@ public class XVM extends VM{
      public XVM(XHost host, String name,
             int nbCores, int ramsize, int netBW, String diskPath, int diskSize, int migNetBW, int dpIntensity){
         // TODO, why should we reduce the migNetBW ? (i.e. interest of multiplying the value by 0.9)
-        super(host.getSGHost(), name, nbCores, ramsize, netBW, diskPath, diskSize, (int)(migNetBW*0.9), dpIntensity);
+        this.vm = new VM (host.getSGHost(), name, nbCores, ramsize, netBW, diskPath, diskSize, (int)(migNetBW*0.9), dpIntensity);
         this.currentLoadDemand = 0;
         this.netBW = netBW ;
         this. dpIntensity = dpIntensity ;
         this.ramsize= ramsize;
-        this.daemon = new Daemon(this, 100);
+        this.daemon = new Daemon(this.vm, 100);
         this.host = host;
         this.NbOfLoadChanges = 0;
         this.vmIsMigrating = false;
    }
 
+    /* Delegation method from MSG VM */
+
+    /**
+     * @return the name of the VM
+     */
+    public String getName() {
+        return this.vm.getName();
+    }
+
+    /**
+     * @return the number of core of the VM
+     */
+    public double getCoreNumber() {
+        return this.vm.getCoreNumber();
+    }
     /**
      * Change the load of the VM, please remind that the load of the VM is set to 0 at its beginning.
      * TODO, check whether it makes sense to set the load to a minimal load.
@@ -102,7 +125,7 @@ public class XVM extends VM{
      */
     public void setLoad(int expectedLoad){
         if (expectedLoad >0) {
-            this.setBound(expectedLoad);
+            this.vm.setBound(expectedLoad);
             daemon.resume();
         }
         else{
@@ -131,7 +154,7 @@ public class XVM extends VM{
      *  Override start method in order to start the daemon at the same time that should run inside the VM.
      */
     public void start(){
-        super.start();
+        this.vm.start();
         try {
             daemon.start();
         } catch (HostNotFoundException e) {
@@ -149,7 +172,7 @@ public class XVM extends VM{
             this.vmIsMigrating = true;
             Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
             Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
-            super.migrate(host.getSGHost());
+            this.vm.migrate(host.getSGHost());
             this.host = host;
             this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
             //The dummy cpu action is not bounded.
@@ -188,6 +211,5 @@ public class XVM extends VM{
     public long getNetBW() {
         return this.netBW;
     }
-
 
 }
