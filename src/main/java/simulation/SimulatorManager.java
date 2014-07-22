@@ -400,18 +400,18 @@ public class SimulatorManager {
         // Violations are detected only on running node
         if (!tmpHost.isOff()){
 
-            Msg.info("Current getCPUDemand "+SimulatorManager.getCPUDemand()+"\n");
+        //    Msg.info("Current getCPUDemand "+SimulatorManager.getCPUDemand()+"\n");
 
 
             if(previouslyViable) {
                 if (!tmpHost.isViable()) {
-                    Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
+        //            Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
                     tmpHost.incViolation();
                     Trace.hostSetState(tmpHost.getName(), "PM", "violation");
                 }
                 else if(!previouslyViable){
                     if (tmpHost.isViable()) {
-                        Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
+        //                Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
                         Trace.hostSetState (tmpHost.getName(), "PM", "normal");
                     }
                 }
@@ -436,7 +436,6 @@ public class SimulatorManager {
             host.turnOn();
             sgHostsOff.remove(host);
             sgHostsOn.add(host);
-
 
             // If your turn on an hosting node, then update the LOAD
             if(sgHostingHosts.contains(host)) {
@@ -482,12 +481,13 @@ public class SimulatorManager {
 
             }
 
-            // Second, remove the node from the collection of running host and add it to the collection of off ones
+            // Turn the node off
+            host.turnOff();
+
+            // Finally, remove the node from the collection of running host and add it to the collection of off ones
             sgHostsOn.remove(host);
             sgHostsOff.add(host);
 
-            // Finally turn the node off
-            host.turnOff();
         }
         else{
             Msg.info("Weird... you are asking to turn off a host that is already off !");

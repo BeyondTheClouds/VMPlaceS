@@ -155,6 +155,10 @@ public class CentralizedResolver extends Process {
                             Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
                             // Decrement the number of on-going migrating process
                             CentralizedResolver.decMig();
+                            if(sourceHost.isOff() || destHost.isOff()) {
+                                System.err.println("Dammed the migration may have crash");
+                                System.exit(-1);
+                            }
                             if(!destHost.isViable()){
                                 Msg.info("ARTIFICIAL VIOLATION ON "+destHost.getName()+"\n");
                                 Trace.hostSetState(destHost.getName(), "PM", "violation-out");
