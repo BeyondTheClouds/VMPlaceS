@@ -41,8 +41,6 @@ public class Multicast extends Process {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-
         }
     }
 

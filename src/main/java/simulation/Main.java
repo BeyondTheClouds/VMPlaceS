@@ -72,7 +72,7 @@ import java.util.Date;
        
     	    if(SimulatorProperties.getAlgo().equals("distributed")){
     		    Msg.info("Distributed scheduling selected (generating deployment file)");
-    		    String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getNbOfNodes()+" "+
+    		    String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getNbOfHostingNodes()+" "+
     			   				SimulatorProperties.getNbOfCPUs()+ " "+
     			   					SimulatorProperties.getCPUCapacity()+ " "+ 
     			   						SimulatorProperties.getMemoryTotal()+" 23000 > config/generated_deploy.xml"};
@@ -83,13 +83,13 @@ import java.util.Date;
                 Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
 
                 //"Usage: python generate.py nb_nodes
-                String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+(SimulatorProperties.getNbOfNodes()/2+1)+" > config/generated_deploy.xml"};
+                String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfHostingNodes()+" "+SimulatorProperties.getNbOfServiceNodes()+" > config/generated_deploy.xml"};
                 Runtime.getRuntime().exec(cmd);
             } else { //(SimulatorProperties.getAlgo().equals("centralized"))
     		    Msg.info("Default selected (generating deployment file for centralized approach)");
     		 
     		    //"Usage: python generate.py nb_nodes
-    		    String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
+    		    String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfHostingNodes()+" > config/generated_deploy.xml"};
     		    Runtime.getRuntime().exec(cmd);
        		}
        	} catch (IOException e) {
@@ -126,7 +126,7 @@ import java.util.Date;
         /* The initial deployment is based on a round robin fashion */
         System.out.println("Configure simulation" + new Date().toString());
         SimulatorManager.cleanLog();
-        SimulatorManager.instanciateVMs(SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(),true);
+        SimulatorManager.instanciateVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfVMs(),true);
         SimulatorManager.writeCurrentConfiguration();
 
 	    /*  execute the simulation. */

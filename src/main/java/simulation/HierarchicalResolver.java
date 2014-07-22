@@ -33,10 +33,11 @@ public class HierarchicalResolver extends Process {
         multicast.start();
 
         // Start the group leader (by default it is started on the first node of the infrastructure
-        new GroupLeader(Host.getByName("node1"), "groupLeader").start();
+        // new GroupLeader(Host.getByName("node1"), "groupLeader").start();
 
         // Start as many GMs as expected and assign them randomly (please note that for reproductibility reasons, we are
         // leveraging a specific seed (see SimulatorProperties class file)
+        /*
         Random randHostPicker = new Random(SimulatorProperties.getSeed());
         int hostIndex;
         ArrayList<Integer> initialGMs = new ArrayList<Integer>();
@@ -51,6 +52,7 @@ public class HierarchicalResolver extends Process {
             Msg.info("GM "+i+" has been created");
             initialGMs.add(i);
         }
+        */
 
         Msg.info("Start the Test process on " + Host.currentHost()+ "");
         new Test(Host.currentHost(), "test").start();

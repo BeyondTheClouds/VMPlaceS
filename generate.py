@@ -9,9 +9,18 @@ import sys, random
 
 ## centralized scheduling
 largv=len(sys.argv)
-if largv == 3:
-    nb_nodes = int(sys.argv[2])
-    if (sys.argv[1] == 'hierarchical'):
+nb_nodes = int(sys.argv[2])
+
+if (sys.argv[1] == 'centralized'):
+    sys.stderr.write("generate deployment file for entropy");
+    sys.stdout.write("<?xml version='1.0'?>\n"
+    "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
+    "<platform version=\"3\">\n"
+    "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
+    "  <process host=\"node%d\" function=\"simulation.CentralizedResolver\"> </process>\n"
+    "</platform>" % (nb_nodes +1, nb_nodes));
+
+elif (sys.argv[1] == 'hierarchical'):
         sys.stderr.write("generate deployment file for snooze");
         sys.stdout.write("<?xml version='1.0'?>\n"
         "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
@@ -19,25 +28,24 @@ if largv == 3:
         "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
         "  <process host=\"node%d\" function=\"simulation.HierarchicalResolver\"> </process>\n" % (nb_nodes +1, nb_nodes +1))
 
-        for i in range(1, nb_nodes+1):
+        for i in range(0, nb_nodes):
 
             line = "  <process host=\"node%d\" function=\"scheduling.snooze.LocalController\">\
 <argument value=\"node%d\" /><argument value=\"localController-%d\" />\
 </process>\n" % (i, i, i)
             sys.stdout.write(line)
 
+        nb_servicenodes = int(sys.argv[3])
+        for i in range(nb_nodes, nb_nodes+nb_servicenodes):
+
+            line = "  <process host=\"node%d\" function=\"scheduling.snooze.GroupManager\">\
+<argument value=\"node%d\" /><argument value=\"groupManager-%d\" />\
+</process>\n" % (i, i, i)
+            sys.stdout.write(line)
+
         sys.stdout.write("</platform>")
 
-    else:
-        sys.stderr.write("generate deployment file for entropy");
-        sys.stdout.write("<?xml version='1.0'?>\n"
-        "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
-        "<platform version=\"3\">\n"
-        "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
-        "  <process host=\"node0\" function=\"simulation.CentralizedResolver\"> </process>\n"
-        "</platform>" % (nb_nodes +1));
-
-elif largv == 6:
+elif (sys.argv[1] == 'distributed'):
         nb_nodes = int(sys.argv[1])
         nb_cpu = int(sys.argv[2])
         total_cpu_cap = int(sys.argv[3])
