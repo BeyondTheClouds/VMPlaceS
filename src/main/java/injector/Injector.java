@@ -107,8 +107,6 @@ public class Injector extends Process {
 
         int nbOfHosts=xhosts.length;
 
-        System.out.println("make an exception"+xhosts[nbOfHosts]);
-
         double lambda=lambdaPerHost*nbOfHosts;
         long id=0;
         XHost tempHost;
