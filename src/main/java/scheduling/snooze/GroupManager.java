@@ -31,8 +31,8 @@ public class GroupManager extends Process {
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
     private Collection<XHost> managedLCs;
 
-    public GroupManager(Host host, String name) {
-        super(host, name);
+    public GroupManager(Host host, String name, String[] args) {
+        super(host, name, args);
         this.host = host;
         this.name = name;
         this.inbox = AUX.gmInbox(host.getName());

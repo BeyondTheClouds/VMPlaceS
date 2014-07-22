@@ -1,9 +1,9 @@
 package scheduling.entropyBased;
 
-import java.io.File;
-
 import configuration.SimulatorProperties;
 import scheduling.GeneralProperties;
+
+import java.io.File;
 
 
 //Represents properties mostly for DVMS instances (except for the logging property which is shared by DVMS instances and the simulator)
@@ -76,7 +76,7 @@ public class EntropyProperties extends GeneralProperties {
 	}
 	
 	public static int getEntropyPlanTimeout(){
-		return Math.max(1, SimulatorProperties.getNbOfNodes()/4);
+		return Math.max(1, SimulatorProperties.getNbOfHostingNodes()/4);
 		//return INSTANCE.getPropertyAsInt(ENTROPY_TIME_OUT, DEFAULT_ENTROPY_TIME_OUT);
 	}
 	
