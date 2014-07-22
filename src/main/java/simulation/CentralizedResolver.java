@@ -151,21 +151,23 @@ public class CentralizedResolver extends Process {
                             System.err.println("You are trying to migrate from/to a non existing node");
                         }
                         if(destHost != null){
-                            sourceHost.migrate(args[0],destHost);
-                            Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
-                            // Decrement the number of on-going migrating process
-                            CentralizedResolver.decMig();
-                            if(sourceHost.isOff() || destHost.isOff()) {
-                                System.err.println("Dammed the migration may have crash");
+                            if( !sourceHost.isOff() && !destHost.isOff() && sourceHost.migrate(args[0],destHost) == 0 ) {
+                                Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
+                                // Decrement the number of on-going migrating process
+                                CentralizedResolver.decMig();
+                                if (!destHost.isViable()) {
+                                    Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
+                                    Trace.hostSetState(destHost.getName(), "PM", "violation-out");
+                                }
+                                if (sourceHost.isViable()) {
+                                    Msg.info("SOLVED VIOLATION ON " + sourceHost.getName() + "\n");
+                                    Trace.hostSetState(sourceHost.getName(), "PM", "normal");
+                                }
+                            }else{
+                                // TODO raise an exception since the migration crash and thus the reconfigurationPlan is not valid anymore
+                                //CentralizedResolved.setRPDeprecated();
+                                Msg.info("Reconfiguration plan cannot be completely applied so abort it");
                                 System.exit(-1);
-                            }
-                            if(!destHost.isViable()){
-                                Msg.info("ARTIFICIAL VIOLATION ON "+destHost.getName()+"\n");
-                                Trace.hostSetState(destHost.getName(), "PM", "violation-out");
-                            }
-                            if(sourceHost.isViable()){
-                                Msg.info("SOLVED VIOLATION ON "+sourceHost.getName()+"\n");
-                                Trace.hostSetState(sourceHost.getName(), "PM", "normal");
                             }
                         }
                     }

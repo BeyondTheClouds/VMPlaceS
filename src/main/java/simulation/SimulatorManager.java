@@ -80,7 +80,7 @@ public class SimulatorManager {
         Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
         Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
 
-        for (XHost host : SimulatorManager.getSGHostingHosts()) {
+        for (XHost host : SimulatorManager.getSGHosts()) {
             Msg.info(host.getName() + " has been turned off "+host.getTurnOffNb()+" times and violated "+host.getNbOfViolations());
         }
 
@@ -135,6 +135,7 @@ public class SimulatorManager {
 
     /**
      * @return the collection of XHosts that have been declared as hosting nodes (i.e. that can host VMs)
+     * Please note that all HostingHosts are returned (without making any distinctions between on and off hosts)
      */
     public static Collection<XHost> getSGHostingHosts(){
         return sgHostingHosts;
@@ -448,6 +449,8 @@ public class SimulatorManager {
                 // Update getCPUDemand of the host
                 Trace.hostVariableSet(host.getName(), "LOAD", host.getCPUDemand());
 
+                // TODO test whether the node is violated or not (this can occur)
+
                 //Update global getCPUDemand
                 Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "LOAD", SimulatorManager.getCPUDemand());
             }
@@ -476,6 +479,7 @@ public class SimulatorManager {
                 // Update getCPUDemand of the host
                 Trace.hostVariableSet(host.getName(), "LOAD", 0);
 
+                // TODO if the node is violated then it is no more violated
                 //Update global getCPUDemand
                 Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
 

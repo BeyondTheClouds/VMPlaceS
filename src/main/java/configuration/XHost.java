@@ -172,8 +172,9 @@ public class XHost{
      * Migrate the vm vmName from this host to the dest one.
      * @param vmName
      * @param dest
+     * @return 0 if the migration succeeded -1 if it crashed
      */
-    public void migrate(String vmName, XHost dest) {
+    public int migrate(String vmName, XHost dest) {
         XVM vm = null ;
         for(XVM tmp : getRunnings()){
             if (tmp.getName().equals(vmName))
@@ -185,8 +186,13 @@ public class XHost{
         }
         // migrate the VM and reassign correctly to the corresponding host
         vm.migrate(dest);
+        if(this.isOff() || dest.isOff()) {
+            System.err.println("Dammed the migration may have crash");
+            return -1;
+        }
         hostedVMs.remove(vm);
         dest.hostedVMs.add(vm);
+        return 0;
     }
 
     /**
