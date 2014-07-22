@@ -21,12 +21,13 @@ if (sys.argv[1] == 'centralized'):
     "</platform>" % (nb_nodes +1, nb_nodes));
 
 elif (sys.argv[1] == 'hierarchical'):
+        nb_servicenodes = int(sys.argv[3])
         sys.stderr.write("generate deployment file for snooze");
         sys.stdout.write("<?xml version='1.0'?>\n"
         "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
         "<platform version=\"3\">\n"
         "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
-        "  <process host=\"node%d\" function=\"simulation.HierarchicalResolver\"> </process>\n" % (nb_nodes +1, nb_nodes +1))
+        "  <process host=\"node%d\" function=\"simulation.HierarchicalResolver\"> </process>\n" % (nb_nodes + nb_servicenodes, nb_nodes +1))
 
         for i in range(0, nb_nodes):
 
@@ -35,7 +36,6 @@ elif (sys.argv[1] == 'hierarchical'):
 </process>\n" % (i, i, i)
             sys.stdout.write(line)
 
-        nb_servicenodes = int(sys.argv[3])
         for i in range(nb_nodes, nb_nodes+nb_servicenodes):
 
             line = "  <process host=\"node%d\" function=\"scheduling.snooze.GroupManager\">\
@@ -46,18 +46,18 @@ elif (sys.argv[1] == 'hierarchical'):
         sys.stdout.write("</platform>")
 
 elif (sys.argv[1] == 'distributed'):
-        nb_nodes = int(sys.argv[1])
-        nb_cpu = int(sys.argv[2])
-        total_cpu_cap = int(sys.argv[3])
-        ram = int(sys.argv[4])
-        port_orig = int(sys.argv[5])
+        nb_nodes = int(sys.argv[2])
+        nb_cpu = int(sys.argv[3])
+        total_cpu_cap = int(sys.argv[4])
+        ram = int(sys.argv[5])
+        port_orig = int(sys.argv[6])
         port = port_orig
         sys.stdout.write("<?xml version='1.0'?>\n"
         "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
         "<platform version=\"3\">\n"
-        "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n" % (node))
+        "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n" % (nb_nodes))
 
-        for i in range(1, nb_nodes+1):
+        for i in range(0, nb_nodes - 1):
 
                 line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
                 <argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
@@ -72,7 +72,7 @@ elif (sys.argv[1] == 'distributed'):
         line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
         <argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
         <argument value=\"node%d\" /><argument value=\"%d\" />\n \
-        </process>\n" % (nb_nodes, nb_nodes, nb_cpu, total_cpu_cap, ram, port, 1, port_orig)
+        </process>\n" % (nb_nodes-1, nb_nodes-1, nb_cpu, total_cpu_cap, ram, port, 0, port_orig)
 
         sys.stdout.write(line)
         sys.stdout.write("</platform>")
