@@ -1,7 +1,10 @@
 package scheduling.snooze.msg;
 
 
+import org.simgrid.msg.HostFailureException;
+import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
+import scheduling.snooze.Logger;
 
 /**
  * Created by sudholt on 24/06/2014.
@@ -38,9 +41,14 @@ public class SnoozeMsg extends Task {
     }
 
     public void send() {
-
 //  Msg.info("SendBox:" + this.getSendBox());
       this.isend(this.getSendBox());
+        try {
+            Process.sleep(1);
+        } catch (HostFailureException e) {
+            Logger.err("[SnoozeMsg.send] Exception");
+            e.printStackTrace();
+        }
 //        this.dsend(this.getSendBox());
     }
 

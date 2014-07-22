@@ -51,23 +51,30 @@ public class SimulatorProperties extends Properties {
     /**
      * Number of nodes (aka. hosts) composing the infrastructure (this number does not include the service node).
      */
-	public final static String NB_OF_NODES = "nodes.number";
+	public final static String NB_OF_HOSTINGNODES = "hostingnodes.number";
     /**
      * Number of cores per nodes
      */
-	public final static String NB_OF_CPUS = "nodes.cpunumber";
+	public final static String NB_OF_CPUS = "hostingnodes.cpunumber";
     /**
      * CPU capacity for a node (number of cores * one_core_capacity = nodes.cpucapacity)
      */
-    public final static String CPU_CAPACITY = "nodes.cpucapacity";
+    public final static String CPU_CAPACITY = "hostingnodes.cpucapacity";
     /**
      * Size of the RAM for each node.
      */
-	public final static String MEMORY_TOTAL = "nodes.memorytotal";
+	public final static String MEMORY_TOTAL = "hostingnodes.memorytotal";
     /**
      * Available network bandwidth (not used for the moment)
      */
-    public final static String NET_CAPACITY = "nodes.netbw";
+    public final static String NET_CAPACITY = "hostingnodes.netbw";
+
+    /**
+     * Number of service nodes (aka. nodes that do not host VMs) composing the infrastructure
+     * (this number does not include the service node).
+     */
+    public final static String NB_OF_SERVICENODES = "servicenodes.number";
+
 
     // //// /////
     // //// ///// Keys related to VMs
@@ -117,12 +124,14 @@ public class SimulatorProperties extends Properties {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	//Default values related to nodes
-	public final static int DEFAULT_NB_OF_NODES = 50;
+	public final static int DEFAULT_NB_OF_HOSTINGNODES = 50;
 	public final static int DEFAULT_NB_OF_CPUS = 4;
 	public final static int DEFAULT_CPU_CAPACITY = 8000;
     public final static int DEFAULT_NET_CAPACITY = 125;
 	public final static int DEFAULT_MEMORY_TOTAL = 8192;
-	
+
+    public final static int DEFAULT_NB_OF_SERVICENODES = 1;
+
 	//Default values related to VMs
 	public final static int DEFAULT_NB_OF_VMS = 200;
 	public final static int DEFAULT_MIN_PERCENTAGE_OF_ACTIVE_VMS = 40;
@@ -153,7 +162,7 @@ public class SimulatorProperties extends Properties {
 	public final static String DEFAULT_SCRIPT_CREATE_VMS = null;
 	public final static String DEFAULT_SCRIPT_INJECT_LOAD = null;
 
-	private static final String DEFAULT_SIMU_ALGO = "entropy";
+	private static final String DEFAULT_SIMU_ALGO = "centralized";
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -224,8 +233,8 @@ public class SimulatorProperties extends Properties {
 	//Methods related to nodes
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	public static int getNbOfNodes(){
-		return getPropertyAsInt(NB_OF_NODES, DEFAULT_NB_OF_NODES);
+	public static int getNbOfHostingNodes(){
+		return getPropertyAsInt(NB_OF_HOSTINGNODES, DEFAULT_NB_OF_HOSTINGNODES);
 	}
 	
 	public static int getNbOfCPUs(){
@@ -242,9 +251,13 @@ public class SimulatorProperties extends Properties {
 	public static int getMemoryTotal(){
 		return getPropertyAsInt(MEMORY_TOTAL, DEFAULT_MEMORY_TOTAL);
 	}
-	
-	
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    public static int getNbOfServiceNodes(){
+        return getPropertyAsInt(NB_OF_SERVICENODES, DEFAULT_NB_OF_SERVICENODES);
+    }
+
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Methods related to VMs
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -369,12 +382,14 @@ public class SimulatorProperties extends Properties {
 	public static void main(String[] args){
 		System.out.println(SimulatorProperties.INSTANCE);
 		System.out.println("configuration file: " + SimulatorProperties.getConfigurationFile());
-		System.out.println("number of nodes: " + SimulatorProperties.getNbOfNodes());
+		System.out.println("number of nodes: " + SimulatorProperties.getNbOfHostingNodes());
 		System.out.println("number of cpus: " + SimulatorProperties.getNbOfCPUs());
 		System.out.println("cpu capacity: " + SimulatorProperties.getCPUCapacity());
 		System.out.println("memory total: " + SimulatorProperties.getMemoryTotal());
 		System.out.println("nb of vms: " + SimulatorProperties.getNbOfVMs());
-		System.out.println("min percentage of active vms: " + SimulatorProperties.getMinPercentageOfActiveVMs());
+        System.out.println("number of service nodes: " + SimulatorProperties.getNbOfServiceNodes());
+
+        System.out.println("min percentage of active vms: " + SimulatorProperties.getMinPercentageOfActiveVMs());
 
 		System.out.println("cpu consumption: " + SimulatorProperties.getCPUConsumption());
 

@@ -18,25 +18,20 @@
 
 package simulation;
 
-import java.io.IOException;
-
-import org.simgrid.msg.*;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
+import configuration.SimulatorProperties;
+import org.simgrid.msg.Msg;
+import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
 import org.simgrid.trace.Trace;
 import org.slf4j.LoggerFactory;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.core.util.StatusPrinter;
-
+import java.io.IOException;
 import java.util.Date;
-import java.util.jar.JarFile;
-import java.util.zip.ZipEntry;
 
-import configuration.SimulatorProperties;
-import scheduling.entropyBased.dvms2.dvms.LoggingActor;
-import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
-
-import javax.security.auth.login.Configuration;
+//import scheduling.entropyBased.dvms2.dvms.LoggingActor;
+//import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
 
 
  public class Main {
@@ -77,7 +72,7 @@ import javax.security.auth.login.Configuration;
        
     	    if(SimulatorProperties.getAlgo().equals("distributed")){
     		    Msg.info("Distributed scheduling selected (generating deployment file)");
-    		    String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getNbOfNodes()+" "+
+    		    String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getNbOfHostingNodes()+" "+
     			   				SimulatorProperties.getNbOfCPUs()+ " "+
     			   					SimulatorProperties.getCPUCapacity()+ " "+ 
     			   						SimulatorProperties.getMemoryTotal()+" 23000 > config/generated_deploy.xml"};
@@ -88,20 +83,20 @@ import javax.security.auth.login.Configuration;
                 Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
 
                 //"Usage: python generate.py nb_nodes
-                String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
+                String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfHostingNodes()+" "+SimulatorProperties.getNbOfServiceNodes()+" > config/generated_deploy.xml"};
                 Runtime.getRuntime().exec(cmd);
             } else { //(SimulatorProperties.getAlgo().equals("centralized"))
     		    Msg.info("Default selected (generating deployment file for centralized approach)");
     		 
     		    //"Usage: python generate.py nb_nodes
-    		    String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfNodes()+" > config/generated_deploy.xml"};
+    		    String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfHostingNodes()+" > config/generated_deploy.xml"};
     		    Runtime.getRuntime().exec(cmd);
        		}
        	} catch (IOException e) {
        		e.printStackTrace();
    		}
 
-        LoggingActor.write(new LoggingProtocol.ExperimentInformation(0, "main", SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(), SimulatorProperties.getAlgo()));
+//        LoggingActor.write(new LoggingProtocol.ExperimentInformation(0, "main", SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(), SimulatorProperties.getAlgo()));
 
 
         /* construct the platform and deploy the application */
@@ -131,7 +126,7 @@ import javax.security.auth.login.Configuration;
         /* The initial deployment is based on a round robin fashion */
         System.out.println("Configure simulation" + new Date().toString());
         SimulatorManager.cleanLog();
-        SimulatorManager.instanciateVMs(SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(),true);
+        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
         SimulatorManager.writeCurrentConfiguration();
 
 	    /*  execute the simulation. */

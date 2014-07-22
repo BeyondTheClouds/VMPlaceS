@@ -1,5 +1,6 @@
 package scheduling.snooze;
 
+import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.Task;
 import scheduling.snooze.msg.SnoozeMsg;
@@ -9,21 +10,25 @@ import scheduling.snooze.msg.SnoozeMsg;
  */
 public class AUX {
     static final String epInbox = "epInbox";                  // EP mbox
-    static final String epGLElection = "epGLElection";        // EP mbox
-    static final String glInbox = "glInbox";
+//    static final String epGLElection = "epGLElection";        // EP mbox
     static final String multicast = "multicast";              // GL/GM multicast mbox
-    static final String glHeartbeatNew = "glHeartbeatNew";    // HeartbeatGroup mbox
-    static final String glHeartbeatBeat = "glHeartbeatBeat";  // HeartbeatGroup mbox
+    static Host multicastHost = null;
+//    static final String glHeartbeatNew = "glHeartbeatNew";    // HeartbeatGroup mbox
+//    static final String glHeartbeatBeat = "glHeartbeatBeat";  // HeartbeatGroup mbox
     static final String glElection = "glElection";            // HeartbeatGroup mbox
-    static final String gmHeartbeatNew = "gmHeartbeatNew";    // HeartbeatGroup mbox
-    static final String gmHeartbeatBeat = "gmHeartbeatBeat";  // HeartbeatGroup mbox
+//    static final String gmHeartbeatNew = "gmHeartbeatNew";    // HeartbeatGroup mbox
+//    static final String gmHeartbeatBeat = "gmHeartbeatBeat";  // HeartbeatGroup mbox
     static final long DefaultComputeInterval = 10;
     static final long EntropyComputationTime = 30000;
     static final long HeartbeatInterval = 1000*SnoozeProperties.getHeartBeatPeriodicity();
     static final long HeartbeatTimeout = 1000*SnoozeProperties.getHeartBeatTimeout();
     static final long SchedulingPeriodicity = 1000*SnoozeProperties.getSchedulingPeriodicity();
     static final long JoinAcknowledgementTimeout = 5000;
-    static final long GLCreationTimeout = 5000;
+    static final long GLCreationTimeout = 1000;
+    static final double MessageReceptionTimeout = 0.2;
+
+    static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
+    static final boolean GLElectionForEachNewGM = false;
 
     static SnoozeMsg arecv(String mbox) {
         if (Task.listen(mbox))
@@ -35,11 +40,11 @@ public class AUX {
         return null;
     }
 
-    static String glInbox(String gmHost) { return glInbox; }
+    static String glInbox(String glHost) { return glHost + "-glInbox"; }
     static String gmInbox(String gmHost) { return gmHost + "-gmInbox"; }
     static String lcInbox(String lcHost) { return lcHost + "-lcInbox"; }
 
     static double timeDiff(double oldTime) {
-        return Msg.getClock()-oldTime;
+        return (Msg.getClock()-oldTime)*1000;
     }
 }

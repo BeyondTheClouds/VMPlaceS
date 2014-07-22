@@ -28,7 +28,7 @@ public class Injector extends Process {
 	    super(host, name, args);
        // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
-       // System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
+        //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
         faultQueue =generateFaultQueue(SimulatorManager.getSGHosts().toArray(new XHost[SimulatorManager.getSGHosts().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
        // System.out.println("Size of fault queue:"+faultQueue.size());
         evtQueue = mergeQueues(loadQueue,faultQueue);
@@ -65,7 +65,6 @@ public class Injector extends Process {
         long id=0;
         XVM tempVM;
 
-        //        currentTime+=Math.round(exponentialDis(randExpDis, lambda));
         currentTime+=exponentialDis(randExpDis, lambda);
 
         Random randVMPicker = new Random(SimulatorProperties.getSeed());
@@ -78,9 +77,8 @@ public class Injector extends Process {
             // and change its state
 
             int cpuConsumptionSlot = maxCPUDemand/nbOfCPUDemandSlots;
-                /*Uniform assignment of VM getCPUDemand */
-            //int slot=(int) (Math.random()*(nbOfCPUDemandSlots+1));
-                /* Gaussian law for the getCPUDemand assignment */
+
+            /* Gaussian law for the getCPUDemand assignment */
             gLoad = Math.max((randExpDis2.nextGaussian()*sigma)+mean, 0);
             int slot= (int) Math.round(Math.min(100,gLoad)*nbOfCPUDemandSlots/100);
 
@@ -108,6 +106,8 @@ public class Injector extends Process {
         double lambdaPerHost=1.0/faultPeriod ; // Nb crash per host (average)
 
         int nbOfHosts=xhosts.length;
+
+        System.out.println("make an exception"+xhosts[nbOfHosts]);
 
         double lambda=lambdaPerHost*nbOfHosts;
         long id=0;

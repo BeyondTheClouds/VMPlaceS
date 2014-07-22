@@ -100,6 +100,9 @@ public abstract class AbstractScheduler implements Scheduler {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	public abstract ComputingState computeReconfigurationPlan();
-	
+
+    /**
+     * @return 0 if the reconfiguration plan has been correctly performed (i.e. completely)
+     */
 	public abstract void applyReconfigurationPlan();
 }

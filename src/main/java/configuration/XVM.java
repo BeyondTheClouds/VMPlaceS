@@ -16,7 +16,7 @@ import org.simgrid.msg.*;
 public class XVM extends VM{
 
     /**
-     * The dirty page intensity of the VM (currently determined by the class of the VM, see the instanciateVMs method).
+     * The dirty page intensity of the VM (currently determined by the class of the VM, see the configureHostsAndVMs method).
      * Expressed as a percentage of the netBW (i.e. an integer between 0 and 100)
      * @see simulation.SimulatorManager
      */
