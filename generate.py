@@ -2,8 +2,8 @@
 
 # This script generates a specific deployment file for the injection simulator.
 # It assumes that the platform will be a cluster.
-# Usage: python generate.py nb_nodes nb_bits end_date
-# Example: python generate.py 100000 32 1000
+# Usage: python generate.py scheduling policies nb_nodes
+# Example: python generate.py centralized 100000 32 1000
 
 import sys, random
 
@@ -16,10 +16,10 @@ if largv == 3:
         sys.stdout.write("<?xml version='1.0'?>\n"
         "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
         "<platform version=\"3\">\n"
-        "  <process host=\"node0\" function=\"injector.Injector\"> </process>\n"
-        "  <process host=\"node0\" function=\"simulation.HierarchicalResolver\"> </process>\n")
+        "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
+        "  <process host=\"node%d\" function=\"simulation.HierarchicalResolver\"> </process>\n" % (nb_nodes +1, nb_nodes +1))
 
-        for i in range(1, nb_nodes):
+        for i in range(1, nb_nodes+1):
 
             line = "  <process host=\"node%d\" function=\"scheduling.snooze.LocalController\">\
 <argument value=\"node%d\" /><argument value=\"localController-%d\" />\
@@ -33,9 +33,9 @@ if largv == 3:
         sys.stdout.write("<?xml version='1.0'?>\n"
         "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
         "<platform version=\"3\">\n"
-        "  <process host=\"node0\" function=\"injector.Injector\"> </process>\n"
+        "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
         "  <process host=\"node0\" function=\"simulation.CentralizedResolver\"> </process>\n"
-        "</platform>");
+        "</platform>" % (nb_nodes +1));
 
 elif largv == 6:
         nb_nodes = int(sys.argv[1])
@@ -47,9 +47,9 @@ elif largv == 6:
         sys.stdout.write("<?xml version='1.0'?>\n"
         "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
         "<platform version=\"3\">\n"
-        "  <process host=\"node0\" function=\"injector.Injector\"> </process>\n")
+        "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n" % (node))
 
-        for i in range(1, nb_nodes):
+        for i in range(1, nb_nodes+1):
 
                 line = "  <process host=\"node%d\" function=\"simulation.DistributedResolver\">\n \
                 <argument value=\"node%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" /><argument value=\"%d\" />\n \
@@ -70,5 +70,5 @@ elif largv == 6:
         sys.stdout.write("</platform>")
 
 else:
-        print("Usage: python generate.py nb_nodes or python generate.py nb_nodes nb_cpu total_cpu_cap ram port > dvms_deploy.xml")
+        print("Usage: python generate.py scheduling_policy nb_nodes or python generate.py distributed nb_nodes nb_cpu total_cpu_cap ram port > dvms_deploy.xml")
         sys.exit(1)

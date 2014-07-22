@@ -65,7 +65,6 @@ public class Injector extends Process {
         long id=0;
         XVM tempVM;
 
-        //        currentTime+=Math.round(exponentialDis(randExpDis, lambda));
         currentTime+=exponentialDis(randExpDis, lambda);
 
         Random randVMPicker = new Random(SimulatorProperties.getSeed());
@@ -78,9 +77,8 @@ public class Injector extends Process {
             // and change its state
 
             int cpuConsumptionSlot = maxCPUDemand/nbOfCPUDemandSlots;
-                /*Uniform assignment of VM getCPUDemand */
-            //int slot=(int) (Math.random()*(nbOfCPUDemandSlots+1));
-                /* Gaussian law for the getCPUDemand assignment */
+
+            /* Gaussian law for the getCPUDemand assignment */
             gLoad = Math.max((randExpDis2.nextGaussian()*sigma)+mean, 0);
             int slot= (int) Math.round(Math.min(100,gLoad)*nbOfCPUDemandSlots/100);
 
@@ -119,7 +117,7 @@ public class Injector extends Process {
 
         while(currentTime < duration){
             // select a host
-            tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
+            tempHost = xhosts[randHostPicker.nextInt(nbOfHosts+1)];
             // and change its state
             // false = off , on = true
             // Add a new event queue

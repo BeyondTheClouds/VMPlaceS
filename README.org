@@ -31,7 +31,7 @@ According to the investigated algorithm, VMs are relocated through the different
 The ultimate objective of the Simgrid Injector VM framework is to deliver a building block that will enable to compare fairly different VM placement algorithms.
 
 ** Configure your development environment
-SBT TODO
+SBT TODO Jonathan Pastor
 
 ** Launcher
 Once you have configured the different parameters of your simulation (config/simulator.properties), you can run the simulation by executing the simulation.Main class.
@@ -48,6 +48,9 @@ You can if you want change the network topology as well as the network capabilit
 documentation, section Platform description)
 WARNING: please keep in mind that due to the fact the capability in terms of cores number/cpu/ramsize is defined in the simulator.properties files, nodes will stay homogeneous.
 
+The injector runs on node((nb_node)+1) and the node0 is reserved to run specific services.
+For instance, if you have configured the simulation in order to simulate the centralized approach with 10 nodes. Node 0 will run the event injector, Node[1-10] will host the VMs and the scheduler will  be launched on node 11.
+This is important as the crash injector only consider nodes between 0 (inclusive) and nb_nodes. In other words, the injector node can never crash.
 
 ** Implement/evaluate a new algorithm
 TODO - Describe the process to add a new scheduler into the injector
