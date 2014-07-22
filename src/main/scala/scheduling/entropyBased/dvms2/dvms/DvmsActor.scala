@@ -44,13 +44,15 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   /* Local states of a DVMS agent */
 
-  def firstOut: Option[SGNodeRef] = {
-    val filter: List[String] = currentPartition match {
-      case Some(p) => p.nodes.map(n => n.getName)
-      case None => Nil
-    }
-    SimpleOverlay.giveSomeNeighbour(filter)
-  }
+//  def firstOut: Option[SGNodeRef] = {
+//    val filter: List[String] = currentPartition match {
+//      case Some(p) => p.nodes.map(n => n.getName)
+//      case None => Nil
+//    }
+//    SimpleOverlay.giveSomeNeighbour(filter)
+//  }
+
+  var firstOut: Option[SGNodeRef] = None
 
   var currentPartition: Option[DvmsPartition] = None
   var lastPartitionUpdateDate: Option[Double] = None
@@ -400,9 +402,17 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-timeout", new Array[String](0)) {
           def main(args: Array[String]) {
-            while (true) {
+            val startingPartitionId: UUID = currentPartition.get.id
+            var continue: Boolean = true
+            while (continue) {
+
               updateTimeout(partition)
               waitFor(0.5)
+
+              continue = currentPartition match {
+                case Some(partition) if(partition.id == startingPartitionId) => true
+                case _ => false
+              }
             }
           }
         }
@@ -436,13 +446,14 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
           }
         }
 
-        timeoutProcess.kill()
+//        timeoutProcess.kill()
 
         logInfo(s"$applicationRef: reconfiguration plan $solution has been applied, dissolving partition $partition")
 
-        partition.nodes.foreach(node => {
-          send(node, DissolvePartition("Reconfiguration plan has been applied"))
-        })
+        dissolvePartition("Reconfiguration plan has been applied")
+//        partition.nodes.foreach(node => {
+//          send(node, DissolvePartition("Reconfiguration plan has been applied"))
+//        })
 
       case None =>
         logInfo("cannot apply reconfigurationSolution: current partition is undefined")
@@ -519,7 +530,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       }
 
     case ThisIsYourNeighbor(node) =>
-//      firstOut = Some(node)
+      firstOut = Some(node)
 
     case msg => forward(applicationRef, sender, msg)
   }

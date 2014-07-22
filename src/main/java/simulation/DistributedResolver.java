@@ -42,15 +42,6 @@ public class DistributedResolver extends Process {
 
             while (!SimulatorManager.isEndOfInjection()) {
 
-                if(Msg.getClock() > 400 && nodeId.equals("node4")) {
-                    dmvsProcess.suspend();
-                    monitorProcess.suspend();
-                    timeoutProcess.suspend();
-
-                    SimpleOverlay.setCrashed(nodeId);
-//                    host.off();
-                }
-
                 waitFor(3);
 
             }
