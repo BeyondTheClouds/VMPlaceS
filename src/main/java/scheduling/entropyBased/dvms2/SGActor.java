@@ -19,10 +19,10 @@ public class SGActor {
 
     public void send(SGNodeRef node, Object message){
 
-//        if(message != "checkTimeout") {
-//            MSG_COUNT++;
-//            System.out.println("MSG_COUNT["+ Msg.getClock()+"]: "+MSG_COUNT+" -> "+message+"@"+node);
-//        }
+        if(message != "checkTimeout" && message != "overloadingDetected") {
+            MSG_COUNT++;
+            System.out.println("MSG_COUNT["+ Msg.getClock()+"]: "+MSG_COUNT+" -> "+message+"@"+node);
+        }
 
         MsgForSG msg = new MsgForSG(message,
                 node+"", ref.getName() ,null);
