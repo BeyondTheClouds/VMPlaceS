@@ -126,7 +126,7 @@ import java.util.Date;
         /* The initial deployment is based on a round robin fashion */
         System.out.println("Configure simulation" + new Date().toString());
         SimulatorManager.cleanLog();
-        SimulatorManager.instanciateVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfVMs(),true);
+        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
         SimulatorManager.writeCurrentConfiguration();
 
 	    /*  execute the simulation. */

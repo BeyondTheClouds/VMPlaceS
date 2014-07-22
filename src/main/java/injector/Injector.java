@@ -28,7 +28,7 @@ public class Injector extends Process {
 	    super(host, name, args);
        // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
-       // System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
+        //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
         faultQueue =generateFaultQueue(SimulatorManager.getSGHosts().toArray(new XHost[SimulatorManager.getSGHosts().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
        // System.out.println("Size of fault queue:"+faultQueue.size());
         evtQueue = mergeQueues(loadQueue,faultQueue);
@@ -107,6 +107,8 @@ public class Injector extends Process {
 
         int nbOfHosts=xhosts.length;
 
+        System.out.println("make an exception"+xhosts[nbOfHosts]);
+
         double lambda=lambdaPerHost*nbOfHosts;
         long id=0;
         XHost tempHost;
@@ -117,7 +119,7 @@ public class Injector extends Process {
 
         while(currentTime < duration){
             // select a host
-            tempHost = xhosts[randHostPicker.nextInt(nbOfHosts+1)];
+            tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
             // and change its state
             // false = off , on = true
             // Add a new event queue

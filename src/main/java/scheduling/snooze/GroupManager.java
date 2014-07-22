@@ -373,12 +373,12 @@ public class GroupManager extends Process {
         }
 
         Logger.info("Computation time (in ms):" + computationTime);
-       // TODO Adrien
+       // TODO Adrien + Add trace calls
        // SimulatorManager.incEntropyComputationTime(computationTime;);
 
         if (computingState.equals(Scheduler.ComputingState.NO_RECONFIGURATION_NEEDED)) {
             Logger.info("Configuration remains unchanged");
-            Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
+            Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
         } else if (computingState.equals(Scheduler.ComputingState.SUCCESS)) {
             int cost = scheduler.getReconfigurationPlanCost();
 
@@ -407,10 +407,10 @@ public class GroupManager extends Process {
         }
 
 		/* Tracing code */
-        for (XHost h : SimulatorManager.getSGHosts())
+        for (XHost h : SimulatorManager.getSGHostingHosts())
             Trace.hostSetState(h.getName(), "SERVICE", "free");
 
-        Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
+        Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
     }
 

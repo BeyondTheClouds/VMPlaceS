@@ -36,7 +36,7 @@ public class CentralizedResolver extends Process {
         double period = EntropyProperties.getEntropyPeriodicity();
 		int numberOfCrash = 0;
 
-		Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
+		Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
         long previousDuration = 0;
 
@@ -55,9 +55,9 @@ public class CentralizedResolver extends Process {
             double reconfigurationTime = 0;
 
 			/* Tracing code */
-			Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "compute");
+			Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute");
 		    int i;
-            for (XHost h:SimulatorManager.getSGHosts()){
+            for (XHost h:SimulatorManager.getSGHostingHosts()){
 				if(!h.isViable())
 					Trace.hostPushState(h.getName(), "PM", "violation-det");
 				Trace.hostSetState(h.getName(), "SERVICE", "booked");
@@ -65,7 +65,7 @@ public class CentralizedResolver extends Process {
 
 			Msg.info("Launching scheduler (loopId = "+loopID+") - start to compute");
 
-			scheduler = new Entropy2RP((Configuration)Entropy2RP.ExtractConfiguration(SimulatorManager.getSGHosts()), loopID ++);
+			scheduler = new Entropy2RP((Configuration)Entropy2RP.ExtractConfiguration(SimulatorManager.getSGHostingHosts()), loopID ++);
 
             beginTimeOfCompute = System.currentTimeMillis();
 			computingState = scheduler.computeReconfigurationPlan();
@@ -79,13 +79,12 @@ public class CentralizedResolver extends Process {
 
 			if(computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)){
 				Msg.info("Configuration remains unchanged");
-				Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
 			} else if(computingState.equals(ComputingState.SUCCESS)){
 				int cost = scheduler.getReconfigurationPlanCost();
 
 				/* Tracing code */
 				// TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
-				for (XHost h: SimulatorManager.getSGHosts())
+				for (XHost h: SimulatorManager.getSGHostingHosts())
 					Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
 
 				Msg.info("Starting reconfiguration");
@@ -105,15 +104,13 @@ public class CentralizedResolver extends Process {
 			}
 
 		/* Tracing code */
-	    	for (XHost h: SimulatorManager.getSGHosts())
+	    	for (XHost h: SimulatorManager.getSGHostingHosts())
 					Trace.hostSetState(h.getName(), "SERVICE", "free");
 
-            Trace.hostSetState(SimulatorManager.getServiceNodeName(), "SERVICE", "free");
+            Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
 
 		}
-
 	}
-
 
     private static void incMig(){
         Trace.hostVariableAdd("node0", "NB_MIG", 1);
