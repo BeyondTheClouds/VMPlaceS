@@ -29,14 +29,20 @@ public class Multicast extends Process {
     }
 
     @Override
-    public void main(String[] strings) throws MsgException {
+    public void main(String[] strings) {
         Test.multicast = this;
         while (true) {
-            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-            handle(m);
-            glDead();
-            gmDead();
-            sleep(AUX.DefaultComputeInterval);
+            try {
+                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+                handle(m);
+                glDead();
+                gmDead();
+                sleep(AUX.DefaultComputeInterval);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
         }
     }
 
