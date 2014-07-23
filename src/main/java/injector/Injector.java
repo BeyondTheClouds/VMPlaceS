@@ -122,12 +122,18 @@ public class Injector extends Process {
             // false = off , on = true
             // Add a new event queue
             faultQueue.add(new FaultEvent(id++, currentTime,tempHost, false));
-            //For the moment, downtime of a node is arbitrarily set to 5 min
-            faultQueue.add(new FaultEvent(id++, currentTime+(300),tempHost, true));
+            if(currentTime+300 < duration)
+                //For the moment, downtime of a node is arbitrarily set to 5 min
+                faultQueue.add(new FaultEvent(id++, currentTime+(300),tempHost, true));
             currentTime+=exponentialDis(randExpDis, lambda);
             //        System.err.println(eventQueue.size());
         }
         Msg.info("Number of events:"+faultQueue.size());
+
+        for(InjectorEvent evt: faultQueue){
+            System.out.println(evt);
+        }
+
         return faultQueue;
     }
 
@@ -162,9 +168,11 @@ public class Injector extends Process {
 	public void main(String[] args) throws MsgException {
 
         for(InjectorEvent evt: this.evtQueue){
-         //   System.out.println(evt);
+            System.out.println(evt);
         }
 
+
+        System.exit(-1);
 		/* Initialization is done in Main */
    
 		if(!SimulatorManager.isViable()){

@@ -1,5 +1,6 @@
 package simulation;
 
+import java.util.Collection;
 import java.util.Random;
 
 import configuration.SimulatorProperties;
@@ -31,7 +32,7 @@ public class CentralizedResolver extends Process {
      * A stupid main to easily comment main2 ;)
 	 */
     public void main(String[] args) throws MsgException{
-       main2(args);
+       //main2(args);
     }
     public void main2(String[] args) throws MsgException {
         double period = EntropyProperties.getEntropyPeriodicity();
@@ -50,8 +51,9 @@ public class CentralizedResolver extends Process {
                 Process.sleep(wait); // instead of waitFor that takes into account only seconds
 
 			/* Compute and apply the plan */
-            scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(SimulatorManager.getSGHostingHosts()), loopID++);
-            entropyRes = scheduler.checkAndReconfigure(SimulatorManager.getSGHostingHosts());
+            Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
+            scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
+            entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
             previousDuration = entropyRes.getDuration();
             if (entropyRes.getRes() == 0) {
                 Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");

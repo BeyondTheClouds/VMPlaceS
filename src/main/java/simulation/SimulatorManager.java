@@ -142,6 +142,18 @@ public class SimulatorManager {
     }
 
     /**
+     * @return the collection of XHosts that have been declared as hosting nodes (i.e. that can host VMs) and that are turned on.
+     */
+    public static Collection<XHost> getSGTurnOnHostingHosts() {
+        LinkedList<XHost> tmp = new LinkedList<XHost>();
+        for (XHost h: sgHostingHosts){
+            if (!h.isOff())
+                tmp.add(h);
+        }
+        return tmp;
+    }
+
+    /**
      * @return the collection of XHosts that have been declared as services nodes (i.e. that cannot host VMs)
      */
     public static Collection<XHost> getSGServiceHosts(){
