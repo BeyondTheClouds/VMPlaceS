@@ -30,7 +30,7 @@ public class LocalController extends Process {
     }
 
     @Override
-    public void main(String[] args) throws MsgException {
+    public void main(String[] args) {
         Test.lcs.remove(this);
         Logger.info("Start LC " + args[0] + ", " + args[1]);
         init(SimulatorManager.getXHostByName(args[0]), args[1]);
@@ -39,7 +39,7 @@ public class LocalController extends Process {
         startBeats();
         startLCChargeToGM();
         while (true) {
-            try{
+            try {
                 SnoozeMsg m = AUX.arecv(inbox);
                 if (m != null) handle(m);
                 gmDead();
@@ -147,37 +147,41 @@ public class LocalController extends Process {
     /**
      * Send LC beat to GM
      */
-    void startBeats() throws HostNotFoundException {
-        new Process(host.getSGHost(), host.getSGHost().getName()+"-lcBeats") {
-            public void main(String[] args) throws HostFailureException {
-                String glHostname = host.getName();
-                while (true) {
-                    BeatLCMsg m = new BeatLCMsg(host.getName(), AUX.gmInbox(gmHostname), null, null);
-                    m.send();
+    void startBeats() {
+        try {
+            new Process(host.getSGHost(), host.getSGHost().getName() + "-lcBeats") {
+                public void main(String[] args) throws HostFailureException {
+                    String glHostname = host.getName();
+                    while (true) {
+                        BeatLCMsg m = new BeatLCMsg(host.getName(), AUX.gmInbox(gmHostname), null, null);
+                        m.send();
 //                    Logger.info("[LC.beat] " + m);
-                    sleep(AUX.HeartbeatInterval);
+                        sleep(AUX.HeartbeatInterval);
+                    }
                 }
-            }
-        }.start();
+            }.start();
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
 
     /**
      * Send LC beats to GM
      */
-    void startLCChargeToGM() throws HostNotFoundException {
-        final XHost h = host;
-        new Process(host.getSGHost(), host.getSGHost().getName() + "-lcCharge") {
-            public void main(String[] args) throws HostFailureException {
-                while (true) {
-                    LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand());
-                    LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
-                    m.send();
+    void startLCChargeToGM() {
+        try {
+            final XHost h = host;
+            new Process(host.getSGHost(), host.getSGHost().getName() + "-lcCharge") {
+                public void main(String[] args) throws HostFailureException {
+                    while (true) {
+                        LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand());
+                        LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
+                        m.send();
 //                    Logger.info("[LC.startLCChargeToGM] Charge sent: " + m);
-                    sleep(AUX.HeartbeatInterval);
+                        sleep(AUX.HeartbeatInterval);
+                    }
                 }
-            }
-        }.start();
+            }.start();
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     void totalHostCapacity() {

@@ -26,18 +26,22 @@ public class GroupLeader extends Process {
     }
 
     @Override
-    public void main(String[] strings) throws MsgException {
+    public void main(String[] strings) {
         Test.gl = this;
         Logger.info("[GL.main] GL started: " + host.getName());
         startBeats();
         while (true) {
-            SnoozeMsg m = AUX.arecv(inbox);
-            if (m != null) handle(m);
-            if (thisGLToBeTerminated) {
-                Logger.err("[GL.main] TBTerminated: " + host.getName());
-                break;
+            try {
+                SnoozeMsg m = AUX.arecv(inbox);
+                if (m != null) handle(m);
+                if (thisGLToBeTerminated) {
+                    Logger.err("[GL.main] TBTerminated: " + host.getName());
+                    break;
+                }
+                sleep(AUX.DefaultComputeInterval);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            sleep(AUX.DefaultComputeInterval);
         }
     }
 
@@ -138,18 +142,22 @@ public class GroupLeader extends Process {
     /**
      * Sends beats to multicast group
      */
-    void startBeats() throws HostNotFoundException {
-        new Process(host, host.getName()+"-glBeats") {
-            public void main(String[] args) throws HostFailureException {
-                String glHostname = host.getName();
-                while (!thisGLToBeTerminated) {
-                    BeatGLMsg m = new BeatGLMsg(glHostname, AUX.multicast, null, null);
-                    m.send();
-//                    Logger.info("[GL.beat] " + m);
-                    sleep(AUX.HeartbeatInterval);
+    void startBeats() {
+        try {
+            new Process(host, host.getName() + "-glBeats") {
+                public void main(String[] args) {
+                    String glHostname = host.getName();
+                    while (!thisGLToBeTerminated) {
+                        try {
+                            BeatGLMsg m = new BeatGLMsg(glHostname, AUX.multicast, null, null);
+                            m.send();
+//                        Logger.info("[GL.beat] " + m);
+                            sleep(AUX.HeartbeatInterval);
+                        } catch (Exception e) { e.printStackTrace(); }
+                    }
                 }
-            }
-        }.start();
+            }.start();
+        } catch (Exception e) { e.printStackTrace(); }
     }
 
     void dispatchVMRequest() {
