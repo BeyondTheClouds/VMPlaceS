@@ -4,8 +4,6 @@ import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import org.simgrid.trace.Trace;
-import scheduling.Scheduler;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
@@ -248,10 +246,12 @@ public class GroupManager extends Process {
             new Process(host, host.getName() + "-gmBeats") {
                 public void main(String[] args) throws HostFailureException {
                     while (!thisGMToBeStopped) {
-                        BeatGMMsg m = new BeatGMMsg(host.getName(), AUX.multicast, null, null);
-                        m.send();
-//                    Logger.info("[GM.startBeats] " + m);
-                        sleep(AUX.HeartbeatInterval);
+                        try {
+                            BeatGMMsg m = new BeatGMMsg(host.getName(), AUX.multicast, null, null);
+                            m.send();
+//                        Logger.info("[GM.startBeats] " + m);
+                            sleep(AUX.HeartbeatInterval);
+                        } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
             }.start();
@@ -266,8 +266,10 @@ public class GroupManager extends Process {
             new Process(host, host.getName() + "-gmScheduling") {
                 public void main(String[] args) throws HostFailureException {
                     while (!thisGMToBeStopped) {
-                        scheduleVMs();
-                        sleep(1);  // TODO: to be adapted (removed?)
+                        try {
+                            scheduleVMs();
+                            sleep(1);  // TODO: to be adapted (removed?)
+                        } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
             }.start();
@@ -284,8 +286,10 @@ public class GroupManager extends Process {
             new Process(host, host.getName() + "-gmSummaryInfoToGL") {
                 public void main(String[] args) throws HostFailureException {
                     while (!thisGMToBeStopped) {
-                        summaryInfoToGL();
-                        sleep(AUX.HeartbeatInterval);
+                        try {
+                            summaryInfoToGL();
+                            sleep(AUX.HeartbeatInterval);
+                        } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
             }.start();

@@ -67,8 +67,8 @@ public class Test extends Process {
     void procAddLCs() throws HostNotFoundException {
         new Process(host, host.getName() + "-addLCs") {
             public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
-                sleep(5000);
-                int lcNo = 21; // no. of statically allocated LCs
+                sleep(3000);
+                int lcNo = 20; // no. of statically allocated LCs
 //                while (!testsToBeTerminated) {
                 for (int i=0; i<20; i++) {
                     String[] lcArgs = new String[] {"node"+lcNo, "dynLocalController-"+lcNo};
@@ -77,7 +77,7 @@ public class Test extends Process {
                     lc.start();
                     Logger.info("[Test.procAddLCs] Dyn. LC added: " + lcArgs[1]);
                     lcNo++;
-                    sleep(5000);
+                    sleep(2000);
                 }
                 sleep(AUX.DefaultComputeInterval);
             }
@@ -97,7 +97,7 @@ public class Test extends Process {
                     m = new TestFailGLMsg(name, AUX.glInbox(multicast.glHostname), null, null);
                     m.send();
                     Logger.info("[Test.terminateGMs] GL failure: " + Test.gl.getHost().getName());
-                    sleep(10000);
+                    sleep(3000);
                 }
             }
         }.start();
@@ -106,7 +106,7 @@ public class Test extends Process {
     void procTerminateGMs() throws HostNotFoundException {
         new Process(host, host.getName() + "-terminateGMs") {
             public void main(String[] args) throws HostFailureException {
-                sleep(5000);
+                sleep(7500);
                 while (!testsToBeTerminated) {
                     if (multicast.gmInfo.size() < 3) {
                         Logger.info("[Test.terminateGMs] #GMs: " + multicast.gmInfo.size());
@@ -117,7 +117,7 @@ public class Test extends Process {
                     m = new TestFailGMMsg(name, AUX.gmInbox(gm), null, null);
                     m.send();
                     Logger.info("[Test.terminateGMs] Term. GM: " + gm + ", #GMs: " + multicast.gmInfo.size());
-                    sleep(10000);
+                    sleep(3000);
                 }
             }
         }.start();

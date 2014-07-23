@@ -153,10 +153,12 @@ public class LocalController extends Process {
                 public void main(String[] args) throws HostFailureException {
                     String glHostname = host.getName();
                     while (true) {
-                        BeatLCMsg m = new BeatLCMsg(host.getName(), AUX.gmInbox(gmHostname), null, null);
-                        m.send();
-//                    Logger.info("[LC.beat] " + m);
-                        sleep(AUX.HeartbeatInterval);
+                        try {
+                            BeatLCMsg m = new BeatLCMsg(host.getName(), AUX.gmInbox(gmHostname), null, null);
+                            m.send();
+//                        Logger.info("[LC.beat] " + m);
+                            sleep(AUX.HeartbeatInterval);
+                        } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
             }.start();
@@ -173,11 +175,13 @@ public class LocalController extends Process {
             new Process(host.getSGHost(), host.getSGHost().getName() + "-lcCharge") {
                 public void main(String[] args) throws HostFailureException {
                     while (true) {
-                        LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand());
-                        LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
-                        m.send();
+                        try {
+                            LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand());
+                            LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
+                            m.send();
 //                    Logger.info("[LC.startLCChargeToGM] Charge sent: " + m);
-                        sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval);
+                        } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
             }.start();
