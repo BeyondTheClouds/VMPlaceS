@@ -11,7 +11,8 @@ import configuration.XHost;
 import configuration.XVM;
 import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
-import org.simgrid.msg.HostFailureException;
+import org.simgrid.msg.*;
+import org.simgrid.trace.Trace;
 import scheduling.entropyBased.EntropyProperties;
 import scheduling.Scheduler;
 import simulation.CentralizedResolver;
@@ -27,6 +28,7 @@ import entropy.plan.choco.ChocoCustomRP;
 import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
+import simulation.SimulatorManager;
 
 public class Entropy2RP extends AbstractScheduler implements Scheduler {
 	
@@ -197,69 +199,137 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 		}
 	}
 
-	
-	//Apply the reconfiguration plan logically (i.e. create/delete Java objects)
-		private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException{
-			Map<Action, List<Dependencies>> revDependencies = new HashMap<Action, List<Dependencies>>();
-			TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
 
-			//Set the reverse dependencies map
-			for (Dependencies dep : g.extractDependencies()) {
-			    for (Action a : dep.getUnsatisfiedDependencies()) {
-			        if (!revDependencies.containsKey(a)) {
-			            revDependencies.put(a, new LinkedList<Dependencies>());
-			        }
-			        revDependencies.get(a).add(dep);
-			    }
-			}
+    //Apply the reconfiguration plan logically (i.e. create/delete Java objects)
+    private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException{
+        Map<Action, List<Dependencies>> revDependencies = new HashMap<Action, List<Dependencies>>();
+        TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
 
-			//Start the feasible actions
-			// ie, actions with a start moment equals to 0.
-			for (Action a : sortedActions) {
-			    if (a.getStartMoment() == 0) {
-			        instantiateAndStart(a);
-			    }
-			    
-			    if (revDependencies.containsKey(a)) {
-				    //Get the associated depenencies and update it
-				    for (Dependencies dep : revDependencies.get(a)) {
-				        dep.removeDependency(a);
-				        //Launch new feasible actions.
-				        if (dep.isFeasible()) {
-				            instantiateAndStart(dep.getAction());
-				        }
-				    }
-				}
-			}
+        //Set the reverse dependencies map
+        for (Dependencies dep : g.extractDependencies()) {
+            for (Action a : dep.getUnsatisfiedDependencies()) {
+                if (!revDependencies.containsKey(a)) {
+                    revDependencies.put(a, new LinkedList<Dependencies>());
+                }
+                revDependencies.get(a).add(dep);
+            }
+        }
 
-            // Wait for completion of all migrations
-            while(CentralizedResolver.ongoingMigration()){
-                try {
-                    org.simgrid.msg.Process.currentProcess().waitFor(1);
-                } catch (HostFailureException e) {
-                    e.printStackTrace();
+        //Start the feasible actions
+        // ie, actions with a start moment equals to 0.
+        for (Action a : sortedActions) {
+            if (a.getStartMoment() == 0) {
+                instantiateAndStart(a);
+            }
+
+            if (revDependencies.containsKey(a)) {
+                //Get the associated depenencies and update it
+                for (Dependencies dep : revDependencies.get(a)) {
+                    dep.removeDependency(a);
+                    //Launch new feasible actions.
+                    if (dep.isFeasible()) {
+                        instantiateAndStart(dep.getAction());
+                    }
                 }
             }
-		}
-		
-            private void instantiateAndStart(Action a) throws InterruptedException{
-                if(a instanceof Migration){
-                    Migration migration = (Migration)a;
-                    CentralizedResolver.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
-                } else{
-                    Logger.log("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
-			}
-		}
+        }
 
+        // Wait for completion of all migrations
+        while(CentralizedResolver.ongoingMigration()){
+            try {
+                org.simgrid.msg.Process.currentProcess().waitFor(1);
+            } catch (HostFailureException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
+    private void instantiateAndStart(Action a) throws InterruptedException{
+        if(a instanceof Migration){
+            Migration migration = (Migration)a;
+            CentralizedResolver.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
+        } else{
+            Logger.log("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
+        }
+    }
 
- // Create configuration for Entropy
+    /**
+     * @param hostsToCheck
+     * @return the duration of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
+     */
+    public Entropy2RPRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
+
+        long beginTimeOfCompute;
+        long endTimeOfCompute;
+        long computationTime;
+        ComputingState computingState;
+        long reconfigurationTime = 0;
+        Entropy2RPRes enRes = new Entropy2RPRes();
+
+			/* Tracing code */
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute");
+        int i;
+        for (XHost h : hostsToCheck) {
+            if (!h.isViable())
+                Trace.hostPushState(h.getName(), "PM", "violation-det");
+            Trace.hostSetState(h.getName(), "SERVICE", "booked");
+        }
+
+        Msg.info("Launching scheduler (loopId = " + loopID + ") - start to compute");
+
+        beginTimeOfCompute = System.currentTimeMillis();
+        computingState = this.computeReconfigurationPlan();
+        endTimeOfCompute = System.currentTimeMillis();
+        computationTime = (endTimeOfCompute - beginTimeOfCompute);
+
+        try {
+            org.simgrid.msg.Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
+        } catch (HostFailureException e) {
+            e.printStackTrace();
+        }
+
+        Msg.info("Computation time (in ms):" + computationTime);
+        enRes.setDuration(computationTime);
+
+        if (computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)) {
+            Msg.info("Configuration remains unchanged");
+        } else if (computingState.equals(ComputingState.SUCCESS)) {
+            int cost = this.getReconfigurationPlanCost();
+
+				/* Tracing code */
+            // TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
+            for (XHost h : hostsToCheck)
+                Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
+
+            Msg.info("Starting reconfiguration");
+            double startReconfigurationTime = Msg.getClock();
+            this.applyReconfigurationPlan();
+            double endReconfigurationTime = Msg.getClock();
+            reconfigurationTime = ((long) (endReconfigurationTime - startReconfigurationTime) * 1000);
+            Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
+            enRes.setDuration(enRes.getDuration() + reconfigurationTime);
+            Msg.info("Number of nodes used: " + SimulatorManager.getNbOfUsedHosts());
+            enRes.setRes(0);
+        } else {
+            Msg.info("Entropy did not find any viable solution");
+            enRes.setRes(-1);
+        }
+
+		/* Tracing code */
+        for (XHost h : hostsToCheck)
+            Trace.hostSetState(h.getName(), "SERVICE", "free");
+
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
+        return enRes;
+    }
+
+    // Create configuration for Entropy
     public static Object ExtractConfiguration(Collection<XHost> xhosts) {
         Configuration currConf = new SimpleConfiguration();
 
         // Add nodes
         for (XHost tmpH:xhosts){
-                // Consider only hosts that are on
+                // Consider only hosts that are turned on
                 if (!tmpH.isOff()) {
                     Node tmpENode = new SimpleNode(tmpH.getName(), tmpH.getNbCores(), tmpH.getCPUCapacity(), tmpH.getMemSize());
                     currConf.addOnline(tmpENode);
@@ -274,4 +344,31 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
         return currConf;
     }
+
+    public class Entropy2RPRes{
+        private int res;
+        private long duration;
+
+        Entropy2RPRes(){
+            this.res = 0;
+            this.duration = 0;
+        }
+
+        public void setRes(int res) {
+            this.res = res;
+        }
+
+        public long getDuration() {
+            return duration;
+        }
+
+        public void setDuration(long duration) {
+            this.duration = duration;
+        }
+
+        public int getRes() {
+            return res;
+        }
+    }
+
 }

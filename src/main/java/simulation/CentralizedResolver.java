@@ -21,7 +21,8 @@ public class CentralizedResolver extends Process {
     static int ongoingMigration = 0 ;
     static int loopID = 0 ;
 
-	CentralizedResolver(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
+
+    CentralizedResolver(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
 		super(host, name, args);
 	}
 
@@ -32,85 +33,39 @@ public class CentralizedResolver extends Process {
     public void main(String[] args) throws MsgException{
        main2(args);
     }
-    public void main2(String[] args) throws MsgException{
+    public void main2(String[] args) throws MsgException {
         double period = EntropyProperties.getEntropyPeriodicity();
-		int numberOfCrash = 0;
+        int numberOfCrash = 0;
+        int numberOfBrokenPlan = 0;
 
-		Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
+        Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
         long previousDuration = 0;
+        Entropy2RP scheduler;
+        Entropy2RP.Entropy2RPRes entropyRes;
+        while (!SimulatorManager.isEndOfInjection()) {
 
-        while(!SimulatorManager.isEndOfInjection()) {
-
-            long wait = ((long)(period*1000)) - previousDuration;
+            long wait = ((long) (period * 1000)) - previousDuration;
             if (wait > 0)
                 Process.sleep(wait); // instead of waitFor that takes into account only seconds
 
 			/* Compute and apply the plan */
-			Scheduler scheduler;
-			long beginTimeOfCompute;
-			long endTimeOfCompute;
-			long computationTime;
-			ComputingState computingState;
-            double reconfigurationTime = 0;
-
-			/* Tracing code */
-			Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute");
-		    int i;
-            for (XHost h:SimulatorManager.getSGHostingHosts()){
-				if(!h.isViable())
-					Trace.hostPushState(h.getName(), "PM", "violation-det");
-				Trace.hostSetState(h.getName(), "SERVICE", "booked");
+            scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(SimulatorManager.getSGHostingHosts()), loopID++);
+            entropyRes = scheduler.checkAndReconfigure(SimulatorManager.getSGHostingHosts());
+            previousDuration = entropyRes.getDuration();
+            if (entropyRes.getRes() == 0) {
+                Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");
+            } else if (entropyRes.getRes() == -1) {
+                Msg.info("No viable solution (duration: " + previousDuration + ")");
+                numberOfCrash++;
+            } else { // res == -2 Reconfiguration has not been correctly performed
+                Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
+                numberOfBrokenPlan++;
             }
+        }
+        Msg.info("Entropy2RP did not find solutions "+numberOfCrash+" times / "+loopID+" and "+numberOfBrokenPlan+" plans have not been completely performed");
 
-			Msg.info("Launching scheduler (loopId = "+loopID+") - start to compute");
-
-			scheduler = new Entropy2RP((Configuration)Entropy2RP.ExtractConfiguration(SimulatorManager.getSGHostingHosts()), loopID ++);
-
-            beginTimeOfCompute = System.currentTimeMillis();
-			computingState = scheduler.computeReconfigurationPlan();
-			endTimeOfCompute = System.currentTimeMillis();
-			computationTime = (endTimeOfCompute - beginTimeOfCompute);
-
-            Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
-
-			Msg.info("Computation time (in ms):" + computationTime);
-            previousDuration = computationTime ;
-
-			if(computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)){
-				Msg.info("Configuration remains unchanged");
-			} else if(computingState.equals(ComputingState.SUCCESS)){
-				int cost = scheduler.getReconfigurationPlanCost();
-
-				/* Tracing code */
-				// TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
-				for (XHost h: SimulatorManager.getSGHostingHosts())
-					Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
-
-				Msg.info("Starting reconfiguration");
-                double startReconfigurationTime =  Msg.getClock() * 1000;
-				scheduler.applyReconfigurationPlan();
-				double endReconfigurationTime =  Msg.getClock() * 1000;
-                reconfigurationTime = endReconfigurationTime - startReconfigurationTime;
-                Msg.info("Reconfiguration time (in ms): "+ reconfigurationTime);
-                previousDuration += reconfigurationTime ;
-
-				Msg.info("Number of nodes used: " + SimulatorManager.getNbOfUsedHosts()) ;
-
-			} else { 
-				System.err.println("The resolver does not find any solutions - EXIT");
-				numberOfCrash++;
-				Msg.info("Entropy has encountered an error (nb: " + numberOfCrash +")");
-			}
-
-		/* Tracing code */
-	    	for (XHost h: SimulatorManager.getSGHostingHosts())
-					Trace.hostSetState(h.getName(), "SERVICE", "free");
-
-            Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
-
-		}
-	}
+    }
 
     private static void incMig(){
         Trace.hostVariableAdd("node0", "NB_MIG", 1);
