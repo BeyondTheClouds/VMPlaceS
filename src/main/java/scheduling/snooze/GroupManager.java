@@ -39,27 +39,31 @@ public class GroupManager extends Process {
     }
 
     @Override
-    public void main(String[] strings) throws MsgException {
-        Test.gms.remove(this);
-        join();
-        Test.gms.add(this);
-        startBeats();
-        startSummaryInfoToGL();
+    public void main(String[] strings) {
+            Test.gms.remove(this);
+            join();
+            Test.gms.add(this);
+            startBeats();
+            startSummaryInfoToGL();
 //        startScheduling();
-        while (true) {
-            SnoozeMsg m = AUX.arecv(inbox);
-            if (m != null) handle(m);
-            if (!thisGMToBeStopped) {
-                glDead();
-                deadLCs();
-                sleep(AUX.DefaultComputeInterval);
-            } else {
-                Logger.err("[GM.main] GM stops: " + m);
-                break;
+            while (true) {
+                try {
+                    SnoozeMsg m = AUX.arecv(inbox);
+                    if (m != null) handle(m);
+                    if (!thisGMToBeStopped) {
+                        glDead();
+                        deadLCs();
+                        sleep(AUX.DefaultComputeInterval);
+                    } else {
+                        Logger.err("[GM.main] GM stops: " + m);
+                        break;
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
-        }
-        Logger.err("[GM.main] GM stopped: " + host.getName());
-        Test.gms.remove(this);
+            Logger.err("[GM.main] GM stopped: " + host.getName());
+            Test.gms.remove(this);
 //        sleep(2000);
     }
 
@@ -239,45 +243,55 @@ public class GroupManager extends Process {
     /**
      * Sends beats to multicast group
      */
-    void startBeats() throws HostNotFoundException {
-        new Process(host, host.getName()+"-gmBeats") {
-            public void main(String[] args) throws HostFailureException {
-                while (!thisGMToBeStopped) {
-                    BeatGMMsg m = new BeatGMMsg(host.getName(), AUX.multicast, null, null);
-                    m.send();
+    void startBeats() {
+        try {
+            new Process(host, host.getName() + "-gmBeats") {
+                public void main(String[] args) throws HostFailureException {
+                    while (!thisGMToBeStopped) {
+                        BeatGMMsg m = new BeatGMMsg(host.getName(), AUX.multicast, null, null);
+                        m.send();
 //                    Logger.info("[GM.startBeats] " + m);
-                    sleep(AUX.HeartbeatInterval);
+                        sleep(AUX.HeartbeatInterval);
+                    }
                 }
-            }
-        }.start();
+            }.start();
+        } catch (Exception e) {e.printStackTrace(); }
     }
 
     /**
      * Sends beats to multicast group
      */
-    void startScheduling() throws HostNotFoundException {
-        new Process(host, host.getName()+"-gmScheduling") {
-            public void main(String[] args) throws HostFailureException {
-                while (!thisGMToBeStopped) {
-                    scheduleVMs();
-                    sleep(1);  // TODO: to be adapted (removed?)
+    void startScheduling() {
+        try {
+            new Process(host, host.getName() + "-gmScheduling") {
+                public void main(String[] args) throws HostFailureException {
+                    while (!thisGMToBeStopped) {
+                        scheduleVMs();
+                        sleep(1);  // TODO: to be adapted (removed?)
+                    }
                 }
-            }
-        }.start();
+            }.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
      * Sends GM charge summary info to GL
      */
-    void startSummaryInfoToGL() throws HostNotFoundException {
-        new Process(host, host.getName()+"-gmSummaryInfoToGL") {
-            public void main(String[] args) throws HostFailureException {
-                while (!thisGMToBeStopped) {
-                    summaryInfoToGL();
-                    sleep(AUX.HeartbeatInterval);
+    void startSummaryInfoToGL() {
+        try {
+            new Process(host, host.getName() + "-gmSummaryInfoToGL") {
+                public void main(String[] args) throws HostFailureException {
+                    while (!thisGMToBeStopped) {
+                        summaryInfoToGL();
+                        sleep(AUX.HeartbeatInterval);
+                    }
                 }
-            }
-        }.start();
+            }.start();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     /**
