@@ -7,11 +7,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
 import org.simgrid.msg.*;
+import org.simgrid.msg.Process;
 import org.simgrid.trace.Trace;
 import scheduling.entropyBased.EntropyProperties;
 import scheduling.Scheduler;
@@ -238,7 +240,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         }
 
         // Wait for completion of all migrations
-        while(CentralizedResolver.ongoingMigration()){
+        while(this.ongoingMigration()){
             try {
                 org.simgrid.msg.Process.currentProcess().waitFor(1);
             } catch (HostFailureException e) {
@@ -250,7 +252,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     private void instantiateAndStart(Action a) throws InterruptedException{
         if(a instanceof Migration){
             Migration migration = (Migration)a;
-            CentralizedResolver.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
+            this.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
         } else{
             Logger.log("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
         }
@@ -269,7 +271,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         long reconfigurationTime = 0;
         Entropy2RPRes enRes = new Entropy2RPRes();
 
-			/* Tracing code */
+		/* Tracing code */
         Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute");
         int i;
         for (XHost h : hostsToCheck) {
@@ -334,7 +336,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         for (XHost tmpH:xhosts){
             // Consider only hosts that are turned on
             if (tmpH.isOff()) {
-                System.err.println("WTF, you are asking me to analyze a dead node ("+tmpH.getName()+")");
+                System.err.println("WTF, you are asking me to analyze a dead node (" + tmpH.getName() + ")");
                 System.exit(-1);
             }
 
@@ -351,6 +353,80 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
         return currConf;
     }
+
+    private int ongoingMigration = 0 ;
+
+    private void incMig(){
+        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);
+        this.ongoingMigration++ ;
+    }
+    private void decMig() {
+        this.ongoingMigration-- ;
+    }
+
+    private boolean ongoingMigration() {
+        return (this.ongoingMigration != 0);
+    }
+
+    public void relocateVM(String VMName, String sourceName, String destName) {
+        Random rand = new Random(SimulatorProperties.getSeed());
+
+        Msg.info("Relocate VM "+VMName+" (from "+sourceName+" to "+destName+")");
+
+        if(destName != null){
+            String[] args = new String[3];
+
+            args[0] = VMName;
+            args[1] = sourceName;
+            args[2] = destName;
+            // Asynchronous migration
+            // The process is launched on the source node
+            try {
+                incMig();
+                new Process(Host.getByName(sourceName),"Migrate-"+rand.nextDouble(),args) {
+                    public void main(String[] args){
+                        XHost destHost = null;
+                        XHost sourceHost = null;
+                        try {
+                            sourceHost = SimulatorManager.getXHostByName(args[1]);
+                            destHost = SimulatorManager.getXHostByName(args[2]);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                            System.err.println("You are trying to migrate from/to a non existing node");
+                        }
+                        if(destHost != null){
+                            if( !sourceHost.isOff() && !destHost.isOff() && sourceHost.migrate(args[0],destHost) == 0 ) {
+                                Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
+                                // Decrement the number of on-going migrating process
+                                decMig();
+                                if (!destHost.isViable()) {
+                                    Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
+                                    Trace.hostSetState(destHost.getName(), "PM", "violation-out");
+                                }
+                                if (sourceHost.isViable()) {
+                                    Msg.info("SOLVED VIOLATION ON " + sourceHost.getName() + "\n");
+                                    Trace.hostSetState(sourceHost.getName(), "PM", "normal");
+                                }
+                            }else{
+                                // TODO raise an exception since the migration crash and thus the reconfigurationPlan is not valid anymore
+                                //CentralizedResolved.setRPDeprecated();
+                                Msg.info("Reconfiguration plan cannot be completely applied so abort it");
+                                System.exit(-1);
+                            }
+                        }
+                    }
+                }.start();
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } else {
+            System.err.println("You are trying to relocate a VM on a non existing node");
+            System.exit(-1);
+        }
+    }
+
 
     public class Entropy2RPRes{
         private int res;
