@@ -36,6 +36,9 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 //	private ChocoCustomPowerRP planner;//Entropy2.0
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
 
+    public Entropy2RP(Configuration initialConfiguration) {
+        this(initialConfiguration, -1);
+    }
 
     public Entropy2RP(Configuration initialConfiguration, int loopID) {
 		super(initialConfiguration);
@@ -331,7 +334,8 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         for (XHost tmpH:xhosts){
             // Consider only hosts that are turned on
             if (tmpH.isOff()) {
-
+                System.err.println("WTF, you are asking me to analyze a dead node ("+tmpH.getName()+")");
+                System.exit(-1);
             }
 
             Node tmpENode = new SimpleNode(tmpH.getName(), tmpH.getNbCores(), tmpH.getCPUCapacity(), tmpH.getMemSize());

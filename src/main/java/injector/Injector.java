@@ -130,10 +130,6 @@ public class Injector extends Process {
         }
         Msg.info("Number of events:"+faultQueue.size());
 
-        for(InjectorEvent evt: faultQueue){
-            System.out.println(evt);
-        }
-
         return faultQueue;
     }
 
@@ -167,12 +163,12 @@ public class Injector extends Process {
     /* Args : nbPMs nbVMs eventFile */
 	public void main(String[] args) throws MsgException {
 
-        for(InjectorEvent evt: this.evtQueue){
-            System.out.println(evt);
-        }
+        /* Display the queue */
 
+        //for(InjectorEvent evt: this.evtQueue){
+        //    System.out.println(evt);
+        //}
 
-        System.exit(-1);
 		/* Initialization is done in Main */
    
 		if(!SimulatorManager.isViable()){

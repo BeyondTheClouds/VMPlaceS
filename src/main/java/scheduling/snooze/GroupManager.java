@@ -364,68 +364,23 @@ public class GroupManager extends Process {
 
     void scheduleVMs() {
 
-        Scheduler scheduler;
-        long beginTimeOfCompute;
-        long endTimeOfCompute;
-        long computationTime;
-        Scheduler.ComputingState computingState;
-        double reconfigurationTime = 0;
 
-        scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(this.getManagedXHosts()), -1);
-
-        Logger.info("Size of the GM: "+this.getManagedXHosts().size());
-        beginTimeOfCompute = System.currentTimeMillis();
-        computingState = scheduler.computeReconfigurationPlan();
-        endTimeOfCompute = System.currentTimeMillis();
-//        computationTime = (endTimeOfCompute - beginTimeOfCompute);
-        computationTime = AUX.EntropyComputationTime;
-
-        try {
-            Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
-        } catch (HostFailureException e) {
-            e.printStackTrace();
+        /* Compute and apply the plan */
+        Collection<XHost> hostsToCheck = this.getManagedXHosts();
+        Entropy2RP scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck));
+        Entropy2RP.Entropy2RPRes entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
+        long previousDuration = entropyRes.getDuration();
+        if (entropyRes.getRes() == 0) {
+            Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");
+        } else if (entropyRes.getRes() == -1) {
+            Msg.info("No viable solution (duration: " + previousDuration + ")");
+            // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
+            // numberOfCrash++;
+        } else { // res == -2 Reconfiguration has not been correctly performed
+            Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
+            // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
+            //numberOfBrokenPlan++;
         }
-
-        Logger.info("Computation time (in ms):" + computationTime);
-       // TODO Adrien + Add trace calls
-       // SimulatorManager.incEntropyComputationTime(computationTime;);
-
-        if (computingState.equals(Scheduler.ComputingState.NO_RECONFIGURATION_NEEDED)) {
-            Logger.info("Configuration remains unchanged");
-            Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
-        } else if (computingState.equals(Scheduler.ComputingState.SUCCESS)) {
-            int cost = scheduler.getReconfigurationPlanCost();
-
-			/* Tracing code */
-            // TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
-            for (XHost h : this.getManagedXHosts())
-                Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
-
-            Logger.info("Starting reconfiguration");
-            double startReconfigurationTime = Msg.getClock() * 1000;
-            scheduler.applyReconfigurationPlan();
-            double endReconfigurationTime = Msg.getClock() * 1000;
-            reconfigurationTime = endReconfigurationTime - startReconfigurationTime;
-            Logger.info("Reconfiguration time (in ms): " + reconfigurationTime);
-            // TODO Adrien
-            //SimulatorManager.incEntropyReconfigurationTime(reconfigurationTime);
-
-            Logger.info("Number of nodes used: " + SimulatorManager.getNbOfUsedHosts());
-
-        } else {
-            System.err.println("The resolver does not find any solutions - EXIT");
-            // TODO Adrien
-            //SimulatorManager.incEntropyNotFound();
-            // TODO Adrien
-            //Logger.info("Entropy has encountered an error (nb: " + SimulatorManager.getEntropyNotFound() + ")");
-        }
-
-		/* Tracing code */
-        for (XHost h : SimulatorManager.getSGHostingHosts())
-            Trace.hostSetState(h.getName(), "SERVICE", "free");
-
-        Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
-
     }
 
 
