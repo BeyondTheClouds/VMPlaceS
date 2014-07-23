@@ -80,7 +80,7 @@ import java.util.Date;
     		    Runtime.getRuntime().exec(cmd);
     	    }
     	    else if (SimulatorProperties.getAlgo().equals("hierarchical")) {
-                Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
+              Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
 
                 //"Usage: python generate.py nb_nodes
                 String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfHostingNodes()+" "+SimulatorProperties.getNbOfServiceNodes()+" > config/generated_deploy.xml"};
