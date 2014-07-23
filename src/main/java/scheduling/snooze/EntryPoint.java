@@ -1,11 +1,16 @@
 package scheduling.snooze;
 
-import org.simgrid.msg.*;
+import org.simgrid.msg.Host;
 import org.simgrid.msg.Process;
-import scheduling.snooze.msg.*;
+import org.simgrid.msg.Task;
+import scheduling.snooze.msg.SnoozeMsg;
 
 /**
  * Created by sudholt on 22/06/2014.
+ *
+ * TODO: Do we need to consider the entry point?
+ *         The direct creation of LCs and GMs and communication with Multicast seems sufficient
+ *         (see Test.java)
  */
 public class EntryPoint extends Process {
     private String name;
@@ -34,8 +39,8 @@ public class EntryPoint extends Process {
     void handle(SnoozeMsg m) {
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-            case "NewGMMsg" : handleNewGM(m); break;
-            case "NewLCMsg" : handleNewLC(m); break;
+//            case "NewGMMsg" : handleNewGM(m); break;
+//            case "NewLCMsg" : handleNewLC(m); break;
             case "RBeatMsg" : handleRBeatGL(m); break;
             case "SnoozeMsg":
                 Logger.err("[EP(SnoozeMsg)] Unknown message" + m);
@@ -56,23 +61,23 @@ public class EntryPoint extends Process {
         glTimestamp = (double) m.getMessage();
     }
 
-    void handleNewGM(SnoozeMsg m) {
-        if (!glHostname.equals(""))
-            new NewGMMsg((String) m.getMessage(), AUX.glInbox(glHostname), m.getOrigin(), m.getReplyBox()).send();
-        else {
-            // Send failure message back
-            new NewGMMsg((String) m.getMessage(), m.getReplyBox(), name, AUX.epInbox).send();
-            Logger.err("[EP.handle] New GM without GroupLeader");
-        }
-    }
-
-    void handleNewLC(SnoozeMsg m) { // Join/rejoin LC
-        if (!glHostname.equals("")) {
-            new NewLCMsg((String) m.getMessage(), AUX.glInbox(glHostname), m.getOrigin(), m.getReplyBox()).send();
-        } else {
-            // Send failure message back
-            new NewLCMsg((String) m.getMessage(), m.getReplyBox(), name, AUX.epInbox).send();
-            Logger.err("[EP.handle] New LC without GroupLeader");
-        }
-    }
+//    void handleNewGM(SnoozeMsg m) {
+//        if (!glHostname.equals(""))
+//            new NewGMMsg((String) m.getMessage(), AUX.glInbox(glHostname), m.getOrigin(), m.getReplyBox()).send();
+//        else {
+//            // Send failure message back
+//            new NewGMMsg((String) m.getMessage(), m.getReplyBox(), name, AUX.epInbox).send();
+//            Logger.err("[EP.handle] New GM without GroupLeader");
+//        }
+//    }
+//
+//    void handleNewLC(SnoozeMsg m) { // Join/rejoin LC
+//        if (!glHostname.equals("")) {
+//            new NewLCMsg((String) m.getMessage(), AUX.glInbox(glHostname), m.getOrigin(), m.getReplyBox()).send();
+//        } else {
+//            // Send failure message back
+//            new NewLCMsg((String) m.getMessage(), m.getReplyBox(), name, AUX.epInbox).send();
+//            Logger.err("[EP.handle] New LC without GroupLeader");
+//        }
+//    }
 }

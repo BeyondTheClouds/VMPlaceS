@@ -39,6 +39,7 @@ public class Test extends Process {
         procFailGLs();
         procTerminateGMs();
         procAddLCs();
+        procAddGMs();
         while (!testsToBeTerminated) {
             dispInfo();
             sleep(1000);
@@ -62,6 +63,26 @@ public class Test extends Process {
         }
         Logger.info("    GL: " + gl.host.getName()
                 + ", #GM: " + gl.gmInfo.size() + ", #LCs: " + al + ", #Test.gms " + Test.gms.size() + "\n");
+    }
+
+    void procAddGMs() throws HostNotFoundException {
+        new Process(host, host.getName() + "-addGMs") {
+            public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
+                sleep(3000);
+                int gmNo = 1; // no. of statically allocated LCs
+//                while (!testsToBeTerminated) {
+                for (int i=0; i<5; i++) {
+                    String[] gmArgs = new String[] {"node"+gmNo, "dynGroupManager-"+gmNo};
+                    GroupManager gm =
+                            new GroupManager(Host.getByName("node"+gmNo), "dynGroupManager-"+gmNo, gmArgs);
+                    gm.start();
+                    Logger.info("[Test.procAddLCs] Dyn. GM added: " + gmArgs[1]);
+                    gmNo++;
+                    sleep(2000);
+                }
+                sleep(AUX.DefaultComputeInterval);
+            }
+        }.start();
     }
 
     void procAddLCs() throws HostNotFoundException {
