@@ -18,11 +18,11 @@ public class AUX {
     static final String glElection = "glElection";            // HeartbeatGroup mbox
 //    static final String gmHeartbeatNew = "gmHeartbeatNew";    // HeartbeatGroup mbox
 //    static final String gmHeartbeatBeat = "gmHeartbeatBeat";  // HeartbeatGroup mbox
-    static final long DefaultComputeInterval = 10;
-    static final long EntropyComputationTime = 30000;
+    static final long DefaultComputeInterval = 1;
+  //  static final long EntropyComputationTime = 30000;
     static final long HeartbeatInterval = 1000*SnoozeProperties.getHeartBeatPeriodicity();
     static final long HeartbeatTimeout = 1000*SnoozeProperties.getHeartBeatTimeout();
-    static final long SchedulingPeriodicity = 1000*SnoozeProperties.getSchedulingPeriodicity();
+    //static final long SchedulingPeriodicity = 1000*SnoozeProperties.getSchedulingPeriodicity();
     static final long JoinAcknowledgementTimeout = 5000;
     static final long GLCreationTimeout = 1000;
     static final double MessageReceptionTimeout = 0.2;

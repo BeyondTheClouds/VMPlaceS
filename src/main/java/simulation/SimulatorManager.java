@@ -497,6 +497,8 @@ public class SimulatorManager {
 
             }
 
+
+            int previousCount = org.simgrid.msg.Process.getCount();
             // Turn the node off
             host.turnOff();
 
@@ -504,9 +506,19 @@ public class SimulatorManager {
             sgHostsOn.remove(host);
             sgHostsOff.add(host);
 
+            Msg.info("Nb of remaining processes on " + host.getName() + ": " + (previousCount - org.simgrid.msg.Process.getCount()));
+
+
         }
         else{
             Msg.info("Weird... you are asking to turn off a host that is already off !");
         }
+    }
+
+    private static int getProcessCount(XHost host) {
+        Msg.info ("TODO");
+        System.exit(-1);
+        return -1;
+
     }
 }

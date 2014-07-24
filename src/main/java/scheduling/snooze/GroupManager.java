@@ -4,6 +4,7 @@ import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import scheduling.entropyBased.EntropyProperties;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
@@ -43,11 +44,11 @@ public class GroupManager extends Process {
             Test.gms.add(this);
             startBeats();
             startSummaryInfoToGL();
-//        startScheduling();
+            startScheduling();
             while (true) {
                 try {
-                    SnoozeMsg m = AUX.arecv(inbox);
-                    if (m != null) handle(m);
+                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+                    handle(m);
                     if (!thisGMToBeStopped) {
                         glDead();
                         deadLCs();
@@ -265,10 +266,16 @@ public class GroupManager extends Process {
         try {
             new Process(host, host.getName() + "-gmScheduling") {
                 public void main(String[] args) throws HostFailureException {
+                    long previousDuration;
+                    long period = (SnoozeProperties.getSchedulingPeriodicity()*1000);
+                    long wait;
+
                     while (!thisGMToBeStopped) {
                         try {
-                            scheduleVMs();
-                            sleep(1);  // TODO: to be adapted (removed?)
+                            previousDuration = scheduleVMs();
+                            wait = period - previousDuration ;
+                            if (wait>  0)
+                                Process.sleep(wait);
                         } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
@@ -338,13 +345,17 @@ public class GroupManager extends Process {
         int proc = 0;
         int mem = 0;
         int s = lcInfo.size();
-        for(String lcHostname: lcInfo.keySet()) {
+        for (String lcHostname : lcInfo.keySet()) {
             LCInfo lci = lcInfo.get(lcHostname);
-            proc += lci.charge.procCharge;
-            mem += lci.charge.memUsed;
+            if (lci == null) {
+                proc += lci.charge.procCharge;
+                mem += lci.charge.memUsed;
+            }
         }
-        proc /= s; mem /= s;
-        procSum = proc; memSum = mem;
+        proc /= s;
+        mem /= s;
+        procSum = proc;
+        memSum = mem;
 //        Logger.info("[GM.updateChargeSummary] " + proc + ", " + mem);
     }
 
@@ -366,8 +377,7 @@ public class GroupManager extends Process {
 
     }
 
-    void scheduleVMs() {
-
+    long scheduleVMs() {
 
         /* Compute and apply the plan */
         Collection<XHost> hostsToCheck = this.getManagedXHosts();
@@ -385,6 +395,7 @@ public class GroupManager extends Process {
             // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
             //numberOfBrokenPlan++;
         }
+        return previousDuration;
     }
 
 

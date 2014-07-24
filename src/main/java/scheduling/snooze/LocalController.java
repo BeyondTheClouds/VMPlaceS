@@ -40,10 +40,11 @@ public class LocalController extends Process {
         startLCChargeToGM();
         while (true) {
             try {
-                SnoozeMsg m = AUX.arecv(inbox);
-                if (m != null) handle(m);
+                Msg.info(Host.currentHost().getName() + " not dead");
+                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+                handle(m);
                 gmDead();
-                sleep(AUX.DefaultComputeInterval);
+                sleep(SnoozeProperties.getHeartBeatPeriodicity()*1000);
             } catch (Exception e) {
                 e.printStackTrace();
             }

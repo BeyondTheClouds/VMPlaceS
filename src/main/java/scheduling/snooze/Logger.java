@@ -11,7 +11,7 @@ public class Logger {
     }
 
     public static void info(String s) {
-        Msg.info("INFSNOO: " + s);
+        //Msg.info("INFSNOO: " + s);
     }
 
     public static void log(Exception e) {

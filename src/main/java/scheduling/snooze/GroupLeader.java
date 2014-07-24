@@ -32,8 +32,8 @@ public class GroupLeader extends Process {
         startBeats();
         while (true) {
             try {
-                SnoozeMsg m = AUX.arecv(inbox);
-                if (m != null) handle(m);
+                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
+                handle(m);
                 if (thisGLToBeTerminated) {
                     Logger.err("[GL.main] TBTerminated: " + host.getName());
                     break;

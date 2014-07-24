@@ -337,7 +337,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             // Consider only hosts that are turned on
             if (tmpH.isOff()) {
                 System.err.println("WTF, you are asking me to analyze a dead node (" + tmpH.getName() + ")");
-                System.exit(-1);
+                //System.exit(-1);
             }
 
             Node tmpENode = new SimpleNode(tmpH.getName(), tmpH.getNbCores(), tmpH.getCPUCapacity(), tmpH.getMemSize());
