@@ -44,7 +44,7 @@ public class LocalController extends Process {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
                 handle(m);
                 gmDead();
-                sleep(SnoozeProperties.getHeartBeatPeriodicity()*1000);
+                sleep(AUX.DefaultComputeInterval);
             } catch (Exception e) {
                 e.printStackTrace();
             }
