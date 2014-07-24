@@ -54,7 +54,7 @@ public class HierarchicalResolver extends Process {
         */
 
         Msg.info("Start the Test process on " + Host.currentHost()+ "");
-//        new Test(Host.currentHost(), "test").start();
+        new Test(Host.currentHost(), "test").start();
 
         while (!SimulatorManager.isEndOfInjection()) {
             waitFor(3);
