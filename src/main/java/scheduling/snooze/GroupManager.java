@@ -4,7 +4,6 @@ import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.entropyBased.EntropyProperties;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
@@ -105,7 +104,7 @@ public class GroupManager extends Process {
             // Notify LCs and Multicast, stop this GM
             m = new GLElecStopGMMsg(host.getName(), m.getReplyBox(), null, null);
             m.send();
-            Logger.info("[GM(GMElec)] Stop msg: " + m);
+            Logger.debug("[GM(GMElec)] Stop msg: " + m);
             do {
                 m = (SnoozeMsg) Task.receive(inbox);
             } while (!m.getClass().getSimpleName().equals("GLElecStopGMMsg"));
@@ -117,12 +116,12 @@ public class GroupManager extends Process {
 
             m = new TermGLMsg(host.getName(), AUX.glInbox(glHostname), null, null);
             m.send();
-            Logger.info("[GM(GMElec)] Old GL to be terminated: " + m);
+            Logger.debug("[GM(GMElec)] Old GL to be terminated: " + m);
             GroupLeader gl = new GroupLeader(Host.currentHost(), "groupLeader");
             gl.start();
             Test.gl = gl;
             glHostname = gl.getHost().getName();
-            Logger.info("[GM(GMElec)] New leader created on: " + glHostname);
+            Logger.debug("[GM(GMElec)] New leader created on: " + glHostname);
             stopThisGM();
         } catch (Exception e) {
             e.printStackTrace();
@@ -195,7 +194,7 @@ public class GroupManager extends Process {
             String glElecMBox = inbox + "-glElec";
             SnoozeMsg m = new GLElecMsg(host.getName(), AUX.multicast, null, glElecMBox);
             m.send();
-            Logger.info("[GM.glDead] GL dead: " + m + ", TS: " + glTimestamp);
+            Logger.debug("[GM.glDead] GL dead: " + m + ", TS: " + glTimestamp);
             try {
                 m = (RBeatGLMsg) Task.receive(glElecMBox, AUX.MessageReceptionTimeout);
                 glTimestamp = (double) m.getMessage();
@@ -226,12 +225,12 @@ public class GroupManager extends Process {
             m.send();
             m = (SnoozeMsg) Task.receive(joinMBox, AUX.MessageReceptionTimeout);
             glTimestamp = Msg.getClock();
-            Logger.info("[GM.join] Finished: " + m);
+            Logger.debug("[GM.join] Finished: " + m);
             success = true;
             if (AUX.GLElectionForEachNewGM) {
                 m = new GLElecMsg(host.getName(), AUX.multicast, null, null);
                 m.send();
-                Logger.info("[GM.join] Leader election: " + m);
+                Logger.debug("[GM.join] Leader election: " + m);
             }
         } catch (Exception e) {
             Logger.err("[GM.join] No joining");
@@ -312,11 +311,11 @@ public class GroupManager extends Process {
         try {
             SnoozeMsg m = new TermGMMSg(host.getName(), AUX.multicast, null, null);
             m.send();
-            Logger.info("[GM.stopThisGM] GL notified: " + glHostname);
+            Logger.debug("[GM.stopThisGM] GL notified: " + glHostname);
             for (String lc : lcInfo.keySet()) {
                 m = new TermGMMSg(host.getName(), AUX.lcInbox(lc), null, null);
                 m.send();
-                Logger.info("[GM.stopThisGM] LC to rejoin: " + m);
+                Logger.debug("[GM.stopThisGM] LC to rejoin: " + m);
             }
             thisGMToBeStopped = true;
         } catch (Exception e) {

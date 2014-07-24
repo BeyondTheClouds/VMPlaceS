@@ -69,7 +69,7 @@ public class Multicast extends Process {
             String gl = (String) m.getMessage();
             if (glHostname == "") {
                 glHostname = gl;
-                Logger.info("[MUL(BeatGL)] GL initialized: " + gl);
+                Logger.debug("[MUL(BeatGL)] GL initialized: " + gl);
             }
             if (glHostname != gl) {
                 Logger.err("[MUL(BeatGL)] Multiple GLs: " + glHostname + ", " + gl);
@@ -121,7 +121,7 @@ public class Multicast extends Process {
             lcInfo.put((String) m.getMessage(), new LCInfo((String) m.getMessage(), "", Msg.getClock(), true));
             m = new RBeatGLMsg(glTimestamp, m.getReplyBox(), glHostname, null);
             m.send();
-            Logger.info("[MUL(NewGMMsg)] LC stored, GL beat sent: " + m);
+            Logger.debug("[MUL(NewGMMsg)] LC stored, GL beat sent: " + m);
         } else {
             // End LC join phase
             lcInfo.put((String) m.getMessage(),
@@ -227,7 +227,7 @@ public class Multicast extends Process {
                 boolean msgReceived = false;
                 try {
                     m = (SnoozeMsg) Task.receive(elecMBox, AUX.MessageReceptionTimeout);
-                    Logger.info("[MUL.leaderElection] Msg.received for GM: " + gm + ", " + m);
+                    Logger.debug("[MUL.leaderElection] Msg.received for GM: " + gm + ", " + m);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -242,7 +242,7 @@ public class Multicast extends Process {
                     success = true;
                     m = new GLElecStopGMMsg(name, AUX.gmInbox(gm), null, null);
                     m.send();
-                    Logger.info("[MUL.leaderElection] New leader elected: " + m);
+                    Logger.debug("[MUL.leaderElection] New leader elected: " + m);
                 } else {
                     // Ignore other messages on mbox AUX.glElection
                     Logger.err("[MUL.leaderElection] GM promotion failed: " + gm);

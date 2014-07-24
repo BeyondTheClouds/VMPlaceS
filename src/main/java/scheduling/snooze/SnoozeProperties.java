@@ -27,6 +27,8 @@ public class SnoozeProperties extends GeneralProperties {
         public final static String HEARTBEAT_PERIODICITY = "snooze.hb-periodicity";
         public final static String HEARTBEAT_TIMEOUT = "snooze.hb-timeout";
         public final static String SCHEDULING_PERIODICITY = "snooze.scheduling-periodicity";
+        public final static String INFO_LEVEL = "snooze.info-level";
+        public final static String INFO_PERIODICITY = "snooze.info-periodicity";
 
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Property default values
@@ -35,6 +37,9 @@ public class SnoozeProperties extends GeneralProperties {
         public final static long DEFAULT_HEARTBEAT_PERIODICITY = 2;
         public final static long DEFAULT_SCHEDULING_PERIODICITY = 30;
         public static final long DEFAULT_HEARTBEAT_TIMEOUT = 5;
+
+        public final static int DEFAULT_INFO_LEVEL = 2;
+        public final static int DEFAULT_INFO_PERIODICITY = 5;
 
 
 
@@ -71,6 +76,15 @@ public class SnoozeProperties extends GeneralProperties {
         public static long getHeartBeatTimeout() {
          return INSTANCE.getPropertyAsLong(HEARTBEAT_TIMEOUT, DEFAULT_HEARTBEAT_TIMEOUT);
         }
+
+        public static int getInfoLevel() {
+            return INSTANCE.getPropertyAsInt(INFO_LEVEL, DEFAULT_INFO_LEVEL);
+        }
+
+        public static int getInfoPeriodicity() {
+            return INSTANCE.getPropertyAsInt(INFO_PERIODICITY, DEFAULT_INFO_PERIODICITY);
+        }
+
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Methods for properties currently not stored in the properties file

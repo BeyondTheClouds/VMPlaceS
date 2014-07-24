@@ -52,7 +52,7 @@ public class EntryPoint extends Process {
         String gl = (String) m.getOrigin();
         if (glHostname.equals("")) {
             glHostname = gl;
-            Logger.info("[EP(RBeatGLMsg)] GL initialized: " + gl);
+            Logger.debug("[EP(RBeatGLMsg)] GL initialized: " + gl);
         }
         else if (glHostname != gl) {
             glHostname = gl;

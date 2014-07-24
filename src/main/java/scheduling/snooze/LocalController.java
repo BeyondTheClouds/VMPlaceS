@@ -32,7 +32,7 @@ public class LocalController extends Process {
     @Override
     public void main(String[] args) {
         Test.lcs.remove(this);
-        Logger.info("Start LC " + args[0] + ", " + args[1]);
+        Logger.debug("Start LC " + args[0] + ", " + args[1]);
         init(SimulatorManager.getXHostByName(args[0]), args[1]);
         join();
         Test.lcs.add(this);
@@ -103,11 +103,11 @@ public class LocalController extends Process {
             // Join GL multicast group
             m = new NewLCMsg(host.getName(), AUX.multicast, name, joinMBox);
             m.send();
-            Logger.info("[LC.join] 1 Request sent: " + m);
+            Logger.debug("[LC.join] 1 Request sent: " + m);
             // Wait for GL beat
             m = (SnoozeMsg) Task.receive(joinMBox);
             gl = (String) m.getOrigin();
-            Logger.info("[LC.join] 2 Got GL: " + gl);
+            Logger.debug("[LC.join] 2 Got GL: " + gl);
             if (gl.equals("")) {
                 Logger.err("[LC.join] Empty GL: " + m);
 //                sleep(AUX.GLCreationTimeout);
@@ -116,12 +116,12 @@ public class LocalController extends Process {
             gmHostname = "";
             // Send GM assignment req.
             m = new LCAssMsg(host.getName(), AUX.glInbox(gl), host.getName(), joinMBox);
-            Logger.info("[LC.join] 4 GM ass. request: " + m);
+            Logger.debug("[LC.join] 4 GM ass. request: " + m);
             m.send();
             // Wait for GM assignment
 
             m = (SnoozeMsg) Task.receive(joinMBox, AUX.MessageReceptionTimeout);
-            Logger.info("[LC.join] 5 Ass. msg.: " + m);
+            Logger.debug("[LC.join] 5 Ass. msg.: " + m);
             if (m.getClass().getSimpleName().equals("LCAssMsg")) {
                 String gm = (String) m.getMessage();
                 if (gm.equals("")) {
@@ -134,13 +134,13 @@ public class LocalController extends Process {
 
                 // Send GM integration request
                 m = new NewLCMsg(host.getName(), AUX.gmInbox(gmHostname), name, joinMBox);
-                Logger.info("[LC.join] 7 GM int.: " + m);
+                Logger.debug("[LC.join] 7 GM int.: " + m);
                 m.send();
 
                 // Leave GL multicast, join GM multicast group
                 m = new NewLCMsg(host.getName(), AUX.multicast, "removeLCjoinGM", gmHostname);
                 m.send();
-                Logger.info("[LC.join] Finished: " + m);
+                Logger.debug("[LC.join] Finished: " + m);
             }
         } catch (Exception e) { e.printStackTrace(); }
     }

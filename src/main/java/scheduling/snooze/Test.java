@@ -42,13 +42,13 @@ public class Test extends Process {
         procAddGMs();
         while (!testsToBeTerminated) {
             dispInfo();
-            sleep(1000);
+            sleep(1000*SnoozeProperties.getInfoPeriodicity());
         }
     }
 
     static void dispInfo() {
         if (multicast.gmInfo.isEmpty()) {
-            Logger.info("[Test.dispGMLCInfo] MUL.gmInfo empty");
+            Logger.debug("[Test.dispGMLCInfo] MUL.gmInfo empty");
             return;
         }
         int i = 0, al = 0;
@@ -76,7 +76,7 @@ public class Test extends Process {
                     GroupManager gm =
                             new GroupManager(Host.getByName("node"+gmNo), "dynGroupManager-"+gmNo, gmArgs);
                     gm.start();
-                    Logger.info("[Test.procAddLCs] Dyn. GM added: " + gmArgs[1]);
+                    Logger.debug("[Test.procAddLCs] Dyn. GM added: " + gmArgs[1]);
                     gmNo++;
                     sleep(2000);
                 }
@@ -96,7 +96,7 @@ public class Test extends Process {
                     LocalController lc =
                             new LocalController(Host.getByName("node"+lcNo), "dynLocalController-"+lcNo, lcArgs);
                     lc.start();
-                    Logger.info("[Test.procAddLCs] Dyn. LC added: " + lcArgs[1]);
+                    Logger.debug("[Test.procAddLCs] Dyn. LC added: " + lcArgs[1]);
                     lcNo++;
                     sleep(2000);
                 }
@@ -111,13 +111,13 @@ public class Test extends Process {
                 sleep(5000);
                 while (!testsToBeTerminated) {
                     if (multicast.gmInfo.size() < 3) {
-                        Logger.info("[Test.terminateGLs] #GMs: " + multicast.gmInfo.size());
+                        Logger.debug("[Test.terminateGLs] #GMs: " + multicast.gmInfo.size());
                         sleep(10000);
                         continue;
                     }
                     m = new TestFailGLMsg(name, AUX.glInbox(multicast.glHostname), null, null);
                     m.send();
-                    Logger.info("[Test.terminateGMs] GL failure: " + Test.gl.getHost().getName());
+                    Logger.debug("[Test.terminateGMs] GL failure: " + Test.gl.getHost().getName());
                     sleep(3000);
                 }
             }
@@ -130,14 +130,14 @@ public class Test extends Process {
                 sleep(7500);
                 while (!testsToBeTerminated) {
                     if (multicast.gmInfo.size() < 3) {
-                        Logger.info("[Test.terminateGMs] #GMs: " + multicast.gmInfo.size());
+                        Logger.debug("[Test.terminateGMs] #GMs: " + multicast.gmInfo.size());
                         sleep(10000);
                         continue;
                     }
                     gm = new ArrayList<String>(multicast.gmInfo.keySet()).get(0);
                     m = new TestFailGMMsg(name, AUX.gmInbox(gm), null, null);
                     m.send();
-                    Logger.info("[Test.terminateGMs] Term. GM: " + gm + ", #GMs: " + multicast.gmInfo.size());
+                    Logger.debug("[Test.terminateGMs] Term. GM: " + gm + ", #GMs: " + multicast.gmInfo.size());
                     sleep(3000);
                 }
             }

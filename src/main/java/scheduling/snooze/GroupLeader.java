@@ -28,7 +28,7 @@ public class GroupLeader extends Process {
     @Override
     public void main(String[] strings) {
         Test.gl = this;
-        Logger.info("[GL.main] GL started: " + host.getName());
+        Logger.debug("[GL.main] GL started: " + host.getName());
         startBeats();
         while (true) {
             try {
@@ -68,7 +68,7 @@ public class GroupLeader extends Process {
         String gm = lcAssignment((String) m.getMessage());
         m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
         m.send();
-        Logger.info("[GL(LCAssMsg)] GM assigned: " + m);
+        Logger.debug("[GL(LCAssMsg)] GM assigned: " + m);
     }
 
     void handleGMSum(SnoozeMsg m) {
@@ -97,14 +97,14 @@ public class GroupLeader extends Process {
     }
 
     void handleTermGL(SnoozeMsg m) {
-        Logger.info("[GL(TermGL)] GL to be terminated: " + host.getName());
+        Logger.debug("[GL(TermGL)] GL to be terminated: " + host.getName());
         thisGLToBeTerminated = true;
     }
 
     void handleTermGM(SnoozeMsg m) {
         String gm = (String) m.getMessage();
         gmInfo.remove(gm);
-        Logger.info("[GL(TermGM)] GM removed: " + gm);
+        Logger.debug("[GL(TermGM)] GM removed: " + gm);
     }
 
     /**
@@ -132,7 +132,7 @@ public class GroupLeader extends Process {
                 ArrayList<String> gms = new ArrayList<>(gmInfo.keySet());
                 gm = gms.get(roundRobin);
                 roundRobin++;
-                Logger.info("[GL.lcAssignment] GM selected (ROUNDROBIN): " + gm + ", #GMs: " + gmInfo.size());
+                Logger.debug("[GL.lcAssignment] GM selected (ROUNDROBIN): " + gm + ", #GMs: " + gmInfo.size());
                 break;
         }
         return gm;
