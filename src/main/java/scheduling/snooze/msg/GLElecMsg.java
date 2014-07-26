@@ -5,7 +5,7 @@ package scheduling.snooze.msg;
  */
 
 public class GLElecMsg extends SnoozeMsg {
-    public GLElecMsg(String name, String sendBox, String origin, String replyBox) {
-        super(name, sendBox, origin, replyBox);
+    public GLElecMsg(Object message, String sendBox, String origin, String replyBox) {
+        super(message, sendBox, origin, replyBox);
     }
 }

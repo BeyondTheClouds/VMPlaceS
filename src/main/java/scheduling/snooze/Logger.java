@@ -14,6 +14,10 @@ public class Logger {
         Msg.info("ERRSNOO: " + s);
     }
 
+    public static void exc(String s) {
+        Msg.info("EXCSNOO: " + s);
+    }
+
     public static void info(String s) {
         if (SnoozeProperties.getInfoLevel() > 1) Msg.info("INFSNOO: " + s);
     }

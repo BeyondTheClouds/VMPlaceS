@@ -21,11 +21,13 @@ public class AUX {
     static final long DefaultComputeInterval = 1;
   //  static final long EntropyComputationTime = 30000;
     static final long HeartbeatInterval = 1000*SnoozeProperties.getHeartBeatPeriodicity();
+    static final long ReceiveTimeout = 2*SnoozeProperties.getHeartBeatTimeout();
+//    static final long ReceiveTimeout = SnoozeProperties.getHeartBeatPeriodicity()/2;
     static final long HeartbeatTimeout = 1000*SnoozeProperties.getHeartBeatTimeout();
     //static final long SchedulingPeriodicity = 1000*SnoozeProperties.getSchedulingPeriodicity();
     static final long JoinAcknowledgementTimeout = 5000;
     static final long GLCreationTimeout = 1000;
-    static final double MessageReceptionTimeout = 0.2;
+    static final double MessageReceptionTimeout = 0.3;
 
     static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
     static final boolean GLElectionForEachNewGM = false;
