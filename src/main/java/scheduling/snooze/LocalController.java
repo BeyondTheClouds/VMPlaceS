@@ -40,7 +40,6 @@ public class LocalController extends Process {
         startLCChargeToGM();
         while (true) {
             try {
-                Msg.info(Host.currentHost().getName() + " not dead");
                 SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
                 handle(m);
                 gmDead();
