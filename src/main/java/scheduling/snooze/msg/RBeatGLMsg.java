@@ -11,7 +11,7 @@ public class RBeatGLMsg extends SnoozeMsg {
      * @param origin    GL host
      * @param replyBox  null
      */
-    public RBeatGLMsg(Object timestamp, String sendBox, String origin, String replyBox) {
-        super(timestamp, sendBox, origin, replyBox);
+    public RBeatGLMsg(double ts, String sendBox, String origin, String replyBox) {
+        super(ts, sendBox, origin, replyBox);
     }
 }

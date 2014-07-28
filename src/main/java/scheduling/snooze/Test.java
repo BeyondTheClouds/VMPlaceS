@@ -35,52 +35,30 @@ public class Test extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
-        sleep(5000);
-        procFailGLs();
-        procTerminateGMs();
         procAddLCs();
         procAddGMs();
+        procFailGLs();
+        procFailGMs();
         while (!testsToBeTerminated) {
             dispInfo();
             sleep(1000*SnoozeProperties.getInfoPeriodicity());
         }
     }
 
-    static void dispInfo() {
-        if (multicast.gmInfo.isEmpty()) {
-            Logger.debug("[Test.dispGMLCInfo] MUL.gmInfo empty");
-            return;
-        }
-        int i = 0, al = 0;
-        Logger.info("[Test.dispInfo]");
-        for (String gm : multicast.gmInfo.keySet()) {
-            int l = 0;
-            for (String lc : multicast.lcInfo.keySet()) if (multicast.lcInfo.get(lc).gmHost.equals(gm)) l++;
-            String gmLeader = "";
-            for (GroupManager gmo: gms) if (gmo.host.getName().equals(gm)) gmLeader = gmo.glHostname;
-            Logger.info("    Multicast: GM: " + gm + ", #LCs: " + l + ", leader: " + gmLeader);
-            i++; al += l;
-        }
-        Logger.info("    GL: " + gl.host.getName()
-                + ", #GM: " + gl.gmInfo.size() + ", #LCs: " + al + ", #Test.gms " + Test.gms.size() + "\n");
-    }
-
     void procAddGMs() throws HostNotFoundException {
         new Process(host, host.getName() + "-addGMs") {
             public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
-                sleep(3000);
+                sleep(5000);
                 int gmNo = 1; // no. of statically allocated LCs
-//                while (!testsToBeTerminated) {
-                for (int i=0; i<5; i++) {
-                    String[] gmArgs = new String[] {"node"+gmNo, "dynGroupManager-"+gmNo};
+                for (int i = 0; i < 13 && !testsToBeTerminated; i++) {
+                    String[] gmArgs = new String[]{"node" + (gmNo+1), "dynGroupManager-" + (gmNo+1)};
                     GroupManager gm =
-                            new GroupManager(Host.getByName("node"+gmNo), "dynGroupManager-"+gmNo, gmArgs);
+                            new GroupManager(Host.getByName("node" + gmNo), "dynGroupManager-" + (gmNo+1), gmArgs);
                     gm.start();
-                    Logger.debug("[Test.procAddLCs] Dyn. GM added: " + gmArgs[1]);
+                    Logger.debug("[Test.addLCs] Dyn. GM added: " + gmArgs[1]);
                     gmNo++;
-                    sleep(2000);
+                    sleep(1000);
                 }
-                sleep(AUX.DefaultComputeInterval);
             }
         }.start();
     }
@@ -88,19 +66,17 @@ public class Test extends Process {
     void procAddLCs() throws HostNotFoundException {
         new Process(host, host.getName() + "-addLCs") {
             public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
-                sleep(3000);
+                sleep(2000);
                 int lcNo = 20; // no. of statically allocated LCs
-//                while (!testsToBeTerminated) {
-                for (int i=0; i<20; i++) {
+                for (int i=0; i<20 && !testsToBeTerminated; i++) {
                     String[] lcArgs = new String[] {"node"+lcNo, "dynLocalController-"+lcNo};
                     LocalController lc =
                             new LocalController(Host.getByName("node"+lcNo), "dynLocalController-"+lcNo, lcArgs);
                     lc.start();
-                    Logger.debug("[Test.procAddLCs] Dyn. LC added: " + lcArgs[1]);
+                    Logger.info("[Test.addLCs] Dyn. LC added: " + lcArgs[1]);
                     lcNo++;
-                    sleep(2000);
+                    sleep(100);
                 }
-                sleep(AUX.DefaultComputeInterval);
             }
         }.start();
     }
@@ -108,39 +84,66 @@ public class Test extends Process {
     void procFailGLs() throws HostNotFoundException {
         new Process(host, host.getName() + "-terminateGMs") {
             public void main(String[] args) throws HostFailureException {
-                sleep(5000);
-                while (!testsToBeTerminated) {
+                sleep(10000);
+                for (int i=0; i<5 && !testsToBeTerminated; i++) {
                     if (multicast.gmInfo.size() < 3) {
-                        Logger.debug("[Test.terminateGLs] #GMs: " + multicast.gmInfo.size());
-                        sleep(10000);
+                        Logger.debug("[Test.failGLs] #GMs: " + multicast.gmInfo.size());
+                        sleep(5000);
                         continue;
                     }
                     m = new TestFailGLMsg(name, AUX.glInbox(multicast.glHostname), null, null);
                     m.send();
-                    Logger.debug("[Test.terminateGMs] GL failure: " + Test.gl.getHost().getName());
-                    sleep(3000);
+                    Logger.info("[Test.failGLs] GL failure: " + Test.gl.getHost().getName());
+                    sleep(5000);
+//                    break;
                 }
             }
         }.start();
     }
 
-    void procTerminateGMs() throws HostNotFoundException {
+    void procFailGMs() throws HostNotFoundException {
         new Process(host, host.getName() + "-terminateGMs") {
             public void main(String[] args) throws HostFailureException {
-                sleep(7500);
-                while (!testsToBeTerminated) {
+                sleep(5000);
+                for (int i=0; i<3 && !testsToBeTerminated; i++) {
                     if (multicast.gmInfo.size() < 3) {
-                        Logger.debug("[Test.terminateGMs] #GMs: " + multicast.gmInfo.size());
+                        Logger.info("[Test.failGMs] #GMs: " + multicast.gmInfo.size());
                         sleep(10000);
                         continue;
                     }
                     gm = new ArrayList<String>(multicast.gmInfo.keySet()).get(0);
                     m = new TestFailGMMsg(name, AUX.gmInbox(gm), null, null);
                     m.send();
-                    Logger.debug("[Test.terminateGMs] Term. GM: " + gm + ", #GMs: " + multicast.gmInfo.size());
-                    sleep(3000);
+                    Logger.info("[Test.failGMs] Term. GM: " + gm + ", #GMs: " + multicast.gmInfo.size());
+                    sleep(5000);
+//                    break;
                 }
             }
         }.start();
+    }
+
+    static void dispInfo() {
+//        if (multicast.gmInfo.isEmpty()) {
+//            Logger.debug("[Test.dispGMLCInfo] MUL.gmInfo empty");
+//            return;
+//        }
+        int i = 0, al = 0;
+        Logger.info("\n\n[Test.dispInfo] #MUL.gmInfo: " + multicast.gmInfo.size() +
+                ", #MUL.lcInfo: " + multicast.lcInfo.size() + ", #Test.gms " + Test.gms.size());
+        if (!multicast.gmInfo.isEmpty()) {
+            for (String gm : multicast.gmInfo.keySet()) {
+                int l = 0;
+                if (!multicast.lcInfo.isEmpty())
+                    for (String lc : multicast.lcInfo.keySet()) if (multicast.lcInfo.get(lc).gmHost.equals(gm)) l++;
+                String gmLeader = "";
+                for (GroupManager gmo : gms) if (gmo.host.getName().equals(gm)) gmLeader = gmo.glHostname;
+                Logger.info("    MUL.GM: " + gm + ", MUL.GM.#LCs: " + l + ", Test.GMLeader: " + gmLeader);
+                i++;
+                al += l;
+            }
+        }
+        if (gl != null)
+            Logger.info("    Test.GL: " + gl.host.getName()
+                    + ", Test.GL.#GM: " + gl.gmInfo.size() + ", MUL.GM.#LCs: " + al + "\n");
     }
 }
