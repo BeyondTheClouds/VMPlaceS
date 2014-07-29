@@ -87,7 +87,7 @@ public class Multicast extends Process {
 //                public void main(String[] args) {
 //                    while (true) {
     void handleNewLC(SnoozeMsg m) {
-//        Logger.info("[MUL(NewLCMsg)] " + m);
+        Logger.info("[MUL(NewLCMsg)] " + m);
         if (m.getMessage() == null) {
             // Add LC
             lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
@@ -98,7 +98,7 @@ public class Multicast extends Process {
             String gm = (String) m.getMessage();
             lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
             m = new NewLCMsg(gm, m.getReplyBox(), null, null);
-            m.dsend(m.getReplyBox());
+            m.send();
             Logger.info("[MUL(NewLCMsg)] LC integrated: " + m);
         }
     }
