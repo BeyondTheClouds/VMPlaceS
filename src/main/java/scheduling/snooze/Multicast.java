@@ -154,7 +154,7 @@ public class Multicast extends Process {
             GMInfo gi = gmInfo.get(gm);
             if (gi.timestamp == 0 || AUX.timeDiff(gmInfo.get(gm).timestamp) <= AUX.HeartbeatTimeout
                     || gi.joining) {
-//            Logger.err("[MUL.gmDead] GM: " + gm + " gmTimestamp == null");
+//                Logger.err("[MUL.gmDead] GM: " + gm + " TS: " + gi.timestamp);
                 continue;
             }
             deadGMs.add(gm);
@@ -296,7 +296,7 @@ public class Multicast extends Process {
         // Send to GL
         SnoozeMsg m = new RBeatGMMsg(ts, AUX.glInbox(glHostname)+"-gmPeriodic", gm, null);
         m.send();
-        Logger.tmp("[MUL.relayGMBeats] " + m);
+        Logger.info("[MUL.relayGMBeats] " + m);
 
         // Send to LCs
         for (String lc: lcInfo.keySet()) {
@@ -308,7 +308,7 @@ public class Multicast extends Process {
                     GMInfo gmi = gmInfo.get(gm);
                     m = new RBeatGMMsg(gmi.timestamp, AUX.lcInbox(lc) + "-gmBeats", gm, null);
                     m.send();
-                    Logger.tmp("[MUL.relayGMBeats] To LC: " + m);
+                    Logger.info("[MUL.relayGMBeats] To LC: " + m);
                 }
             }
         }
@@ -349,7 +349,7 @@ public class Multicast extends Process {
                     while (true) {
                         try {
                             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGMBeats", AUX.HeartbeatTimeout);
-                            Logger.tmp("[MUL.procRelayGMBeats] " + m);
+                            Logger.info("[MUL.procRelayGMBeats] " + m);
                             String gm = m.getOrigin();
                             double ts = (double) m.getMessage();
                             if (gmInfo.containsKey(gm)) {

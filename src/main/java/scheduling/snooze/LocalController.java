@@ -86,7 +86,7 @@ public class LocalController extends Process {
 
     void join() {
         joining = true;
-        Logger.info("[LC.join] Entry: " + gmHostname + ", TS: " + gmTimestamp);
+        Logger.tmp("[LC.join] Entry: " + gmHostname + ", TS: " + gmTimestamp);
         String gl, gm;
         boolean success = false;
         int i;
@@ -95,9 +95,11 @@ public class LocalController extends Process {
                 gl = getGL();
                 if (gl.isEmpty()) continue;
                 i = 0;
-                do { gm = getGM(gl); } while (gm.isEmpty() && i<3);
-                if (gm.isEmpty()) continue;
-                do { success = joinGM(gm); } while (!success && i<3);
+                do {
+                    gm = getGM(gl);
+                    if (gm.isEmpty()) continue;
+                    success = joinGM(gm);
+                } while (!success && i<3);
                 if (!success) continue;
                 do { success = joinFinalize(gm); } while (!success && i<3);
                 if (!success) continue;
@@ -108,7 +110,7 @@ public class LocalController extends Process {
             }
         } while (!success);
         joining = false;
-        Logger.info("[LC.join] Success, GM: " + gmHostname + ", TS: " + gmTimestamp);
+        Logger.tmp("[LC.join] Success, GM: " + gmHostname + ", TS: " + gmTimestamp);
     }
 
     /**
@@ -127,7 +129,7 @@ public class LocalController extends Process {
             int i = 1;
             do {
                 m = (SnoozeMsg) Task.receive(inbox, AUX.HeartbeatTimeout);
-                Logger.tmp("[LC.getGL] Round " + i + ": " + m);
+                Logger.info("[LC.getGL] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
                 success = m.getClass().getSimpleName().equals("RBeatGLMsg") && !m.getOrigin().isEmpty();
             } while (!success);
@@ -201,7 +203,7 @@ public class LocalController extends Process {
             SnoozeMsg m = new NewLCMsg(gm, AUX.multicast, host.getName(), joinMBox);
             m.send();
             Logger.info("[LC.joinFinalize] GL->GM multicast: " + m);
-            m = (SnoozeMsg) Task.receive(joinMBox, AUX.MessageReceptionTimeout);
+            m = (SnoozeMsg) Task.receive(joinMBox, AUX.HeartbeatTimeout);
             if (!m.getClass().getSimpleName().equals("NewLCMsg")) return false;
             gm = (String) m.getMessage();
             if (gm.isEmpty()) {
@@ -213,10 +215,10 @@ public class LocalController extends Process {
             gmHostname = gm;
             gmTimestamp = Msg.getClock();
 
-            Logger.tmp("[LC.joinFinalize] Finished, GM: " + gm + ", " + gmTimestamp);
+            Logger.info("[LC.joinFinalize] Finished, GM: " + gm + ", " + gmTimestamp);
             return true;
         } catch (Exception e) {
-            Logger.exc("Exception [LC.joinFinalize] " + host.getName() + ": " + e.getClass().getName());
+            Logger.exc("[LC.joinFinalize] PROBLEM? Exception " + host.getName() + ": " + e.getClass().getName());
             e.printStackTrace();
             return false;
         }
@@ -244,7 +246,7 @@ public class LocalController extends Process {
                                 continue;  // Could be used for change of GM
                             }
                             gmTimestamp = (double) m.getMessage();
-                            Logger.tmp("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
+                            Logger.info("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
 
                             sleep(AUX.HeartbeatInterval);
                         } catch (Exception e) { e.printStackTrace(); }
@@ -267,7 +269,7 @@ public class LocalController extends Process {
                         try {
                             BeatLCMsg m = new BeatLCMsg(Msg.getClock(), AUX.gmInbox(gmHostname), host.getName(), null);
                             m.send();
-                            Logger.tmp("[LC.beat] " + m);
+                            Logger.info("[LC.beat] " + m);
                             sleep(AUX.HeartbeatInterval);
                         } catch (Exception e) { e.printStackTrace(); }
                     }

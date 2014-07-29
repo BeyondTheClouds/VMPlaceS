@@ -187,7 +187,7 @@ public class GroupManager extends Process {
             if (!gl.isEmpty()) {
                 glHostname = m.getOrigin();
                 Logger.info("[GM.glBeats] Updated: " + glHostname + ", " + m);
-                NewGMMsg ms = new NewGMMsg(host.getName(), AUX.glInbox(glHostname), null, null);
+                NewGMMsg ms = new NewGMMsg(host.getName(), AUX.glInbox(glHostname) + "-newGM", null, null);
                 ms.send();
 
                 if (joining) {
@@ -340,7 +340,6 @@ public class GroupManager extends Process {
     void stopThisGM() {
         try {
             SnoozeMsg m = new TermGMMsg(host.getName(), AUX.multicast, null, null);
-//            m.send();
             Comm c = m.isend(AUX.multicast);
             c.waitCompletion();
             Test.gms.remove(this);

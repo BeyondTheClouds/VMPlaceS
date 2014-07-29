@@ -30,6 +30,7 @@ public class GroupLeader extends Process {
         Test.gl = this;
 //        Logger.debug("[GL.main] GL started: " + host.getName());
         procSendMyBeats();
+        procNewGM();
         procGMInfo();
         while (true) {
             try {
@@ -54,7 +55,7 @@ public class GroupLeader extends Process {
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "LCAssMsg" : handleLCAss(m);  break;
-            case "NewGMMsg" : handleNewGM(m);  break;
+//            case "NewGMMsg" : handleNewGM(m);  break;
             case "TermGMMsg": handleTermGM(m); break;
             case "TermGLMsg": handleTermGL(m); break;
             case "SnoozeMsg":
@@ -171,7 +172,7 @@ public class GroupLeader extends Process {
                     while (!thisGLToBeTerminated) {
                         try {
                             SnoozeMsg m = (SnoozeMsg)
-                                    Task.receive(inbox + "-gmPeriodic", AUX.ReceiveTimeout);
+                                    Task.receive(inbox + "-gmPeriodic", AUX.HeartbeatTimeout);
 //                            Logger.info("[GL.procGMInfo] " + m);
 
                             if      (m instanceof RBeatGMMsg) gmBeats(m);
@@ -188,6 +189,41 @@ public class GroupLeader extends Process {
                         }
                         catch (Exception e) {
                             Logger.exc("[GL.procGMInfo] Exception, " + host.getName() + ": " + e.getClass().getName());
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }.start();
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    void procNewGM() {
+        try {
+            new Process(host, host.getName() + "-newGM") {
+                public void main(String[] args) throws HostFailureException {
+                    while (!thisGLToBeTerminated) {
+                        try {
+                            NewGMMsg m = (NewGMMsg)
+                                    Task.receive(inbox + "-newGM", AUX.HeartbeatTimeout);
+//                            if (!m.getClass().getSimpleName().equals("NewGMMsg")) {
+//                                Logger.err("[GL.procNewGM] Unknown message: " + m);
+//                                continue;
+//                            }
+//                            Logger.info("[GL.procNewGM] " + m);
+                            String gmHostname = (String) m.getMessage();
+                            if (gmInfo.containsKey(gmHostname))
+                                Logger.err("[GL.procNewGM] GM " + gmHostname + " exists already");
+                            // Add GM
+                            GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, Msg.getClock()));
+                            gmInfo.put(gmHostname, gi);
+                            // Acknowledge integration
+                            Logger.info("[GL.procNewGM] GM added: " + m);
+                        }
+                        catch (Exception e) {
+                            Logger.exc("[GL.procNewGM] Exception, " + host.getName() + ": " + e.getClass().getName());
                             e.printStackTrace();
                         }
                     }

@@ -1,5 +1,6 @@
 package scheduling.snooze;
 
+import configuration.SimulatorProperties;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.SnoozeMsg;
@@ -35,10 +36,10 @@ public class Test extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
-//        procAddLCs();
+        procAddLCs();
 //        procAddGMs();
-//        procFailGLs();
-//        procFailGMs();
+        procFailGLs();
+        procFailGMs();
         while (!testsToBeTerminated) {
             dispInfo();
             sleep(1000*SnoozeProperties.getInfoPeriodicity());
@@ -50,7 +51,7 @@ public class Test extends Process {
             public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
                 sleep(5000);
                 int gmNo = 1; // no. of statically allocated LCs
-                for (int i = 0; i < 13 && !testsToBeTerminated; i++) {
+                for (int i = 0; i < SimulatorProperties.getNbOfServiceNodes() && !testsToBeTerminated; i++) {
                     String[] gmArgs = new String[]{"node" + (gmNo+1), "dynGroupManager-" + (gmNo+1)};
                     GroupManager gm =
                             new GroupManager(Host.getByName("node" + gmNo), "dynGroupManager-" + (gmNo+1), gmArgs);
@@ -66,16 +67,15 @@ public class Test extends Process {
     void procAddLCs() throws HostNotFoundException {
         new Process(host, host.getName() + "-addLCs") {
             public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
-                sleep(2000);
-                int lcNo = 20; // no. of statically allocated LCs
-                for (int i=0; i<20 && !testsToBeTerminated; i++) {
+                sleep(3000);
+                int lcNo = 0; // no. of statically allocated LCs
+                for (int i=0; i< SimulatorProperties.getNbOfHostingNodes() && !testsToBeTerminated; i++) {
                     String[] lcArgs = new String[] {"node"+lcNo, "dynLocalController-"+lcNo};
                     LocalController lc =
                             new LocalController(Host.getByName("node"+lcNo), "dynLocalController-"+lcNo, lcArgs);
                     lc.start();
                     Logger.info("[Test.addLCs] Dyn. LC added: " + lcArgs[1]);
                     lcNo++;
-                    sleep(100);
                 }
             }
         }.start();
@@ -85,7 +85,7 @@ public class Test extends Process {
         new Process(host, host.getName() + "-terminateGMs") {
             public void main(String[] args) throws HostFailureException {
                 sleep(10000);
-                for (int i=0; i<5 && !testsToBeTerminated; i++) {
+                for (int i=0; i< SimulatorProperties.getNbOfServiceNodes() && !testsToBeTerminated; i++) {
                     if (multicast.gmInfo.size() < 3) {
                         Logger.debug("[Test.failGLs] #GMs: " + multicast.gmInfo.size());
                         sleep(5000);
@@ -105,7 +105,7 @@ public class Test extends Process {
         new Process(host, host.getName() + "-terminateGMs") {
             public void main(String[] args) throws HostFailureException {
                 sleep(5000);
-                for (int i=0; i<3 && !testsToBeTerminated; i++) {
+                for (int i=0; i<SimulatorProperties.getNbOfServiceNodes() && !testsToBeTerminated; i++) {
                     if (multicast.gmInfo.size() < 3) {
                         Logger.info("[Test.failGMs] #GMs: " + multicast.gmInfo.size());
                         sleep(10000);
