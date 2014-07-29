@@ -86,23 +86,23 @@ public class LocalController extends Process {
 
     void join() {
         joining = true;
-        Logger.tmp("[LC.join] Entry: " + gmHostname + ", TS: " + gmTimestamp);
+        Logger.info("[LC.join] Entry: " + gmHostname + ", TS: " + gmTimestamp);
         String gl, gm;
         boolean success = false;
         do {
             try {
-                int i = 0;
                 gl = getGL();
                 if (gl.isEmpty()) continue;
+                int i = 0;
                 do {
                     gm = getGM(gl);
                     if (gm.isEmpty()) continue;
                     success = joinGM(gm);
                     i++;
-                } while (!success && i<2);
+                } while (!success && i<3);
                 if (!success) continue;
                 i=0;
-                do { success = joinFinalize(gm); i++; } while (!success && i<4);
+                do { success = joinFinalize(gm); i++; } while (!success && i<3);
                 if (!success) continue;
             } catch(Exception e) {
                 Logger.err("[LC.join] Exception");
@@ -111,7 +111,7 @@ public class LocalController extends Process {
             }
         } while (!success);
         joining = false;
-        Logger.tmp("[LC.join] Success, GM: " + gmHostname + ", TS: " + gmTimestamp);
+        Logger.info("[LC.join] Success, GM: " + gmHostname + ", TS: " + gmTimestamp);
     }
 
     /**
@@ -127,9 +127,10 @@ public class LocalController extends Process {
             m.send();
 //            Logger.info("[LC.getGL] 1 Request sent: " + m);
             // Wait for GL beat
-            int i = 1;
+            int i = 0;
             do {
-                m = (SnoozeMsg) Task.receive(inbox, AUX.HeartbeatTimeout);
+                m = (SnoozeMsg) Task.receive(inbox, 3*AUX.MessageReceptionTimeout);
+                i++;
                 Logger.info("[LC.getGL] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
                 success = m.getClass().getSimpleName().equals("RBeatGLMsg") && !m.getOrigin().isEmpty();
@@ -154,7 +155,7 @@ public class LocalController extends Process {
             Logger.info("[LC.getGM] Assignment message sent: " + m);
 
             // Wait for GM assignment
-            m = (SnoozeMsg) Task.receive(joinMBox, AUX.MessageReceptionTimeout);
+            m = (SnoozeMsg) Task.receive(joinMBox, 3*AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("LCAssMsg")) return "";
             String gm = (String) m.getMessage();
             if (gm.isEmpty()) {
@@ -180,7 +181,7 @@ public class LocalController extends Process {
             SnoozeMsg m = new NewLCMsg(host.getName(), AUX.gmInbox(gm), name, joinMBox);
             m.send();
             Logger.info("[LC.joinGM] Integration message sent: " + m);
-            m = (SnoozeMsg) Task.receive(joinMBox, AUX.MessageReceptionTimeout);
+            m = (SnoozeMsg) Task.receive(joinMBox, 3*AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("NewLCMsg")) {
                 Logger.err("[LC.joinGM] No NewLC msg.: " + m);
                 return false;
@@ -204,7 +205,7 @@ public class LocalController extends Process {
             SnoozeMsg m = new NewLCMsg(gm, AUX.multicast, host.getName(), joinMBox);
             m.send();
             Logger.info("[LC.joinFinalize] GL->GM multicast: " + m);
-            m = (SnoozeMsg) Task.receive(joinMBox, AUX.HeartbeatTimeout);
+            m = (SnoozeMsg) Task.receive(joinMBox, 3*AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("NewLCMsg")) return false;
             gm = (String) m.getMessage();
             if (gm.isEmpty()) {

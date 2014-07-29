@@ -29,19 +29,19 @@ elif (sys.argv[1] == 'hierarchical'):
         "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
         "  <process host=\"node%d\" function=\"simulation.HierarchicalResolver\"> </process>\n" % (nb_nodes + nb_servicenodes, nb_nodes +1))
 
-        for i in range(0, nb_nodes):
+#        for i in range(0, nb_nodes):
+#
+#            line = "  <process host=\"node%d\" function=\"scheduling.snooze.LocalController\">\
+# <argument value=\"node%d\" /><argument value=\"localController-%d\" />\
+# </process>\n" % (i, i, i)
+#            sys.stdout.write(line)
 
-            line = "  <process host=\"node%d\" function=\"scheduling.snooze.LocalController\">\
- <argument value=\"node%d\" /><argument value=\"localController-%d\" />\
- </process>\n" % (i, i, i)
-            sys.stdout.write(line)
-
-        for i in range(nb_nodes, nb_nodes+nb_servicenodes):
-
-            line = "  <process host=\"node%d\" function=\"scheduling.snooze.GroupManager\">\
-<argument value=\"node%d\" /><argument value=\"groupManager-%d\" />\
-</process>\n" % (i, i, i)
-            sys.stdout.write(line)
+#        for i in range(nb_nodes, nb_nodes+nb_servicenodes):
+#
+#            line = "  <process host=\"node%d\" function=\"scheduling.snooze.GroupManager\">\
+#<argument value=\"node%d\" /><argument value=\"groupManager-%d\" />\
+#</process>\n" % (i, i, i)
+#            sys.stdout.write(line)
 
         sys.stdout.write("</platform>")
 
