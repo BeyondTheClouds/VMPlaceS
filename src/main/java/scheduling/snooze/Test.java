@@ -35,10 +35,10 @@ public class Test extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
-        procAddLCs();
-        procAddGMs();
-        procFailGLs();
-        procFailGMs();
+//        procAddLCs();
+//        procAddGMs();
+//        procFailGLs();
+//        procFailGMs();
         while (!testsToBeTerminated) {
             dispInfo();
             sleep(1000*SnoozeProperties.getInfoPeriodicity());
@@ -128,7 +128,7 @@ public class Test extends Process {
 //            return;
 //        }
         int i = 0, al = 0;
-        Logger.info("\n\n[Test.dispInfo] #MUL.gmInfo: " + multicast.gmInfo.size() +
+        Logger.tmp("\n\n[Test.dispInfo] #MUL.gmInfo: " + multicast.gmInfo.size() +
                 ", #MUL.lcInfo: " + multicast.lcInfo.size() + ", #Test.gms " + Test.gms.size());
         if (!multicast.gmInfo.isEmpty()) {
             for (String gm : multicast.gmInfo.keySet()) {
@@ -137,13 +137,13 @@ public class Test extends Process {
                     for (String lc : multicast.lcInfo.keySet()) if (multicast.lcInfo.get(lc).gmHost.equals(gm)) l++;
                 String gmLeader = "";
                 for (GroupManager gmo : gms) if (gmo.host.getName().equals(gm)) gmLeader = gmo.glHostname;
-                Logger.info("    MUL.GM: " + gm + ", MUL.GM.#LCs: " + l + ", Test.GMLeader: " + gmLeader);
+                Logger.tmp("    MUL.GM: " + gm + ", MUL.GM.#LCs: " + l + ", Test.GMLeader: " + gmLeader);
                 i++;
                 al += l;
             }
         }
         if (gl != null)
-            Logger.info("    Test.GL: " + gl.host.getName()
+            Logger.tmp("    Test.GL: " + gl.host.getName()
                     + ", Test.GL.#GM: " + gl.gmInfo.size() + ", MUL.GM.#LCs: " + al + "\n");
     }
 }

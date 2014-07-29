@@ -34,6 +34,7 @@ public class Multicast extends Process {
     public void main(String[] strings) {
         Test.multicast = this;
         procRelayGLBeats();
+        procRelayGMBeats();
         while (true) {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
@@ -57,8 +58,6 @@ public class Multicast extends Process {
      //   Logger.info("New message :" + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-//            case "BeatGLMsg": handleBeatGL(m); break;
-            case "BeatGMMsg": handleBeatGM(m); break;
             case "GLElecMsg": handleGLElec(m); break;
             case "NewLCMsg" : handleNewLC(m);  break;
             case "NewGMMsg" : handleNewGM(m);  break;
@@ -67,18 +66,6 @@ public class Multicast extends Process {
                 Logger.err("[MUL(SnoozeMsg)] Unknown message" + m);
                 break;
         }
-    }
-
-    void handleBeatGM(SnoozeMsg m) {
-        String gm = m.getOrigin();
-        if (gmInfo.get(gm) == null) {
-            Logger.err("[MUL(BeatGM)] GM unknown: " + gm);
-            return;
-        }
-        GMInfo oldGI = gmInfo.get(gm);
-        gmInfo.put(gm, new GMInfo(oldGI.replyBox, (double) m.getMessage(), oldGI.joining));
-//        Logger.info("[MUL(BeatGM)] To be relayed: " + m);
-        relayGMBeats(gm);
     }
 
     void handleGLElec(SnoozeMsg m) {
@@ -108,23 +95,6 @@ public class Multicast extends Process {
             Logger.info("[MUL(NewGM)] GM Promotion succeeded: " + gm);
         }
 //        Logger.info("[MUL(NewGMMsg)] GM stored: " + m);
-    }
-
-    void handleNewLC(SnoozeMsg m) {
-//        Logger.info("[MUL(NewLCMsg)] " + m);
-        if (m.getMessage() == null) {
-            // Add LC
-            lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
-            Logger.info("[MUL(NewLCMsg)] LC temp. joined: " + m);
-        } else {
-            // End LC join phase
-            String lc = m.getOrigin();
-            String gm = (String) m.getMessage();
-            lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
-            m = new NewLCMsg(gm, m.getReplyBox(), null, null);
-            m.send();
-            Logger.info("[MUL(NewLCMsg)] LC integrated: " + m);
-        }
     }
 
     void handleTermGM(SnoozeMsg m) {
@@ -159,24 +129,24 @@ public class Multicast extends Process {
         ArrayList<String> orphanLCs = new ArrayList<String>();
 
         for (String gm: gmInfo.keySet()) {
-            if (gmInfo.get(gm).timestamp == 0) {
+            GMInfo gi = gmInfo.get(gm);
+            if (gi.timestamp == 0 || AUX.timeDiff(gmInfo.get(gm).timestamp) <= AUX.HeartbeatTimeout
+                    || gi.joining) {
 //            Logger.err("[MUL.gmDead] GM: " + gm + " gmTimestamp == null");
-                return;
+                continue;
             }
-            if (AUX.timeDiff(gmInfo.get(gm).timestamp) > AUX.HeartbeatTimeout) {
-                deadGMs.add(gm);
+            deadGMs.add(gm);
 
-                // Identify LCs of dead GMs
-                for (String lc: lcInfo.keySet()) {
-                    if (lcInfo.get(lc).gmHost.equals(gm)) orphanLCs.add(lc);
-                }
+            // Identify LCs of dead GMs
+            for (String lc: lcInfo.keySet()) {
+                if (lcInfo.get(lc).gmHost.equals(gm)) orphanLCs.add(lc);
             }
         }
 
         // Remove dead GMs and associated LCs
         for (String gm: deadGMs) {
+            Logger.err("[MUL.gmDead] GM removed: " + gm + ", " + gmInfo.get(gm).timestamp);
             gmInfo.remove(gm);
-            Logger.err("[MUL.gmDead] GM removed: " + gm);
 //            leaderElection();
             Test.dispInfo();
         }
@@ -283,7 +253,7 @@ public class Multicast extends Process {
             for (String gm : gmInfo.keySet()) {
                 m = new RBeatGLMsg(glTimestamp, AUX.gmInbox(gm)+"-glBeats", glHostname, null);
                 m.send();
-//                Logger.info("[MUL.relayGLbeats] Beat relayed to GM: " + m);
+                Logger.info("[MUL.relayGLbeats] Beat relayed to GM: " + m);
             }
             for (String lc : lcInfo.keySet()) {
                 LCInfo lv = lcInfo.get(lc);
@@ -300,11 +270,11 @@ public class Multicast extends Process {
     /**
      * Relay GM beats to LCs
      */
-    void relayGMBeats(String gm) {
+    void relayGMBeats(String gm, double ts) {
         // Send to GL
-        SnoozeMsg m = new RBeatGMMsg(gmInfo.get(gm).timestamp, AUX.glInbox(glHostname)+"-gmPeriodic", gm, null);
+        SnoozeMsg m = new RBeatGMMsg(ts, AUX.glInbox(glHostname)+"-gmPeriodic", gm, null);
         m.send();
-        Logger.info("[MUL.relayGMBeats] GL: " + m);
+        Logger.tmp("[MUL.relayGMBeats] " + m);
 
         // Send to LCs
         for (String lc: lcInfo.keySet()) {
@@ -314,9 +284,9 @@ public class Multicast extends Process {
 //            Logger.info("[MUL.relayGMBeats] LC: " + lc + ", GM: " + gm);
                 if (gm.equals(gmLc)) {
                     GMInfo gmi = gmInfo.get(gm);
-                    m = new RBeatGMMsg(gmi.timestamp, AUX.lcInbox(lc), gm, null);
+                    m = new RBeatGMMsg(gmi.timestamp, AUX.lcInbox(lc) + "-gmBeats", gm, null);
                     m.send();
-//                    Logger.info("[MUL.relayGMBeats] To LC: " + m);
+                    Logger.tmp("[MUL.relayGMBeats] To LC: " + m);
                 }
             }
         }
@@ -339,6 +309,60 @@ public class Multicast extends Process {
                             glDead = true;
                         } catch (Exception e) {
                             Logger.exc("[MUL.procRelayGLBeats] Exception: " + e.getClass().getName());
+//                            e.printStackTrace();
+                        }
+                    }
+                }
+            }.start();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+
+//    void procNewLC() {
+//        try {
+//            new Process(host, host.getName() + "-relayGMBeats") {
+//                public void main(String[] args) {
+//                    while (true) {
+    void handleNewLC(SnoozeMsg m) {
+//        Logger.info("[MUL(NewLCMsg)] " + m);
+        if (m.getMessage() == null) {
+            // Add LC
+            lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
+            Logger.info("[MUL(NewLCMsg)] LC temp. joined: " + m);
+        } else {
+            // End LC join phase
+            String lc = m.getOrigin();
+            String gm = (String) m.getMessage();
+            lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
+            m = new NewLCMsg(gm, m.getReplyBox(), null, null);
+            m.send();
+            Logger.info("[MUL(NewLCMsg)] LC integrated: " + m);
+        }
+    }
+    /**
+     * Relays GM beats
+     */
+    void procRelayGMBeats() {
+        try {
+            new Process(host, host.getName() + "-relayGMBeats") {
+                public void main(String[] args) {
+                    while (true) {
+                        try {
+                            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGMBeats", AUX.HeartbeatTimeout);
+                            Logger.tmp("[MUL.procRelayGMBeats] " + m);
+                            String gm = m.getOrigin();
+                            double ts = (double) m.getMessage();
+                            if (gmInfo.containsKey(gm)) {
+                                GMInfo gi = gmInfo.get(gm);
+                                gmInfo.put(gm, new GMInfo(gi.replyBox, ts, gi.joining));
+                            }
+                            else Logger.err("[MUL.procRelayGMBeats] Unknown GM: " + m);
+                            relayGMBeats(gm, ts);
+                            sleep(AUX.DefaultComputeInterval);
+                        } catch (TimeoutException e) {
+                            glDead = true;
+                        } catch (Exception e) {
+                            Logger.exc("[MUL.procRelayGMBeats] Exception: " + e.getClass().getName());
 //                            e.printStackTrace();
                         }
                     }

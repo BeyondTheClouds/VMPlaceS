@@ -107,7 +107,7 @@ public class GroupLeader extends Process {
     void gmCharge(SnoozeMsg m) {
         try {
             String gm = m.getOrigin();
-            if (!gmInfo.contains(m.getOrigin())) return;
+            if (!gmInfo.containsKey(m.getOrigin())) return;
             GMInfo gi = gmInfo.get(gm);
             GMSumMsg.GMSum s = (GMSumMsg.GMSum) m.getMessage();
             GMSum sum = new GMSum(s.getProcCharge(), s.getMemUsed(), Msg.getClock());
@@ -212,7 +212,7 @@ public class GroupLeader extends Process {
                             BeatGLMsg m =
                                     new BeatGLMsg(Msg.getClock(), AUX.multicast+"-relayGLBeats", glHostname, null);
                             m.send();
-                        Logger.info("[GL.procBeats] " + m);
+                            Logger.info("[GL.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval);
                         } catch (Exception e) { e.printStackTrace(); }
                     }

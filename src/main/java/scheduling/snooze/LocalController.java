@@ -37,7 +37,8 @@ public class LocalController extends Process {
         init(SimulatorManager.getXHostByName(args[0]), args[1]);
         join();
         Test.lcs.add(this);
-        procBeats();
+        procSendMyBeats();
+        procGMBeats();
         procLCChargeToGM();
         while (true) {
             try {
@@ -56,26 +57,11 @@ public class LocalController extends Process {
 //        Logger.info("[LC.handle] LCIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-            case "RBeatGMMsg": handleRBeatGM(m); break;
             case "TermGMMsg" : handleTermGM(m); break;
             case "SnoozeMsg" :
                 Logger.err("[GM(SnoozeMsg)] Unknown message" + m + " on " + host);
                 break;
         }
-    }
-
-    void handleRBeatGM(SnoozeMsg m) {
-        String gm = (String) m.getOrigin();
-        if (gmHostname.isEmpty()) {
-            Logger.err("[LC(BeatGMMsg)] No GM");
-            return;
-        }
-        if (!gmHostname.equals(gm))   {
-            Logger.err("[LC(BeatGMMsg)] Multiple GMs" + gmHostname + ", " + gm);
-            return;  // Could be used for change of GM
-        }
-        gmTimestamp = (double) m.getMessage();
-//        Logger.info("[LC(BeatGMMsg)] Exit GM: " + gmHostname + " TS: " + gmTimestamp);
     }
 
     /**
@@ -129,8 +115,11 @@ public class LocalController extends Process {
             m.send();
 //            Logger.info("[LC.tryJoin] 1 Request sent: " + m);
             // Wait for GL beat
+            int i = 1;
             do {
-                m = (SnoozeMsg) Task.receive(inbox, AUX.MessageReceptionTimeout);
+                m = (SnoozeMsg) Task.receive(inbox, AUX.HeartbeatInterval);
+//                m = (SnoozeMsg) Task.receive(inbox, AUX.MessageReceptionTimeout);
+                Logger.tmp("[LC.tryJoin] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
                 success = m.getClass().getSimpleName().equals("RBeatGLMsg") && !m.getOrigin().isEmpty();
             } while (!success);
@@ -179,12 +168,11 @@ public class LocalController extends Process {
             gmHostname = gm;
             gmTimestamp = Msg.getClock();
 
-//            Logger.info("[LC.tryJoin] Finished, GM: " + gm + ", " + gmTimestamp);
+            Logger.tmp("[LC.tryJoin] Finished, GM: " + gm + ", " + gmTimestamp);
             return true;
         } catch (Exception e) {
-            Logger.exc("Exception [LC.tryJoin] " + host.getName() + ": " + e.getClass().getName() + ": "
-                    + e.getCause());
-//            e.printStackTrace();
+            Logger.exc("Exception [LC.tryJoin] " + host.getName() + ": " + e.getClass().getName());
+            e.printStackTrace();
             return false;
         }
     }
@@ -192,7 +180,40 @@ public class LocalController extends Process {
     /**
      * Send LC beat to GM
      */
-    void procBeats() {
+    void procGMBeats() {
+        try {
+            new Process(host.getSGHost(), host.getSGHost().getName() + "-gmBeats") {
+                public void main(String[] args) throws HostFailureException {
+                    SnoozeMsg m;
+                    String gm;
+                    while (true) {
+                        try {
+                            m = (SnoozeMsg) Task.receive(inbox + "-gmBeats", AUX.HeartbeatTimeout);
+                            gm = (String) m.getOrigin();
+                            if (gmHostname.isEmpty()) {
+                                Logger.err("[LC.procGMBeats] No GM");
+                                continue;
+                            }
+                            if (!gmHostname.equals(gm))   {
+                                Logger.err("[LC.procGMBeats] Multiple GMs" + gmHostname + ", " + gm);
+                                continue;  // Could be used for change of GM
+                            }
+                            gmTimestamp = (double) m.getMessage();
+                            Logger.tmp("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
+
+                            sleep(AUX.HeartbeatInterval);
+                        } catch (Exception e) { e.printStackTrace(); }
+                    }
+                }
+            }.start();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
+
+    /**
+     * Send LC beat to GM
+     */
+    void procSendMyBeats() {
         try {
             new Process(host.getSGHost(), host.getSGHost().getName() + "-lcBeats") {
                 public void main(String[] args) throws HostFailureException {
@@ -201,7 +222,7 @@ public class LocalController extends Process {
                         try {
                             BeatLCMsg m = new BeatLCMsg(Msg.getClock(), AUX.gmInbox(gmHostname), host.getName(), null);
                             m.send();
-                            Logger.info("[LC.beat] " + m);
+                            Logger.tmp("[LC.beat] " + m);
                             sleep(AUX.HeartbeatInterval);
                         } catch (Exception e) { e.printStackTrace(); }
                     }
@@ -209,6 +230,7 @@ public class LocalController extends Process {
             }.start();
         } catch (Exception e) { e.printStackTrace(); }
     }
+
 
     /**
      * Send LC beats to GM

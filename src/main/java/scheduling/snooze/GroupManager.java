@@ -136,7 +136,7 @@ public class GroupManager extends Process {
     void handleLCCharge(SnoozeMsg m) {
         try {
             String lcHostname = (String) m.getOrigin();
-            if (lcHostname.equals("") || !lcInfo.contains(lcHostname)) return;
+            if (lcHostname.equals("") || !lcInfo.containsKey(lcHostname)) return;
             LCChargeMsg.LCCharge cs = (LCChargeMsg.LCCharge) m.getMessage();
             LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), Msg.getClock());
             double oldBeat = lcInfo.get(lcHostname).timestamp;
@@ -271,11 +271,11 @@ public class GroupManager extends Process {
      */
     void procSendMyBeats() {
         try {
-            new Process(host, host.getName() + "-gmBeats") {
+            new Process(host, host.getName() + "-relayGMBeats") {
                 public void main(String[] args) throws HostFailureException {
                     while (!thisGMToBeStopped) {
                         try {
-                            BeatGMMsg m = new BeatGMMsg(Msg.getClock(), AUX.multicast, host.getName(), null);
+                            BeatGMMsg m = new BeatGMMsg(Msg.getClock(), AUX.multicast + "-relayGMBeats", host.getName(), null);
                             m.send();
                             Logger.info("[GM.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval);

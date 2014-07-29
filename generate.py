@@ -32,8 +32,8 @@ elif (sys.argv[1] == 'hierarchical'):
         for i in range(0, nb_nodes):
 
             line = "  <process host=\"node%d\" function=\"scheduling.snooze.LocalController\">\
-<argument value=\"node%d\" /><argument value=\"localController-%d\" />\
-</process>\n" % (i, i, i)
+ <argument value=\"node%d\" /><argument value=\"localController-%d\" />\
+ </process>\n" % (i, i, i)
             sys.stdout.write(line)
 
         for i in range(nb_nodes, nb_nodes+nb_servicenodes):
