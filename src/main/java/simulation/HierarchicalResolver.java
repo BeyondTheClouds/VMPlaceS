@@ -27,6 +27,7 @@ public class HierarchicalResolver extends Process {
         new EntryPoint(Host.currentHost(), "entryPoint").start();
 
         // Start the mutlicast service
+        Msg.info("Start the multicast entry point on " + Host.currentHost()+ "");
         Multicast multicast = new Multicast(Host.currentHost(), "multicast");
         multicast.start();
 
