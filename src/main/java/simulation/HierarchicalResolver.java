@@ -4,7 +4,6 @@ package simulation;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.EntryPoint;
-import scheduling.snooze.GroupLeader;
 import scheduling.snooze.Multicast;
 import scheduling.snooze.Test;
 
@@ -32,7 +31,7 @@ public class HierarchicalResolver extends Process {
         multicast.start();
 
 //        Start the group leadear (by default it is started on the first node of the infrastructure
-        new GroupLeader(Host.getByName("node1"), "groupLeader").start();
+//        new GroupLeader(Host.getByName("node1"), "groupLeader").start();
 
         // Start as many GMs as expected and assign them randomly (please note that for reproductibility reasons, we are
         // leveraging a specific seed (see SimulatorProperties class file)

@@ -117,7 +117,7 @@ public class LocalController extends Process {
             // Wait for GL beat
             int i = 1;
             do {
-                m = (SnoozeMsg) Task.receive(inbox, AUX.HeartbeatInterval);
+                m = (SnoozeMsg) Task.receive(inbox);
 //                m = (SnoozeMsg) Task.receive(inbox, AUX.MessageReceptionTimeout);
                 Logger.tmp("[LC.tryJoin] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
