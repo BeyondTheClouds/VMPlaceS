@@ -16,7 +16,7 @@ public class LocalController extends Process {
     private String gmHostname = "";
     private double gmTimestamp;
     private int procCharge = 0;
-    private String inbox;
+    private String inbox, joinMBox;
     private String lcCharge; // GM mbox
     private boolean joining = true;
 
@@ -28,6 +28,7 @@ public class LocalController extends Process {
         this.host = host;
         this.name = name;
         this.inbox = AUX.lcInbox(host.getName());
+        this.joinMBox = inbox + "-join";
     }
 
     @Override
@@ -86,11 +87,20 @@ public class LocalController extends Process {
     void join() {
         joining = true;
         Logger.info("[LC.join] Entry: " + gmHostname + ", TS: " + gmTimestamp);
-        boolean success;
+        String gl, gm;
+        boolean success = false;
+        int i;
         do {
             try {
-                success = tryJoin();
-                if (!success) sleep(200); // TODO: to adapt
+                gl = getGL();
+                if (gl.isEmpty()) continue;
+                i = 0;
+                do { gm = getGM(gl); } while (gm.isEmpty() && i<3);
+                if (gm.isEmpty()) continue;
+                do { success = joinGM(gm); } while (!success && i<3);
+                if (!success) continue;
+                do { success = joinFinalize(gm); } while (!success && i<3);
+                if (!success) continue;
             } catch(Exception e) {
                 Logger.err("[LC.join] Exception");
                 e.printStackTrace();
@@ -104,74 +114,109 @@ public class LocalController extends Process {
     /**
      * Send join request to EP and wait for GroupManager acknowledgement
      */
-    boolean tryJoin() {
+    String getGL() {
         try {
             boolean success = false;
-            String joinMBox = AUX.lcInbox(host.getName()) + "-join";
             SnoozeMsg m = null;
             String gl = "";
             // Join GL multicast group
             m = new NewLCMsg(null, AUX.multicast, host.getName(), joinMBox);
             m.send();
-//            Logger.info("[LC.tryJoin] 1 Request sent: " + m);
+//            Logger.info("[LC.getGL] 1 Request sent: " + m);
             // Wait for GL beat
             int i = 1;
             do {
-                m = (SnoozeMsg) Task.receive(inbox);
-//                m = (SnoozeMsg) Task.receive(inbox, AUX.MessageReceptionTimeout);
-                Logger.tmp("[LC.tryJoin] Round " + i + ": " + m);
+                m = (SnoozeMsg) Task.receive(inbox, AUX.HeartbeatTimeout);
+                Logger.tmp("[LC.getGL] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
                 success = m.getClass().getSimpleName().equals("RBeatGLMsg") && !m.getOrigin().isEmpty();
             } while (!success);
-            gl = m.getOrigin();
-//            Logger.info("[LC.tryJoin] 1 Got GL: " + m);
+            return gl;
+//            Logger.info("[LC.getGL] 1 Got GL: " + m);
+        } catch (Exception e) {
+            Logger.exc("[LC.getGL] PROBLEM? Exception " + host.getName() + ": " + e.getClass().getName());
+            e.printStackTrace();
+            return "";
+        }
+    }
 
-            gmHostname = "";
+    /**
+     * Send join request to EP and wait for GroupManager acknowledgement
+     */
+    String getGM(String gl) {
+        try {
             // Send GM assignment request
-            m = new LCAssMsg(host.getName(), AUX.glInbox(gl), host.getName(), joinMBox);
+            SnoozeMsg m = new LCAssMsg(host.getName(), AUX.glInbox(gl), host.getName(), joinMBox);
             m.send();
+            Logger.info("[LC.getGM] Assignment message sent: " + m);
 
             // Wait for GM assignment
             m = (SnoozeMsg) Task.receive(joinMBox, AUX.MessageReceptionTimeout);
-            if (!m.getClass().getSimpleName().equals("LCAssMsg")) return false;
+            if (!m.getClass().getSimpleName().equals("LCAssMsg")) return "";
             String gm = (String) m.getMessage();
             if (gm.isEmpty()) {
-                Logger.err("[LC.tryJoin] 2 Empty GM: " + m);
-                return false;
+                Logger.err("[LC.getGM] Empty GM: " + m);
+                return "";
             }
-//            Logger.info("[LC.tryJoin] 2 GM assigned: " + m);
+            Logger.info("[LC.getGM] GM assigned: " + m);
+            return gm;
+        } catch (Exception e) {
+            Logger.exc("[LC.getGM] Exception " + host.getName() + ": " + e.getClass().getName());
+            e.printStackTrace();
+            return "";
+        }
+    }
 
+
+    /**
+     * Send join request to EP and wait for GroupManager acknowledgement
+     */
+    boolean joinGM(String gm) {
+        try {
             // GM integration request
-            m = new NewLCMsg(host.getName(), AUX.gmInbox(gm), name, joinMBox);
+            SnoozeMsg m = new NewLCMsg(host.getName(), AUX.gmInbox(gm), name, joinMBox);
             m.send();
+            Logger.info("[LC.joinGM] Integration message sent: " + m);
             m = (SnoozeMsg) Task.receive(joinMBox, AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("NewLCMsg")) {
-                Logger.err("[LC.tryJoin] 3 No NewLC msg.: " + m);
+                Logger.err("[LC.joinGM] No NewLC msg.: " + m);
                 return false;
             }
-//            Logger.info("[LC.tryJoin] 3 Integrated by GM: " + m);
+            Logger.info("[LC.joinGM] Integrated by GM: " + m);
+            return true;
+        } catch (Exception e) {
+            Logger.exc("[LC.joinGM] Exception " + host.getName() + ": " + e.getClass().getName());
+            e.printStackTrace();
+            return false;
+        }
+    }
 
 
+    /**
+     * Send join request to EP and wait for GroupManager acknowledgement
+     */
+    boolean joinFinalize(String gm) {
+        try {
             // Leave GL multicast, join GM multicast group
-            m = new NewLCMsg(gm, AUX.multicast, host.getName(), joinMBox);
+            SnoozeMsg m = new NewLCMsg(gm, AUX.multicast, host.getName(), joinMBox);
             m.send();
-//            Logger.info("[LC.tryJoin] 4.1 GL->GM multicast: " + m);
+            Logger.info("[LC.joinFinalize] GL->GM multicast: " + m);
             m = (SnoozeMsg) Task.receive(joinMBox, AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("NewLCMsg")) return false;
             gm = (String) m.getMessage();
             if (gm.isEmpty()) {
-                Logger.err("[LC.tryJoin] 4 Empty GM: " + m);
+                Logger.err("[LC.joinFinalize] 4 Empty GM: " + m);
                 return false;
             }
-//            Logger.info("[LC.tryJoin] 4 Ok GL->GM multicast: " + m);
+            Logger.info("[LC.tryJoin] Ok GL->GM multicast: " + m);
 
             gmHostname = gm;
             gmTimestamp = Msg.getClock();
 
-            Logger.tmp("[LC.tryJoin] Finished, GM: " + gm + ", " + gmTimestamp);
+            Logger.tmp("[LC.joinFinalize] Finished, GM: " + gm + ", " + gmTimestamp);
             return true;
         } catch (Exception e) {
-            Logger.exc("Exception [LC.tryJoin] " + host.getName() + ": " + e.getClass().getName());
+            Logger.exc("Exception [LC.joinFinalize] " + host.getName() + ": " + e.getClass().getName());
             e.printStackTrace();
             return false;
         }

@@ -91,12 +91,13 @@ public class GroupManager extends Process {
      * Listen asynchronously for heartbeats from all known LCs
      */
     void handleBeatLC(SnoozeMsg m) {
-//        Logger.info("[GM(BeatLC)] " + m);
+        Logger.info("[GM(BeatLC)] " + m);
         String lc = m.getOrigin();
-        LCInfo li = lcInfo.get(lc);
-        LCCharge lcc = li != null ? li.charge : null;
-        lcInfo.put(lc, new LCInfo(lcc, (double) m.getMessage()));
-        Logger.info("[GM(BeatLC)] " + lc + ", " + lcInfo.get(lc).charge + ", " + lcInfo.get(lc).timestamp);
+        if (lcInfo.containsKey(lc)) {
+            lcInfo.put(lc, new LCInfo(lcInfo.get(lc).charge, (double) m.getMessage()));
+            Logger.info("[GM(BeatLC)] " + lc + ", " + lcInfo.get(lc).charge + ", " + lcInfo.get(lc).timestamp);
+        }
+        else Logger.err("[GM(BeatLC) Unknown LC] " + m);
     }
 
     void handleGMElec(SnoozeMsg m) {
