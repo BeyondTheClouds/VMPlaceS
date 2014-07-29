@@ -89,19 +89,20 @@ public class LocalController extends Process {
         Logger.tmp("[LC.join] Entry: " + gmHostname + ", TS: " + gmTimestamp);
         String gl, gm;
         boolean success = false;
-        int i;
         do {
             try {
+                int i = 0;
                 gl = getGL();
                 if (gl.isEmpty()) continue;
-                i = 0;
                 do {
                     gm = getGM(gl);
                     if (gm.isEmpty()) continue;
                     success = joinGM(gm);
-                } while (!success && i<3);
+                    i++;
+                } while (!success && i<2);
                 if (!success) continue;
-                do { success = joinFinalize(gm); } while (!success && i<3);
+                i=0;
+                do { success = joinFinalize(gm); i++; } while (!success && i<4);
                 if (!success) continue;
             } catch(Exception e) {
                 Logger.err("[LC.join] Exception");

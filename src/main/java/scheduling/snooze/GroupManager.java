@@ -193,7 +193,7 @@ public class GroupManager extends Process {
                 if (joining) {
                     procSendMyBeats();
                     procSendMyCharge();
-//                    procScheduling();
+                    procScheduling();
                     Logger.info("[GM.glBeats] GM Join finished: " + m);
                     joining = false;
                     Test.gms.add(this);
