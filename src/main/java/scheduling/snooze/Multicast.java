@@ -81,6 +81,28 @@ public class Multicast extends Process {
         }
     }
 
+    //    void procNewLC() {
+//        try {
+//            new Process(host, host.getName() + "-relayGMBeats") {
+//                public void main(String[] args) {
+//                    while (true) {
+    void handleNewLC(SnoozeMsg m) {
+//        Logger.info("[MUL(NewLCMsg)] " + m);
+        if (m.getMessage() == null) {
+            // Add LC
+            lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
+            Logger.info("[MUL(NewLCMsg)] LC temp. joined: " + m);
+        } else {
+            // End LC join phase
+            String lc = m.getOrigin();
+            String gm = (String) m.getMessage();
+            lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
+            m = new NewLCMsg(gm, m.getReplyBox(), null, null);
+            m.dsend(m.getReplyBox());
+            Logger.info("[MUL(NewLCMsg)] LC integrated: " + m);
+        }
+    }
+
     void handleNewGM(SnoozeMsg m) {
         String gm = (String) m.getMessage();
         gmInfo.put(gm, new GMInfo(AUX.gmInbox(gm), Msg.getClock(), true));
@@ -317,28 +339,6 @@ public class Multicast extends Process {
         } catch (Exception e) { e.printStackTrace(); }
     }
 
-
-//    void procNewLC() {
-//        try {
-//            new Process(host, host.getName() + "-relayGMBeats") {
-//                public void main(String[] args) {
-//                    while (true) {
-    void handleNewLC(SnoozeMsg m) {
-//        Logger.info("[MUL(NewLCMsg)] " + m);
-        if (m.getMessage() == null) {
-            // Add LC
-            lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
-            Logger.info("[MUL(NewLCMsg)] LC temp. joined: " + m);
-        } else {
-            // End LC join phase
-            String lc = m.getOrigin();
-            String gm = (String) m.getMessage();
-            lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
-            m = new NewLCMsg(gm, m.getReplyBox(), null, null);
-            m.send();
-            Logger.info("[MUL(NewLCMsg)] LC integrated: " + m);
-        }
-    }
     /**
      * Relays GM beats
      */

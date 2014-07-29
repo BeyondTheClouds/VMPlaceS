@@ -98,7 +98,7 @@ public class GroupLeader extends Process {
     void gmBeats(SnoozeMsg m) {
         String gm = m.getOrigin();
         double ts = (double) m.getMessage();
-        if (!gm.isEmpty()) {
+        if (gmInfo.containsKey(gm)) {
             gmInfo.put(gm, new GMInfo(ts, gmInfo.get(gm).summary));
             Logger.info("[GL.gmBeats] TS updated: " + gm + ": " + ts);
         }
@@ -187,8 +187,8 @@ public class GroupLeader extends Process {
                             Logger.exc("[GL.procGMInfo] PROBLEM? Timeout Exception");
                         }
                         catch (Exception e) {
-                            Logger.exc("[GM.procGLInfo] Exception, " + host.getName() + ": " + e.getClass().getName());
-//                            e.printStackTrace();
+                            Logger.exc("[GL.procGMInfo] Exception, " + host.getName() + ": " + e.getClass().getName());
+                            e.printStackTrace();
                         }
                     }
                 }
