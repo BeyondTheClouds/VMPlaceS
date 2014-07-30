@@ -143,7 +143,7 @@ public class Injector extends Process {
             crashEvt = null;
         LoadEvent loadEvt = loadQueue.pollFirst();
         // Here we are considering that the getCPUDemand event queue cannot be empty
-        do{
+        while(loadEvt != null){
 
             while (crashEvt != null && loadEvt.getTime()>crashEvt.getTime()){
                 queue.addLast(crashEvt);
@@ -151,7 +151,7 @@ public class Injector extends Process {
             }
             queue.addLast(loadEvt);
             loadEvt = loadQueue.pollFirst();
-        }while(loadEvt != null);
+        }//while(loadEvt != null);
 
         while(crashEvt != null){
             queue.addLast(crashEvt);
@@ -165,9 +165,9 @@ public class Injector extends Process {
 
         /* Display the queue */
 
-        //for(InjectorEvent evt: this.evtQueue){
-        //    System.out.println(evt);
-        //}
+        for(InjectorEvent evt: this.evtQueue){
+            System.out.println(evt);
+        }
 
 		/* Initialization is done in Main */
    

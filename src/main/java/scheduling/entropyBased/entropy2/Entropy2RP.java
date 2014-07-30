@@ -37,6 +37,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 	private ChocoCustomRP planner;//Entropy2.1
 //	private ChocoCustomPowerRP planner;//Entropy2.0
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
+    private boolean abortRP;
 
     public Entropy2RP(Configuration initialConfiguration) {
         this(initialConfiguration, -1);
@@ -49,6 +50,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
 		planner.setTimeLimit(EntropyProperties.getEntropyPlanTimeout());
         this.loopID = loopID;
+        this.abortRP = false;
         //Log the current Configuration
         try {
             String fileName = "logs/entropy/configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt";
@@ -180,22 +182,8 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-			//Apply the reconfiguration plan physically if running on a real system (i.e. migrate real VMs)
-//			if(!SimulatorProperties.getSimulation()){
-//				TimedReconfigurationExecuter exec;
-//				
-//				try {
-//					timeToApplyReconfigurationPlan = System.currentTimeMillis();
-//					exec = new TimedReconfigurationExecuter(new DriverFactory(new PropertiesHelper()));
-//					exec.start(reconfigurationPlan);
-//					timeToApplyReconfigurationPlan = System.currentTimeMillis() - timeToApplyReconfigurationPlan;
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//					timeToApplyReconfigurationPlan = System.currentTimeMillis() - timeToApplyReconfigurationPlan;
-//				}
-//			}
-			// Apply the reconfiguration plan logicaly (ie. on the current configuration).
+
+			// Apply the reconfiguration plan.
 			try {
 				applyReconfigurationPlanLogically(sortedActions);
 			} catch (InterruptedException e) {
@@ -223,7 +211,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         //Start the feasible actions
         // ie, actions with a start moment equals to 0.
         for (Action a : sortedActions) {
-            if (a.getStartMoment() == 0) {
+            if ((a.getStartMoment() == 0)  && !isReconfigurationPlanAborted()) {
                 instantiateAndStart(a);
             }
 
@@ -232,14 +220,15 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                 for (Dependencies dep : revDependencies.get(a)) {
                     dep.removeDependency(a);
                     //Launch new feasible actions.
-                    if (dep.isFeasible()) {
+                    if (dep.isFeasible() && !isReconfigurationPlanAborted()) {
                         instantiateAndStart(dep.getAction());
                     }
                 }
             }
         }
 
-        // Wait for completion of all migrations
+        // If you reach that line, it means that either the execution of the plan has been completely launched or the
+        // plan has been aborted. In both cases, we should wait for the completion of on-going migrations
         while(this.ongoingMigration()){
             try {
                 org.simgrid.msg.Process.currentProcess().waitFor(1);
@@ -248,6 +237,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             }
         }
     }
+
 
     private void instantiateAndStart(Action a) throws InterruptedException{
         if(a instanceof Migration){
@@ -299,9 +289,8 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         if (computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)) {
             Msg.info("Configuration remains unchanged");
         } else if (computingState.equals(ComputingState.SUCCESS)) {
-            int cost = this.getReconfigurationPlanCost();
 
-				/* Tracing code */
+			/* Tracing code */
             // TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
             for (XHost h : hostsToCheck)
                 Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
@@ -314,7 +303,11 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
             enRes.setDuration(enRes.getDuration() + reconfigurationTime);
             Msg.info("Number of nodes used: " + SimulatorManager.getNbOfUsedHosts());
-            enRes.setRes(0);
+            if (isReconfigurationPlanAborted())
+                enRes.setRes(-2);
+            else
+                enRes.setRes(0);
+
         } else {
             Msg.info("Entropy did not find any viable solution");
             enRes.setRes(-1);
@@ -368,6 +361,12 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         return (this.ongoingMigration != 0);
     }
 
+    private void abortReconfigurationPlan() {this.abortRP = true;}
+
+    private boolean isReconfigurationPlanAborted() {
+        return this.abortRP;
+    }
+
     public void relocateVM(String VMName, String sourceName, String destName) {
         Random rand = new Random(SimulatorProperties.getSeed());
 
@@ -382,11 +381,11 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             // Asynchronous migration
             // The process is launched on the source node
             try {
-                incMig();
                 new Process(Host.getByName(sourceName),"Migrate-"+rand.nextDouble(),args) {
                     public void main(String[] args){
                         XHost destHost = null;
                         XHost sourceHost = null;
+                        int res=0;
                         try {
                             sourceHost = SimulatorManager.getXHostByName(args[1]);
                             destHost = SimulatorManager.getXHostByName(args[2]);
@@ -394,26 +393,30 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                             e.printStackTrace();
                             System.err.println("You are trying to migrate from/to a non existing node");
                         }
-                        if(destHost != null){
-                            if( !sourceHost.isOff() && !destHost.isOff() && sourceHost.migrate(args[0],destHost) == 0 ) {
-                                Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
-                                // Decrement the number of on-going migrating process
+                        if(destHost != null) {
+                            if (!sourceHost.isOff() && !destHost.isOff()) {
+                                incMig();
+                                if (sourceHost.migrate(args[0], destHost) == 0) {
+                                    res = 1;
+                                    Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
+
+                                    if (!destHost.isViable()) {
+                                        Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
+                                        Trace.hostSetState(destHost.getName(), "PM", "violation-out");
+                                    }
+                                    if (sourceHost.isViable()) {
+                                        Msg.info("SOLVED VIOLATION ON " + sourceHost.getName() + "\n");
+                                        Trace.hostSetState(sourceHost.getName(), "PM", "normal");
+                                    }
+                                }
                                 decMig();
-                                if (!destHost.isViable()) {
-                                    Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
-                                    Trace.hostSetState(destHost.getName(), "PM", "violation-out");
-                                }
-                                if (sourceHost.isViable()) {
-                                    Msg.info("SOLVED VIOLATION ON " + sourceHost.getName() + "\n");
-                                    Trace.hostSetState(sourceHost.getName(), "PM", "normal");
-                                }
-                            }else{
-                                // TODO raise an exception since the migration crash and thus the reconfigurationPlan is not valid anymore
-                                //CentralizedResolved.setRPDeprecated();
-                                Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                                System.exit(-1);
                             }
                         }
+                        if (res != 1){
+                             Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
+                             Msg.info("Reconfiguration plan cannot be completely applied so abort it");
+                             abortReconfigurationPlan();
+                         }
                     }
                 }.start();
 
@@ -429,7 +432,8 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
 
     public class Entropy2RPRes{
-        private int res;
+
+        private int res; // 0 everything is ok, -1 no viable configuration, -2 reconfiguration plan aborted
         private long duration;
 
         Entropy2RPRes(){

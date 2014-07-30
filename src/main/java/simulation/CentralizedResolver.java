@@ -43,26 +43,32 @@ public class CentralizedResolver extends Process {
         long previousDuration = 0;
         Entropy2RP scheduler;
         Entropy2RP.Entropy2RPRes entropyRes;
-        while (!SimulatorManager.isEndOfInjection()) {
 
-            long wait = ((long) (period * 1000)) - previousDuration;
-            if (wait > 0)
-                Process.sleep(wait); // instead of waitFor that takes into account only seconds
+        try{
+            while (!SimulatorManager.isEndOfInjection()) {
 
-			/* Compute and apply the plan */
-            Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
-            scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
-            entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
-            previousDuration = entropyRes.getDuration();
-            if (entropyRes.getRes() == 0) {
-                Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");
-            } else if (entropyRes.getRes() == -1) {
-                Msg.info("No viable solution (duration: " + previousDuration + ")");
-                numberOfCrash++;
-            } else { // res == -2 Reconfiguration has not been correctly performed
-                Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
-                numberOfBrokenPlan++;
+                long wait = ((long) (period * 1000)) - previousDuration;
+                if (wait > 0)
+                    Process.sleep(wait); // instead of waitFor that takes into account only seconds
+
+//			/* Compute and apply the plan */
+//            Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
+//            scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
+//            entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
+//            previousDuration = entropyRes.getDuration();
+//            if (entropyRes.getRes() == 0) {
+//                Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");
+//            } else if (entropyRes.getRes() == -1) {
+//                Msg.info("No viable solution (duration: " + previousDuration + ")");
+//                numberOfCrash++;
+//            } else { // res == -2 Reconfiguration has not been correctly performed
+//                Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
+//                numberOfBrokenPlan++;
+//            }
             }
+        } catch(HostFailureException e){
+            System.err.println(e);
+            System.exit(-1);
         }
         Msg.info("Entropy2RP did not find solutions "+numberOfCrash+" times / "+loopID+" and "+numberOfBrokenPlan+" plans have not been completely performed");
 

@@ -506,7 +506,7 @@ public class SimulatorManager {
             sgHostsOn.remove(host);
             sgHostsOff.add(host);
 
-            Msg.info("Nb of remaining processes on " + host.getName() + ": " + (previousCount - org.simgrid.msg.Process.getCount()));
+          //  Msg.info("Nb of remaining processes on " + host.getName() + ": " + (previousCount - org.simgrid.msg.Process.getCount()));
 
 
         }

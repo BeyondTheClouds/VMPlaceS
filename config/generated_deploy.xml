@@ -1,23 +1,26 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
 <platform version="3">
-<<<<<<< HEAD
   <process host="node220" function="injector.Injector"> </process>
   <process host="node201" function="simulation.HierarchicalResolver"> </process>
-=======
-  <process host="node140" function="injector.Injector"> </process>
-  <process host="node129" function="simulation.HierarchicalResolver"> </process>
-  <process host="node128" function="scheduling.snooze.GroupManager"><argument value="node128" /><argument value="groupManager-128" /></process>
-  <process host="node129" function="scheduling.snooze.GroupManager"><argument value="node129" /><argument value="groupManager-129" /></process>
-  <process host="node130" function="scheduling.snooze.GroupManager"><argument value="node130" /><argument value="groupManager-130" /></process>
-  <process host="node131" function="scheduling.snooze.GroupManager"><argument value="node131" /><argument value="groupManager-131" /></process>
-  <process host="node132" function="scheduling.snooze.GroupManager"><argument value="node132" /><argument value="groupManager-132" /></process>
-  <process host="node133" function="scheduling.snooze.GroupManager"><argument value="node133" /><argument value="groupManager-133" /></process>
-  <process host="node134" function="scheduling.snooze.GroupManager"><argument value="node134" /><argument value="groupManager-134" /></process>
-  <process host="node135" function="scheduling.snooze.GroupManager"><argument value="node135" /><argument value="groupManager-135" /></process>
-  <process host="node136" function="scheduling.snooze.GroupManager"><argument value="node136" /><argument value="groupManager-136" /></process>
-  <process host="node137" function="scheduling.snooze.GroupManager"><argument value="node137" /><argument value="groupManager-137" /></process>
-  <process host="node138" function="scheduling.snooze.GroupManager"><argument value="node138" /><argument value="groupManager-138" /></process>
-  <process host="node139" function="scheduling.snooze.GroupManager"><argument value="node139" /><argument value="groupManager-139" /></process>
->>>>>>> cb0500fd6ca7344d3ce9d68f18c35c7d9693fe17
+  <process host="node200" function="scheduling.snooze.GroupManager"><argument value="node200" /><argument value="groupManager-200" /></process>
+  <process host="node201" function="scheduling.snooze.GroupManager"><argument value="node201" /><argument value="groupManager-201" /></process>
+  <process host="node202" function="scheduling.snooze.GroupManager"><argument value="node202" /><argument value="groupManager-202" /></process>
+  <process host="node203" function="scheduling.snooze.GroupManager"><argument value="node203" /><argument value="groupManager-203" /></process>
+  <process host="node204" function="scheduling.snooze.GroupManager"><argument value="node204" /><argument value="groupManager-204" /></process>
+  <process host="node205" function="scheduling.snooze.GroupManager"><argument value="node205" /><argument value="groupManager-205" /></process>
+  <process host="node206" function="scheduling.snooze.GroupManager"><argument value="node206" /><argument value="groupManager-206" /></process>
+  <process host="node207" function="scheduling.snooze.GroupManager"><argument value="node207" /><argument value="groupManager-207" /></process>
+  <process host="node208" function="scheduling.snooze.GroupManager"><argument value="node208" /><argument value="groupManager-208" /></process>
+  <process host="node209" function="scheduling.snooze.GroupManager"><argument value="node209" /><argument value="groupManager-209" /></process>
+  <process host="node210" function="scheduling.snooze.GroupManager"><argument value="node210" /><argument value="groupManager-210" /></process>
+  <process host="node211" function="scheduling.snooze.GroupManager"><argument value="node211" /><argument value="groupManager-211" /></process>
+  <process host="node212" function="scheduling.snooze.GroupManager"><argument value="node212" /><argument value="groupManager-212" /></process>
+  <process host="node213" function="scheduling.snooze.GroupManager"><argument value="node213" /><argument value="groupManager-213" /></process>
+  <process host="node214" function="scheduling.snooze.GroupManager"><argument value="node214" /><argument value="groupManager-214" /></process>
+  <process host="node215" function="scheduling.snooze.GroupManager"><argument value="node215" /><argument value="groupManager-215" /></process>
+  <process host="node216" function="scheduling.snooze.GroupManager"><argument value="node216" /><argument value="groupManager-216" /></process>
+  <process host="node217" function="scheduling.snooze.GroupManager"><argument value="node217" /><argument value="groupManager-217" /></process>
+  <process host="node218" function="scheduling.snooze.GroupManager"><argument value="node218" /><argument value="groupManager-218" /></process>
+  <process host="node219" function="scheduling.snooze.GroupManager"><argument value="node219" /><argument value="groupManager-219" /></process>
 </platform>
