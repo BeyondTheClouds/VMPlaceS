@@ -42,6 +42,8 @@ public class GroupManager extends Process {
     public void main(String[] strings) {
         SnoozeMsg m = null;
         boolean success = false;
+        int n = 1;
+
         Logger.info("[GM.main] GM started: " + host.getName());
         Test.gms.remove(this);
         procGLBeats();
@@ -55,18 +57,28 @@ public class GroupManager extends Process {
                     deadLCs();
                     sleep(AUX.DefaultComputeInterval);
                 } else break;
+            } catch (HostFailureException e) {
+                thisGMToBeStopped = true;
+                break;
             } catch (Exception e) {
-                Logger.err("[GM.main] PROBLEM? Exception, " + host.getName() + ": " + e.getClass().getName());
+                String cause = e.getClass().getName();
+                if (cause.equals("org.simgrid.msg.TimeoutException")) {
+                    if (n % 10 == 0)
+                        Logger.err("[GM.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
+                    n++;
+                } else {
+                    Logger.err("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                    e.printStackTrace();
+                }
 //                glDead();
                 deadLCs();
             }
         }
         Logger.err("[GM.main] GM stopped: " + host.getName() + ", " + m);
         Test.gms.remove(this);
-//        sleep(2000);
     }
 
-    void handle(SnoozeMsg m) {
+    void handle(SnoozeMsg m) throws HostFailureException {
 //        Logger.info("[GM.handle] GMIn: " + m);
         String cs = m.getClass().getSimpleName();
 
@@ -100,7 +112,7 @@ public class GroupManager extends Process {
         else Logger.err("[GM(BeatLC) Unknown LC] " + m);
     }
 
-    void handleGMElec(SnoozeMsg m) {
+    void handleGMElec(SnoozeMsg m) throws HostFailureException {
         // This GM will be new leader
         String oldGL = glHostname;
         try {
@@ -129,6 +141,8 @@ public class GroupManager extends Process {
             Logger.info("[GM(GMElec)] New leader created on: " + glHostname);
 
             stopThisGM();
+        } catch (HostFailureException e) {
+            throw e;
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -245,16 +259,17 @@ public class GroupManager extends Process {
                                     Task.receive(inbox + "-glBeats", SnoozeProperties.getHeartBeatTimeout());
                             glBeats(m);
                             sleep(AUX.DefaultComputeInterval);
-                        }
-                        catch (TimeoutException e) {
+                        } catch (TimeoutException e) {
                             if (!joining) {
                                 glDead = true;
                                 glDead();
                                 Logger.exc("[GM.procGLBeats] Timeout: "
                                         + glHostname + ": " + glTimestamp + ", " + Msg.getClock());
                             }
-                        }
-                        catch (Exception e) {
+                        } catch (HostFailureException e) {
+                            thisGMToBeStopped = true;
+                            break;
+                        } catch (Exception e) {
                             Logger.exc("[GM.procGLBeats] Exception, " + host.getName() + ": " + e.getClass().getName());
 //                            e.printStackTrace();
                         }
@@ -280,6 +295,9 @@ public class GroupManager extends Process {
                             m.send();
                             Logger.info("[GM.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval);
+                        } catch (HostFailureException e) {
+                            thisGMToBeStopped = true;
+                            break;
                         } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
@@ -298,6 +316,9 @@ public class GroupManager extends Process {
                         try {
                             summaryInfoToGL();
                             sleep(AUX.HeartbeatInterval);
+                        } catch (HostFailureException e) {
+                            thisGMToBeStopped = true;
+                            break;
                         } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
@@ -325,6 +346,9 @@ public class GroupManager extends Process {
                                 wait = period - previousDuration;
                             }
                             if (wait > 0) Process.sleep(wait);
+                        } catch (HostFailureException e) {
+                            thisGMToBeStopped = true;
+                            break;
                         } catch (Exception e) { e.printStackTrace(); }
                     }
                 }

@@ -27,6 +27,8 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) {
+        int n = 1;
+
         Test.gl = this;
 //        Logger.debug("[GL.main] GL started: " + host.getName());
         procSendMyBeats();
@@ -43,19 +45,29 @@ public class GroupLeader extends Process {
                     break;
                 }
                 sleep(AUX.DefaultComputeInterval);
+            } catch (HostFailureException e) {
+                thisGLToBeTerminated = true;
+                break;
             } catch (Exception e) {
-                Logger.err("[GL.main] PROBLEM? Exception, " + host.getName() + ": " + e.getClass().getName());
+                String cause = e.getClass().getName();
+                if (cause.equals("org.simgrid.msg.TimeoutException")) {
+                    if (n % 10 == 0)
+                        Logger.err("[GL.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
+                    n++;
+                } else {
+                    Logger.err("[GL.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                    e.printStackTrace();
+                }
                 gmDead();
             }
         }
     }
 
     void handle(SnoozeMsg m) {
-//        Logger.info("[GL.handle] GLIn: " + m);
+        Logger.info("[GL.handle] GLIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "LCAssMsg" : handleLCAss(m);  break;
-//            case "NewGMMsg" : handleNewGM(m);  break;
             case "TermGMMsg": handleTermGM(m); break;
             case "TermGLMsg": handleTermGL(m); break;
             case "SnoozeMsg":
@@ -73,16 +85,6 @@ public class GroupLeader extends Process {
         m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
         m.send();
         Logger.debug("[GL(LCAssMsg)] GM assigned: " + m);
-    }
-
-    void handleNewGM(SnoozeMsg m) {
-        String gmHostname = (String) m.getMessage();
-        if (gmInfo.containsKey(gmHostname)) Logger.err("[GL(NewGM)] GM " + gmHostname + " exists already");
-        // Add GM
-        GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, Msg.getClock()));
-        gmInfo.put(gmHostname, gi);
-        // Acknowledge integration
-        Logger.info("[GL(NewGMMsg)] GM added: " + m);
     }
 
     void handleTermGL(SnoozeMsg m) {
@@ -186,8 +188,9 @@ public class GroupLeader extends Process {
                         }
                         catch (TimeoutException e) {
                             Logger.exc("[GL.procGMInfo] PROBLEM? Timeout Exception");
-                        }
-                        catch (Exception e) {
+                        } catch (HostFailureException e) {
+                            break;
+                        } catch (Exception e) {
                             Logger.exc("[GL.procGMInfo] Exception, " + host.getName() + ": " + e.getClass().getName());
                             e.printStackTrace();
                         }
@@ -221,8 +224,9 @@ public class GroupLeader extends Process {
                             gmInfo.put(gmHostname, gi);
                             // Acknowledge integration
                             Logger.info("[GL.procNewGM] GM added: " + m);
-                        }
-                        catch (Exception e) {
+                        } catch (HostFailureException e) {
+                            break;
+                        } catch (Exception e) {
                             Logger.exc("[GL.procNewGM] Exception, " + host.getName() + ": " + e.getClass().getName());
                             e.printStackTrace();
                         }
@@ -250,6 +254,8 @@ public class GroupLeader extends Process {
                             m.send();
                             Logger.info("[GL.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval);
+                        } catch (HostFailureException e) {
+                            break;
                         } catch (Exception e) { e.printStackTrace(); }
                     }
                 }

@@ -32,9 +32,12 @@ public class Multicast extends Process {
 
     @Override
     public void main(String[] strings) {
+        int n = 1;
+
         Test.multicast = this;
         procRelayGLBeats();
         procRelayGMBeats();
+        procNewLC();
         while (true) {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
@@ -42,8 +45,18 @@ public class Multicast extends Process {
                 glDead();
                 gmDead();
                 sleep(AUX.DefaultComputeInterval);
+            } catch (HostFailureException e) {
+                Logger.err("[MUL.main] HostFailure Exception should never happen!: " + host.getName());
             } catch (Exception e) {
-                Logger.exc("[MUL.main] PROBLEM? Exception: " + e.getClass().getName());
+                String cause = e.getClass().getName();
+                if (cause.equals("org.simgrid.msg.TimeoutException")) {
+                    if (n % 10 == 0)
+                        Logger.err("[MUL.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
+                    n++;
+                } else {
+                    Logger.err("[MUL.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                    e.printStackTrace();
+                }
                 glDead();
                 gmDead();
             }
@@ -59,7 +72,6 @@ public class Multicast extends Process {
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "GLElecMsg": handleGLElec(m); break;
-            case "NewLCMsg" : handleNewLC(m);  break;
             case "NewGMMsg" : handleNewGM(m);  break;
             case "TermGMMsg": handleTermGM(m); break;
             case "SnoozeMsg":
@@ -78,28 +90,6 @@ public class Multicast extends Process {
         } else {
             // Leader recently elected
             Logger.info("[MUL(GLElecMsg)] GL election on-going or recent: " + m);
-        }
-    }
-
-    //    void procNewLC() {
-//        try {
-//            new Process(host, host.getName() + "-relayGMBeats") {
-//                public void main(String[] args) {
-//                    while (true) {
-    void handleNewLC(SnoozeMsg m) {
-        Logger.info("[MUL(NewLCMsg)] " + m);
-        if (m.getMessage() == null) {
-            // Add LC
-            lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
-            Logger.info("[MUL(NewLCMsg)] LC temp. joined: " + m);
-        } else {
-            // End LC join phase
-            String lc = m.getOrigin();
-            String gm = (String) m.getMessage();
-            lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
-            m = new NewLCMsg(gm, m.getReplyBox(), null, null);
-            m.send();
-            Logger.info("[MUL(NewLCMsg)] LC integrated: " + m);
         }
     }
 
@@ -172,10 +162,10 @@ public class Multicast extends Process {
 //            leaderElection();
             Test.dispInfo();
         }
-//        for (String lc: orphanLCs) {
-//            lcInfo.remove(lc);
-//            Logger.err("[MUL.gmDead] LC: " + lc);
-//        }
+        for (String lc: orphanLCs) {
+            lcInfo.remove(lc);
+            Logger.err("[MUL.gmDead] LC: " + lc);
+        }
     }
 
     boolean gmPromotion(String gm) {
@@ -314,6 +304,41 @@ public class Multicast extends Process {
         }
     }
 
+    void procNewLC() {
+        try {
+            new Process(host, host.getName() + "-newLC") {
+                public void main(String[] args) {
+                    while (true) {
+                        try {
+                            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-newLC", AUX.HeartbeatTimeout);
+//                            Logger.info("[MUL.procRelayGLBeats] " + m);
+                            Logger.info("[MUL.procNewLC] " + m);
+                            if (m.getMessage() == null) {
+                                // Add LC
+                                lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
+                                Logger.info("[MUL.procNewLC] LC temp. joined: " + m);
+                            } else {
+                                // End LC join phase
+                                String lc = m.getOrigin();
+                                String gm = (String) m.getMessage();
+                                lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
+                                m = new NewLCMsg(gm, m.getReplyBox(), null, null);
+                                m.send();
+                                Logger.info("[MUL.procNewLC] LC integrated: " + m);
+                            }
+                        } catch (TimeoutException e) {
+                            Logger.exc("[MUL.procNewLC] PROBLEM? Timeout Exception");
+                        } catch (HostFailureException e) {
+                            Logger.err("[MUL.main] HostFailure Exception should never happen!: " + host.getName());
+                        } catch (Exception e) {
+                            Logger.exc("[MUL.procNewLC] Exception");
+                        }
+                    }
+                }
+            }.start();
+        } catch (Exception e) { e.printStackTrace(); }
+    }
+
     /**
      * Relays GL beats
      */
@@ -329,9 +354,11 @@ public class Multicast extends Process {
                             sleep(AUX.DefaultComputeInterval);
                         } catch (TimeoutException e) {
                             glDead = true;
+                        } catch (HostFailureException e) {
+                            Logger.err("[MUL.main] HostFailure Exc. should never happen!: " + host.getName());
+                            break;
                         } catch (Exception e) {
-                            Logger.exc("[MUL.procRelayGLBeats] Exception: " + e.getClass().getName());
-//                            e.printStackTrace();
+                            Logger.exc("[MUL.procNewLC] Exception");
                         }
                     }
                 }
@@ -361,9 +388,10 @@ public class Multicast extends Process {
                             sleep(AUX.DefaultComputeInterval);
                         } catch (TimeoutException e) {
                             glDead = true;
+                        } catch (HostFailureException e) {
+                            Logger.err("[MUL.main] HostFailure Exc. should never happen!: " + host.getName());
                         } catch (Exception e) {
-                            Logger.exc("[MUL.procRelayGMBeats] Exception: " + e.getClass().getName());
-//                            e.printStackTrace();
+                            Logger.exc("[MUL.procNewLC] Exception");
                         }
                     }
                 }

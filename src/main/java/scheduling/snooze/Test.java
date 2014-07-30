@@ -37,9 +37,9 @@ public class Test extends Process {
     @Override
     public void main(String[] strings) throws MsgException {
         procAddLCs();
-        procAddGMs();
-        procFailGLs();
-        procFailGMs();
+//        procAddGMs();
+//        procFailGLs();
+//        procFailGMs();
         while (!testsToBeTerminated) {
             dispInfo();
             sleep(1000*SnoozeProperties.getInfoPeriodicity());
@@ -68,7 +68,7 @@ public class Test extends Process {
     void procAddLCs() throws HostNotFoundException {
         new Process(host, host.getName() + "-addLCs") {
             public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
-                sleep(777);
+//                sleep(777);
                 int lcNo = 0; // no. of statically allocated LCs
                 for (int i=0; i< SimulatorProperties.getNbOfHostingNodes() && !testsToBeTerminated; i++) {
                     String[] lcArgs = new String[] {"node"+lcNo, "dynLocalController-"+lcNo};
@@ -77,7 +77,7 @@ public class Test extends Process {
                     lc.start();
                     Logger.info("[Test.addLCs] Dyn. LC added: " + lcArgs[1]);
                     lcNo++;
-                    sleep(237);
+                    sleep(33);
                 }
             }
         }.start();

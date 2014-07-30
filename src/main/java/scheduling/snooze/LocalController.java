@@ -13,6 +13,7 @@ import simulation.SimulatorManager;
 public class LocalController extends Process {
     private String name;
     XHost host; //@ Make private
+    private boolean thisLCToBeStopped = false;
     private String gmHostname = "";
     private double gmTimestamp;
     private int procCharge = 0;
@@ -33,28 +34,46 @@ public class LocalController extends Process {
 
     @Override
     public void main(String[] args) {
-        Test.lcs.remove(this);
-        Logger.debug("Start LC " + args[0] + ", " + args[1]);
-        init(SimulatorManager.getXHostByName(args[0]), args[1]);
-        join();
-        Test.lcs.add(this);
-        procSendMyBeats();
-        procGMBeats();
-        procLCChargeToGM();
-        while (true) {
-            try {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
-                handle(m);
-                gmDead();
-                sleep(AUX.DefaultComputeInterval);
-            } catch (Exception e) {
-                Logger.err("[LC.main] PROBLEM? Exception, " + host.getName() + ": " + e.getClass().getName());
-                gmDead();
+        int n=0;
+
+        try {
+            Test.lcs.remove(this);
+            Logger.debug("Start LC " + args[0] + ", " + args[1]);
+            init(SimulatorManager.getXHostByName(args[0]), args[1]);
+            join();
+            Test.lcs.add(this);
+            procSendMyBeats();
+            procGMBeats();
+            procLCChargeToGM();
+            while (true) {
+                try {
+                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
+                    handle(m);
+                    gmDead();
+                    sleep(AUX.DefaultComputeInterval);
+                } catch (HostFailureException e) {
+                    thisLCToBeStopped = true;
+                    break;
+                } catch (Exception e) {
+                    String cause = e.getClass().getName();
+                    if (cause.equals("org.simgrid.msg.TimeoutException")) {
+                        if (n % 10 == 0)
+                            Logger.err("[GM.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
+                        n++;
+                    } else {
+                        Logger.err("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                        e.printStackTrace();
+                    }
+                    Logger.err("[LC.main] PROBLEM? Exception, " + host.getName() + ": " + e.getClass().getName());
+                    gmDead();
+                }
             }
+        } catch (HostFailureException e) {
+            thisLCToBeStopped = true;
         }
     }
 
-    void handle(SnoozeMsg m) {
+    void handle(SnoozeMsg m) throws HostFailureException {
 //        Logger.info("[LC.handle] LCIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
@@ -68,7 +87,7 @@ public class LocalController extends Process {
     /**
      * Stop LC activity and rejoin
      */
-    void handleTermGM(SnoozeMsg m) {
+    void handleTermGM(SnoozeMsg m) throws HostFailureException {
         // TODO: stop LC activity
         Logger.err("[LC(TermGM)] GM DEAD, LC rejoins: " + m);
         join();
@@ -78,13 +97,14 @@ public class LocalController extends Process {
     /**
      * GM dead: rejoin
      */
-    void gmDead() {
+    void gmDead() throws HostFailureException {
         if (AUX.timeDiff(gmTimestamp) < AUX.HeartbeatTimeout || joining) return;
         Logger.err("[LC.gmDead] GM dead: " + gmHostname + ", " + gmTimestamp);
+        gmHostname = "";
         join();
     }
 
-    void join() {
+    void join() throws HostFailureException {
         joining = true;
         Logger.info("[LC.join] Entry: " + gmHostname + ", TS: " + gmTimestamp);
         String gl, gm;
@@ -99,11 +119,16 @@ public class LocalController extends Process {
                     if (gm.isEmpty()) continue;
                     success = joinGM(gm);
                     i++;
-                } while (!success && i<3);
+                } while (!success && i < 3);
                 if (!success) continue;
-                i=0;
-                do { success = joinFinalize(gm); i++; } while (!success && i<3);
+                i = 0;
+                do {
+                    success = joinFinalize(gm);
+                    i++;
+                } while (!success && i < 3);
                 if (!success) continue;
+            } catch (HostFailureException e) {
+                throw e;
             } catch(Exception e) {
                 Logger.err("[LC.join] Exception");
                 e.printStackTrace();
@@ -117,13 +142,13 @@ public class LocalController extends Process {
     /**
      * Send join request to EP and wait for GroupManager acknowledgement
      */
-    String getGL() {
+    String getGL() throws HostFailureException {
         try {
             boolean success = false;
             SnoozeMsg m = null;
             String gl = "";
             // Join GL multicast group
-            m = new NewLCMsg(null, AUX.multicast, host.getName(), joinMBox);
+            m = new NewLCMsg(null, AUX.multicast + "-newLC", host.getName(), joinMBox);
             m.send();
 //            Logger.info("[LC.getGL] 1 Request sent: " + m);
             // Wait for GL beat
@@ -137,8 +162,14 @@ public class LocalController extends Process {
             } while (!success);
             return gl;
 //            Logger.info("[LC.getGL] 1 Got GL: " + m);
-        } catch (Exception e) {
+        } catch (TimeoutException e) {
             Logger.exc("[LC.getGL] PROBLEM? Exception " + host.getName() + ": " + e.getClass().getName());
+            e.printStackTrace();
+            return "";
+        } catch (HostFailureException e) {
+            throw e;
+        } catch (Exception e) {
+            Logger.exc("[LC.joinFinalize] PROBLEM? Exception " + host.getName() + ": " + e.getClass().getName());
             e.printStackTrace();
             return "";
         }
@@ -147,7 +178,7 @@ public class LocalController extends Process {
     /**
      * Send join request to EP and wait for GroupManager acknowledgement
      */
-    String getGM(String gl) {
+    String getGM(String gl) throws HostFailureException {
         try {
             // Send GM assignment request
             SnoozeMsg m = new LCAssMsg(host.getName(), AUX.glInbox(gl), host.getName(), joinMBox);
@@ -164,8 +195,14 @@ public class LocalController extends Process {
             }
             Logger.info("[LC.getGM] GM assigned: " + m);
             return gm;
-        } catch (Exception e) {
+        } catch (TimeoutException e) {
             Logger.exc("[LC.getGM] Exception " + host.getName() + ": " + e.getClass().getName());
+            e.printStackTrace();
+            return "";
+        } catch (HostFailureException e) {
+            throw e;
+        } catch (Exception e) {
+            Logger.exc("[LC.getGM] PROBLEM? Exception " + host.getName() + ": " + e.getClass().getName());
             e.printStackTrace();
             return "";
         }
@@ -175,7 +212,7 @@ public class LocalController extends Process {
     /**
      * Send join request to EP and wait for GroupManager acknowledgement
      */
-    boolean joinGM(String gm) {
+    boolean joinGM(String gm) throws HostFailureException {
         try {
             // GM integration request
             SnoozeMsg m = new NewLCMsg(host.getName(), AUX.gmInbox(gm), name, joinMBox);
@@ -188,8 +225,14 @@ public class LocalController extends Process {
             }
             Logger.info("[LC.joinGM] Integrated by GM: " + m);
             return true;
-        } catch (Exception e) {
+        } catch (TimeoutException e) {
             Logger.exc("[LC.joinGM] Exception " + host.getName() + ": " + e.getClass().getName());
+            e.printStackTrace();
+            return false;
+        } catch (HostFailureException e) {
+            throw e;
+        } catch (Exception e) {
+            Logger.exc("[LC.joinGM] PROBLEM? Exception " + host.getName() + ": " + e.getClass().getName());
             e.printStackTrace();
             return false;
         }
@@ -199,13 +242,13 @@ public class LocalController extends Process {
     /**
      * Send join request to EP and wait for GroupManager acknowledgement
      */
-    boolean joinFinalize(String gm) {
+    boolean joinFinalize(String gm) throws HostFailureException {
         try {
             // Leave GL multicast, join GM multicast group
-            SnoozeMsg m = new NewLCMsg(gm, AUX.multicast, host.getName(), joinMBox);
+            SnoozeMsg m = new NewLCMsg(gm, AUX.multicast + "-newLC", host.getName(), joinMBox);
             m.send();
             Logger.info("[LC.joinFinalize] GL->GM multicast: " + m);
-            m = (SnoozeMsg) Task.receive(joinMBox, 3*AUX.MessageReceptionTimeout);
+            m = (SnoozeMsg) Task.receive(joinMBox, 3 * AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("NewLCMsg")) return false;
             gm = (String) m.getMessage();
             if (gm.isEmpty()) {
@@ -219,6 +262,8 @@ public class LocalController extends Process {
 
             Logger.info("[LC.joinFinalize] Finished, GM: " + gm + ", " + gmTimestamp);
             return true;
+        } catch (HostFailureException e) {
+            throw e;
         } catch (Exception e) {
             Logger.exc("[LC.joinFinalize] PROBLEM? Exception " + host.getName() + ": " + e.getClass().getName());
             e.printStackTrace();
@@ -232,10 +277,10 @@ public class LocalController extends Process {
     void procGMBeats() {
         try {
             new Process(host.getSGHost(), host.getSGHost().getName() + "-gmBeats") {
-                public void main(String[] args) throws HostFailureException {
+                public void main(String[] args) {
                     SnoozeMsg m;
                     String gm;
-                    while (true) {
+                    while (!thisLCToBeStopped) {
                         try {
                             m = (SnoozeMsg) Task.receive(inbox + "-gmBeats", AUX.HeartbeatTimeout);
                             gm = (String) m.getOrigin();
@@ -265,9 +310,8 @@ public class LocalController extends Process {
     void procSendMyBeats() {
         try {
             new Process(host.getSGHost(), host.getSGHost().getName() + "-lcBeats") {
-                public void main(String[] args) throws HostFailureException {
-                    String glHostname = host.getName();
-                    while (true) {
+                public void main(String[] args) {
+                    while (!thisLCToBeStopped) {
                         try {
                             BeatLCMsg m = new BeatLCMsg(Msg.getClock(), AUX.gmInbox(gmHostname), host.getName(), null);
                             m.send();
@@ -289,7 +333,7 @@ public class LocalController extends Process {
             final XHost h = host;
             new Process(host.getSGHost(), host.getSGHost().getName() + "-lcCharge") {
                 public void main(String[] args) throws HostFailureException {
-                    while (true) {
+                    while (!thisLCToBeStopped) {
                         try {
                             LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand());
                             LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
