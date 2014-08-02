@@ -6,31 +6,28 @@ import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.SnoozeMsg;
 
-import java.util.LinkedList;
+import java.lang.reflect.Constructor;
 
 /**
  * Created by sudholt on 31/07/2014.
  */
 public class ThreadPool {
-    private final Process[] workerThreads;
-    private final LinkedList<SnoozeMsg> workerQueue;
-    private final String node;
+    private final Process[] workers;
     private final int numThreads;
-    private final PoolRunnable runnable;
+    private String runClass;
 
-    ThreadPool(String node, PoolRunnable runnable, int numThreads) {
-        this.node = node;
+    ThreadPool(Object owner, String runClass, int numThreads) {
         this.numThreads = numThreads;
-        this.runnable = runnable;
-        workerQueue = new LinkedList<SnoozeMsg>();
-        workerThreads = new Process[numThreads];
+        workers = new Process[numThreads];
 
         int i = 0;
-        for (Process p : workerThreads) {
+        for (Process w: workers) {
             i++;
-            p = new Worker(Host.currentHost(), "PoolProcess-" + i);
+            w = new Worker(Host.currentHost(), "PoolProcess-" + i, owner, runClass);
             try {
-                p.start();
+                w.start();
+                Logger.tmp("[ThreadPool] Worker created: " + i + ", " + Host.currentHost()
+                        + ", " + owner.getClass().getSimpleName() + ", " + runClass);
             } catch (HostNotFoundException e) {
                 Logger.exc("[ThreadPool] HostNoFound");
 //                e.printStackTrace();
@@ -38,27 +35,33 @@ public class ThreadPool {
         }
     }
 
-    public void addTask(SnoozeMsg m) {
-        workerQueue.add(m);
-    }
-
     private class Worker extends Process {
         Host host;
         String name;
+        SnoozeMsg m;
+        String mbox;
+        Object owner;
+        String runClassName;
 
-        Worker(Host host, String name) {
+        Worker(Host host, String name, Object owner, String runClass) {
             super(host, name);
             this.host = host;
             this.name = name;
+            this.owner = owner;
+            this.runClassName = runClass;
         }
 
         @Override
         public void main(String[] strings) throws MsgException {
             while (true) {
                 try {
-                    SnoozeMsg m = workerQueue.remove();
-                    runnable.run();
-                } catch (RuntimeException e) {
+                    Class runClass = Class.forName(runClassName);
+                    Constructor<?> constructor = runClass.getDeclaredConstructors()[0];
+                    constructor.setAccessible(true);
+                    Runnable r = (Runnable) constructor.newInstance(owner);
+                    Logger.tmp("[ThreadPool.Worker.main] : " + r);
+                    r.run();
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }

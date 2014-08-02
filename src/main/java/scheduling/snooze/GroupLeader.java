@@ -15,6 +15,7 @@ public class GroupLeader extends Process {
     Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>(); //@ Make private
     private String inbox;
     private boolean thisGLToBeTerminated = false;
+    private ThreadPool lcAssPool;
 
     static enum AssignmentAlg { BESTFIT, ROUNDROBIN };
     private int roundRobin = 0;
@@ -27,6 +28,8 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) {
+        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), 10);
+
         int n = 1;
 
         Test.gl = this;
@@ -67,7 +70,7 @@ public class GroupLeader extends Process {
         Logger.info("[GL.handle] GLIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-            case "LCAssMsg" : handleLCAss(m);  break;
+//            case "LCAssMsg" : handleLCAss(m);  break;
             case "TermGMMsg": handleTermGM(m); break;
             case "TermGLMsg": handleTermGL(m); break;
             case "SnoozeMsg":
@@ -80,11 +83,23 @@ public class GroupLeader extends Process {
         }
     }
 
-    void handleLCAss(SnoozeMsg m) {
-        String gm = lcAssignment((String) m.getMessage());
-        m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
-        m.send();
-        Logger.debug("[GL(LCAssMsg)] GM assigned: " + m);
+    public class RunLCAss implements Runnable {
+        public RunLCAss() {};
+
+        public void run() {
+            LCAssMsg m = null;
+            try {
+                Logger.tmp("[GL.RunLCAss] Wait for tasks: " + GroupLeader.this.inbox + "-lcAssign");
+                m = (LCAssMsg) Task.receive(GroupLeader.this.inbox + "-lcAssign");
+                Logger.tmp("[GL.RunLCAss] Task received: " + m);
+                String gm = GroupLeader.this.lcAssignment((String) m.getMessage());
+                m = new LCAssMsg(gm, m.getReplyBox(), GroupLeader.this.host.getName(), null);
+                m.send();
+                Logger.tmp("[GL.RunLCAss] GM assigned: " + m);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     void handleTermGL(SnoozeMsg m) {

@@ -181,7 +181,7 @@ public class LocalController extends Process {
     String getGM(String gl) throws HostFailureException {
         try {
             // Send GM assignment request
-            SnoozeMsg m = new LCAssMsg(host.getName(), AUX.glInbox(gl), host.getName(), joinMBox);
+            SnoozeMsg m = new LCAssMsg(host.getName(), AUX.glInbox(gl) + "-lcAssign", host.getName(), joinMBox);
             m.send();
             Logger.info("[LC.getGM] Assignment message sent: " + m);
 
