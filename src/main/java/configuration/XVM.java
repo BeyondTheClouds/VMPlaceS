@@ -172,12 +172,21 @@ public class XVM {
             this.vmIsMigrating = true;
             Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
             Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
-            this.vm.migrate(host.getSGHost());
-            this.host = host;
-            this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
-            //The dummy cpu action is not bounded.
-            Msg.info("End of migration of VM " + this.getName() + " to node " + host.getName());
-            this.vmIsMigrating = false;
+            try {
+                this.vm.migrate(host.getSGHost());
+                this.host = host;
+                this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
+                //The dummy cpu action is not bounded.
+                Msg.info("End of migration of VM " + this.getName() + " to node " + host.getName());
+                this.vmIsMigrating = false;
+            } catch (Exception e){
+                e.printStackTrace();
+                Msg.info("Something strange occurs during the migration");
+                Msg.info("TODO Adrien, migrate should return 0 or -1, -2, ... according to whether the migration succeeded or not.");
+                System.exit(1);
+                // TODO Adrien, migrate should return 0 or -1, -2, ... according to whether the migration succeeded or not.
+                // This value can be then use at highler level to check whether the reconfiguration plan has been aborted or not.
+            }
         } else {
             Msg.info("You are trying to migrate twice a VM... it is impossible ! Byebye");
             System.exit(-1);
