@@ -26,8 +26,8 @@ public class ThreadPool {
             w = new Worker(Host.currentHost(), "PoolProcess-" + i, owner, runClass);
             try {
                 w.start();
-                Logger.tmp("[ThreadPool] Worker created: " + i + ", " + Host.currentHost()
-                        + ", " + owner.getClass().getSimpleName() + ", " + runClass);
+//                Logger.tmp("[ThreadPool] Worker created: " + i + ", " + Host.currentHost()
+//                        + ", " + owner.getClass().getSimpleName() + ", " + runClass);
             } catch (HostNotFoundException e) {
                 Logger.exc("[ThreadPool] HostNoFound");
 //                e.printStackTrace();
@@ -59,7 +59,7 @@ public class ThreadPool {
                     Constructor<?> constructor = runClass.getDeclaredConstructors()[0];
                     constructor.setAccessible(true);
                     Runnable r = (Runnable) constructor.newInstance(owner);
-                    Logger.tmp("[ThreadPool.Worker.main] : " + r);
+//                    ™Logger.tmp("[ThreadPool.Worker.main] : " + r);
                     r.run();
                 } catch (Exception e) {
                     e.printStackTrace();

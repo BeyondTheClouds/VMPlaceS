@@ -136,7 +136,7 @@ public class LocalController extends Process {
             }
         } while (!success);
         joining = false;
-        Logger.info("[LC.join] Success, GM: " + gmHostname + ", TS: " + gmTimestamp);
+        Logger.info("[LC.join] Finished, GM: " + gmHostname + ", TS: " + gmTimestamp);
     }
 
     /**
@@ -154,7 +154,7 @@ public class LocalController extends Process {
             // Wait for GL beat
             int i = 0;
             do {
-                m = (SnoozeMsg) Task.receive(inbox, 3*AUX.MessageReceptionTimeout);
+                m = (SnoozeMsg) Task.receive(inbox, 5*AUX.MessageReceptionTimeout);
                 i++;
                 Logger.info("[LC.getGL] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
@@ -186,7 +186,7 @@ public class LocalController extends Process {
             Logger.info("[LC.getGM] Assignment message sent: " + m);
 
             // Wait for GM assignment
-            m = (SnoozeMsg) Task.receive(joinMBox, 3*AUX.MessageReceptionTimeout);
+            m = (SnoozeMsg) Task.receive(joinMBox, 5*AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("LCAssMsg")) return "";
             String gm = (String) m.getMessage();
             if (gm.isEmpty()) {
@@ -208,17 +208,16 @@ public class LocalController extends Process {
         }
     }
 
-
     /**
      * Send join request to EP and wait for GroupManager acknowledgement
      */
     boolean joinGM(String gm) throws HostFailureException {
         try {
             // GM integration request
-            SnoozeMsg m = new NewLCMsg(host.getName(), AUX.gmInbox(gm), name, joinMBox);
+            SnoozeMsg m = new NewLCMsg(host.getName(), AUX.gmInbox(gm) + "-newLC", name, joinMBox);
             m.send();
             Logger.info("[LC.joinGM] Integration message sent: " + m);
-            m = (SnoozeMsg) Task.receive(joinMBox, 3*AUX.MessageReceptionTimeout);
+            m = (SnoozeMsg) Task.receive(joinMBox, 5*AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("NewLCMsg")) {
                 Logger.err("[LC.joinGM] No NewLC msg.: " + m);
                 return false;
@@ -248,7 +247,7 @@ public class LocalController extends Process {
             SnoozeMsg m = new NewLCMsg(gm, AUX.multicast + "-newLC", host.getName(), joinMBox);
             m.send();
             Logger.info("[LC.joinFinalize] GL->GM multicast: " + m);
-            m = (SnoozeMsg) Task.receive(joinMBox, 3 * AUX.MessageReceptionTimeout);
+            m = (SnoozeMsg) Task.receive(joinMBox, 5 * AUX.MessageReceptionTimeout);
             if (!m.getClass().getSimpleName().equals("NewLCMsg")) return false;
             gm = (String) m.getMessage();
             if (gm.isEmpty()) {

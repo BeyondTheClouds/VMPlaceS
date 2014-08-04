@@ -18,6 +18,7 @@ public class Multicast extends Process {
     private double glTimestamp;
     private boolean glDead = false;
     private double lastPromotionOrElection;
+    private ThreadPool newLCPool;
     Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>();  //@ Make private
     Hashtable<String, LCInfo> lcInfo = new Hashtable<String, LCInfo>();  //@ Make private
 
@@ -35,9 +36,11 @@ public class Multicast extends Process {
         int n = 1;
 
         Test.multicast = this;
+
+        newLCPool = new ThreadPool(this, RunNewLC.class.getName(), 10);
+
         procRelayGLBeats();
         procRelayGMBeats();
-        procNewLC();
         while (true) {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
@@ -96,10 +99,14 @@ public class Multicast extends Process {
     void handleNewGM(SnoozeMsg m) {
         String gm = (String) m.getMessage();
         gmInfo.put(gm, new GMInfo(AUX.gmInbox(gm), Msg.getClock(), true));
-        if (!glHostname.isEmpty() ||
-                (AUX.timeDiff(lastPromotionOrElection) >= AUX.HeartbeatTimeout
-                        && lastPromotionOrElection == 0))
+        Logger.info("[MUL(NewGM)] GM added: " + m + ", " + lastPromotionOrElection);
+        if (!glHostname.isEmpty() || lastPromotionOrElection == 0.0
+                || AUX.timeDiff(lastPromotionOrElection) <= AUX.HeartbeatTimeout) {
+            m = new RBeatGLMsg(glTimestamp, AUX.gmInbox(gm) + "-glBeats", glHostname, null);
+            m.send();
+            Logger.info("[MUL(NewGM)] No promotion: " + m);
             return;
+        }
         boolean success = gmPromotion(gm);
         if (!success) Logger.err("[MUL(NewGM)] GM Promotion FAILED: " + gm);
         else {
@@ -193,7 +200,7 @@ public class Multicast extends Process {
             glDead = false;
             m = new GLElecStopGMMsg(name, AUX.gmInbox(gm), null, null);
             m.send();
-//                    Logger.info("[MUL.leaderElection] New leader elected: " + m);
+            Logger.info("[MUL.leaderElection] New leader elected: " + m);
         } else Logger.err("[MUL.leaderElection] GM promotion failed: " + gm);
 
         return success;
@@ -250,7 +257,7 @@ public class Multicast extends Process {
         if ((glHostname == "" || glDead) && !gl.isEmpty()) {
             glHostname = gl;
             glDead = false;
-            Logger.info("[MUL.relayGLBeats] GL initialized: " + glHostname);
+            Logger.err("[MUL.relayGLBeats] GL initialized: " + glHostname);
         }
         if (glHostname != gl) {
             Logger.err("[MUL.relayGLBeats] Multiple GLs: " + glHostname + ", " + gl);
@@ -304,39 +311,37 @@ public class Multicast extends Process {
         }
     }
 
-    void procNewLC() {
-        try {
-            new Process(host, host.getName() + "-newLC") {
-                public void main(String[] args) {
-                    while (true) {
-                        try {
-                            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-newLC", AUX.HeartbeatTimeout);
+    public class RunNewLC implements Runnable {
+        public RunNewLC() {};
+
+        @Override
+        public void run() {
+            NewLCMsg m;
+            try {
+                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.HeartbeatTimeout);
 //                            Logger.info("[MUL.procRelayGLBeats] " + m);
-                            Logger.info("[MUL.procNewLC] " + m);
-                            if (m.getMessage() == null) {
-                                // Add LC
-                                lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
-                                Logger.info("[MUL.procNewLC] LC temp. joined: " + m);
-                            } else {
-                                // End LC join phase
-                                String lc = m.getOrigin();
-                                String gm = (String) m.getMessage();
-                                lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
-                                m = new NewLCMsg(gm, m.getReplyBox(), null, null);
-                                m.send();
-                                Logger.info("[MUL.procNewLC] LC integrated: " + m);
-                            }
-                        } catch (TimeoutException e) {
-                            Logger.exc("[MUL.procNewLC] PROBLEM? Timeout Exception");
-                        } catch (HostFailureException e) {
-                            Logger.err("[MUL.main] HostFailure Exception should never happen!: " + host.getName());
-                        } catch (Exception e) {
-                            Logger.exc("[MUL.procNewLC] Exception");
-                        }
-                    }
+                Logger.info("[MUL.RunNewLC] " + m);
+                if (m.getMessage() == null) {
+                    // Add LC
+                    lcInfo.put(m.getOrigin(), new LCInfo(m.getOrigin(), "", Msg.getClock(), true));
+                    Logger.info("[MUL.RunNewLC] LC temp. joined: " + m);
+                } else {
+                    // End LC join phase
+                    String lc = m.getOrigin();
+                    String gm = (String) m.getMessage();
+                    lcInfo.put(lc, new LCInfo(lc, gm, Msg.getClock(), false));
+                    m = new NewLCMsg(gm, m.getReplyBox(), null, null);
+                    m.send();
+                    Logger.info("[MUL.RunNewLC] LC integrated: " + m);
                 }
-            }.start();
-        } catch (Exception e) { e.printStackTrace(); }
+            } catch (TimeoutException e) {
+                Logger.exc("[MUL.RunNewLC] PROBLEM? Timeout Exception");
+            } catch (HostFailureException e) {
+                Logger.err("[MUL.RunNewLC] HostFailure Exception should never happen!: " + host.getName());
+            } catch (Exception e) {
+                Logger.exc("[MUL.RunNewLC] Exception");
+            }
+        }
     }
 
     /**

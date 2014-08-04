@@ -30,6 +30,7 @@ public class GroupManager extends Process {
     private String gmHeartbeatNew = "gmHeartbeatNew";
     private String gmHeartbeatBeat = "gmHeartbeatBeat";
     private Collection<XHost> managedLCs;
+    private ThreadPool newLCPool;
 
     public GroupManager(Host host, String name, String[] args) {
         super(host, name, args);
@@ -46,13 +47,13 @@ public class GroupManager extends Process {
 
         Logger.info("[GM.main] GM started: " + host.getName());
         Test.gms.remove(this);
+
         procGLBeats();
         newJoin();
         while (true) {
             try {
                 if (!thisGMToBeStopped) {
                     m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
-//                    glDead();
                     handle(m);
                     deadLCs();
                     sleep(AUX.DefaultComputeInterval);
@@ -70,7 +71,6 @@ public class GroupManager extends Process {
                     Logger.err("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
                     e.printStackTrace();
                 }
-//                glDead();
                 deadLCs();
             }
         }
@@ -86,7 +86,6 @@ public class GroupManager extends Process {
             case "BeatLCMsg":   handleBeatLC(m);   break;
             case "GMElecMsg":   handleGMElec(m);   break;
             case "LCChargeMsg": handleLCCharge(m); break;
-            case "NewLCMsg":    handleNewLC(m);    break;
             case "TermGMMsg":   stopThisGM(); break;
             case "SnoozeMsg":
                 Logger.err("[GM(SnoozeMsg)] Unknown message" + m + " on " + host);
@@ -162,18 +161,49 @@ public class GroupManager extends Process {
         }
     }
 
-    void handleNewLC(SnoozeMsg m) {
-        String lc = (String) m.getMessage();
-        double   ts  = Msg.getClock();
-        // Init LC charge and heartbeat
-        LCInfo    lci = new LCInfo(new LCCharge(0, 0, ts), ts);
-        lcInfo.put(lc, lci);
-        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
+    public class RunNewLC implements Runnable {
+        public RunNewLC() {};
 
-        // Send acknowledgment
-        m = new NewLCMsg(host.getName(), m.getReplyBox(), null, null);
-        m.send();
+        @Override
+        public void run() {
+            NewLCMsg m;
+            try {
+                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.HeartbeatTimeout);
+//                            Logger.info("[GM.procRelayGLBeats] " + m);
+                Logger.info("[GM.RunNewLC] " + m);
+                String lc = (String) m.getMessage();
+                double   ts  = Msg.getClock();
+                // Init LC charge and heartbeat
+                LCInfo    lci = new LCInfo(new LCCharge(0, 0, ts), ts);
+                lcInfo.put(lc, lci);
+                Logger.info("[GM.RunNewLC] LC stored: " + m);
+
+                // Send acknowledgment
+                m = new NewLCMsg(host.getName(), m.getReplyBox(), null, null);
+                m.send();
+            } catch (TimeoutException e) {
+                Logger.exc("[GM.RunNewLC] PROBLEM? Timeout Exception");
+            } catch (HostFailureException e) {
+                Logger.err("[GM.RunNewLC] HostFailure Exception should never happen!: " + host.getName());
+            } catch (Exception e) {
+                Logger.exc("[GM.RunNewLC] Exception");
+            }
+        }
     }
+
+
+//    void handleNewLC(SnoozeMsg m) {
+//        String lc = (String) m.getMessage();
+//        double   ts  = Msg.getClock();
+//        // Init LC charge and heartbeat
+//        LCInfo    lci = new LCInfo(new LCCharge(0, 0, ts), ts);
+//        lcInfo.put(lc, lci);
+//        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
+//
+//        // Send acknowledgment
+//        m = new NewLCMsg(host.getName(), m.getReplyBox(), null, null);
+//        m.send();
+//    }
 
     /**
      * Identify and handle dead LCs
@@ -207,7 +237,8 @@ public class GroupManager extends Process {
                 if (joining) {
                     procSendMyBeats();
                     procSendMyCharge();
-                    procScheduling();
+//                    procScheduling();
+                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(), 3);
                     Logger.info("[GM.glBeats] GM Join finished: " + m);
                     joining = false;
                     Test.gms.add(this);

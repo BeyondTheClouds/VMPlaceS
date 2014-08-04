@@ -70,7 +70,6 @@ public class GroupLeader extends Process {
         Logger.info("[GL.handle] GLIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-//            case "LCAssMsg" : handleLCAss(m);  break;
             case "TermGMMsg": handleTermGM(m); break;
             case "TermGLMsg": handleTermGL(m); break;
             case "SnoozeMsg":
@@ -80,25 +79,6 @@ public class GroupLeader extends Process {
             case "TestFailGLMsg":
                 Logger.err("[GL.main] thisGLToBeTerminated: " + host.getName());
                 thisGLToBeTerminated = true; break;
-        }
-    }
-
-    public class RunLCAss implements Runnable {
-        public RunLCAss() {};
-
-        public void run() {
-            LCAssMsg m = null;
-            try {
-                Logger.tmp("[GL.RunLCAss] Wait for tasks: " + GroupLeader.this.inbox + "-lcAssign");
-                m = (LCAssMsg) Task.receive(GroupLeader.this.inbox + "-lcAssign");
-                Logger.tmp("[GL.RunLCAss] Task received: " + m);
-                String gm = GroupLeader.this.lcAssignment((String) m.getMessage());
-                m = new LCAssMsg(gm, m.getReplyBox(), GroupLeader.this.host.getName(), null);
-                m.send();
-                Logger.tmp("[GL.RunLCAss] GM assigned: " + m);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
 
@@ -276,6 +256,29 @@ public class GroupLeader extends Process {
                 }
             }.start();
         } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    public class RunLCAss implements Runnable {
+        public RunLCAss() {};
+
+        public void run() {
+            LCAssMsg m = null;
+            try {
+                Logger.info("[GL.RunLCAss] Wait for tasks: " + GroupLeader.this.inbox + "-lcAssign");
+                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.HeartbeatInterval);
+                Logger.info("[GL.RunLCAss] Task received: " + m);
+                String gm = lcAssignment((String) m.getMessage());
+                m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
+                m.send();
+                Logger.info("[GL.RunLCAss] GM assigned: " + m);
+            } catch (TimeoutException e) {
+                Logger.exc("[GL.RunLCAss] PROBLEM? Timeout Exception");
+            } catch (HostFailureException e) {
+                Logger.err("[GL.RunLCAss] HostFailure Exception should never happen!: " + host.getName());
+            } catch (Exception e) {
+                Logger.exc("[GL.RunLCAss] Exception");
+            }
+        }
     }
 
     void dispatchVMRequest() {
