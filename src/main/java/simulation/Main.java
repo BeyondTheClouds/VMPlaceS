@@ -72,7 +72,8 @@ import java.util.Date;
        
     	    if(SimulatorProperties.getAlgo().equals("distributed")){
     		    Msg.info("Distributed scheduling selected (generating deployment file)");
-    		    String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getNbOfHostingNodes()+" "+
+    		    String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getAlgo()+" "+
+                        SimulatorProperties.getNbOfHostingNodes()+" "+
     			   				SimulatorProperties.getNbOfCPUs()+ " "+
     			   					SimulatorProperties.getCPUCapacity()+ " "+ 
     			   						SimulatorProperties.getMemoryTotal()+" 23000 > config/generated_deploy.xml"};
