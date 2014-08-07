@@ -167,7 +167,7 @@ public class XVM {
      * Migrate a VM from one XHost to another one.
      * @param host the host where to migrate the VM
      */
-    public void migrate(XHost host) {
+    public void migrate(XHost host) throws HostFailureException {
         if (!this.vmIsMigrating) {
             this.vmIsMigrating = true;
             Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
@@ -183,7 +183,7 @@ public class XVM {
                 e.printStackTrace();
                 Msg.info("Something strange occurs during the migration");
                 Msg.info("TODO Adrien, migrate should return 0 or -1, -2, ... according to whether the migration succeeded or not.");
-                System.exit(1);
+                throw new HostFailureException();
                 // TODO Adrien, migrate should return 0 or -1, -2, ... according to whether the migration succeeded or not.
                 // This value can be then use at highler level to check whether the reconfiguration plan has been aborted or not.
             }
