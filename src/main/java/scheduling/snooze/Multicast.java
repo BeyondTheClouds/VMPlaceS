@@ -100,8 +100,8 @@ public class Multicast extends Process {
         String gm = (String) m.getMessage();
         gmInfo.put(gm, new GMInfo(AUX.gmInbox(gm), Msg.getClock(), true));
         Logger.info("[MUL(NewGM)] GM added: " + m + ", " + lastPromotionOrElection);
-        if (!glHostname.isEmpty() || lastPromotionOrElection == 0.0
-                || AUX.timeDiff(lastPromotionOrElection) <= AUX.HeartbeatTimeout) {
+        if (!glHostname.isEmpty() && (lastPromotionOrElection == 0.0
+                || AUX.timeDiff(lastPromotionOrElection) <= AUX.HeartbeatTimeout)) {
             m = new RBeatGLMsg(glTimestamp, AUX.gmInbox(gm) + "-glBeats", glHostname, null);
             m.send();
             Logger.info("[MUL(NewGM)] No promotion: " + m);
