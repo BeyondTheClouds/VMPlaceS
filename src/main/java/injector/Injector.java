@@ -13,9 +13,7 @@ import org.simgrid.trace.Trace;
 import scheduling.entropyBased.EntropyProperties;
 import simulation.*;
 
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Random;
+import java.util.*;
 
 
 public class Injector extends Process {
@@ -116,8 +114,11 @@ public class Injector extends Process {
         Random randHostPicker = new Random(SimulatorProperties.getSeed());
 
         while(currentTime < duration){
-            // select a host
-            tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
+            // select a host that is not already off.
+            do {
+                tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
+            }while(isStillOff(tempHost, faultQueue, currentTime));
+
             // and change its state
             // false = off , on = true
             // Add a new event queue
@@ -132,7 +133,21 @@ public class Injector extends Process {
 
         return faultQueue;
     }
-
+    public static boolean isStillOff(XHost tmp, LinkedList<FaultEvent> queue, double currentTime){
+        ListIterator<FaultEvent> iterator = queue.listIterator(queue.size());
+        while(iterator.hasPrevious()){
+            FaultEvent evt = iterator.previous();
+            if(evt.getState() == false){
+                if (evt.getTime() + 300 >= currentTime) {
+                    if (evt.getHost()== tmp)
+                        return true;
+                }
+                else
+                    break;
+            }
+        }
+        return false;
+    }
 
     public static Deque<InjectorEvent> mergeQueues(Deque<LoadEvent> loadQueue, Deque<FaultEvent> faultQueue) {
         LinkedList<InjectorEvent> queue = new LinkedList<InjectorEvent>();
