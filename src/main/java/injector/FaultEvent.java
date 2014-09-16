@@ -49,4 +49,8 @@ public class FaultEvent implements InjectorEvent{
     public String toString(){
         return this.getTime()+"/"+this.getHost().getName()+"/"+this.state;
     }
+
+    public boolean getState() {
+        return state;
+    }
 }
