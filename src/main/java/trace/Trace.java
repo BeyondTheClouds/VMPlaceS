@@ -8,37 +8,48 @@ import java.util.LinkedList;
 
 /**
  * Copyright 2012-2013-2014. The SimGrid Team. All rights reserved.
- *
+ * <p/>
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the license (GNU LGPL) which comes with this package.
- *
+ * <p/>
  * This file is the launcher on the Simgrid VM injector
  * The main is composed of three part:
  * 1./ Generate the deployment file according to the number of nodes and the algorithm you want to evaluate
  * 2./ Configure, instanciate and assign each VM on the different PMs
  * 3./ Launch the injector and the other simgrid processes in order to run the simulation.
- *
+ * <p/>
  * Please note that all parameters of the simulation are given in the ''simulator.properties'' file available
  * in the ''config'' directory
  *
  * @author: adrien.lebre@inria.fr
  * @author: jonathan.pastor@inria.fr
- *
  */
 public class Trace {
-
 
     class TState {
 
         private String value;
         private double datetime;
 
-        public TState (String value, double datetime) {
+        public TState(String value, double datetime) {
             this.value = value;
             this.datetime = datetime;
         }
     }
 
+    class TValue{
+        private double value;
+        private double datetime;
+
+        public TValue(double value, double datetime) {
+            this.value = value;
+            this.datetime = datetime;
+        }
+
+        public double getValue() {
+            return value;
+        }
+    }
     /**
      * Hashmap for host states: key : name of the host, value hashMap of Linkedlist of states
      */
@@ -47,7 +58,7 @@ public class Trace {
     /**
      * Hashmap for host variables: key : name of the host, value hashMap of variables
      */
-    HashMap<String, HashMap<String, Double> hostVariables;
+    HashMap<String, HashMap<String, TValue>> hostVariables;
 
     private Trace instance;
 
@@ -58,111 +69,221 @@ public class Trace {
         return instance;
     }
 
-    public Trace(){
-        hostStates = new HashMap<String, HashMap<String,LinkedList<TState>>>();
-        hostVariables = new HashMap<String, HashMap<String, Double>>;
-    }
-
-
-    /**
-     *     Declare a user state that will be associated to hosts.
-     */
-    public static void hostStateDeclare(String name) {
-         }
-
-    /**
-     *  Declare a new value for a user state associated to hosts.
-     * @param state
-     * @param value
-     * @param color
-     */
-    public static void    hostStateDeclareValue(String state, String value, String color){
-           //usefull only for MSG api
-        org.simgrid.trace.Trace.hostStateDeclareValue(state, value, color);
+    public Trace() {
+        hostStates = new HashMap<String, HashMap<String, LinkedList<TState>>>();
+        hostVariables = new HashMap<String, HashMap<String, TValue>>;
     }
 
     /**
-     *  Set the user state to the given value.
-     * @param host
-     * @param state
-     * @param value
+     * Declare a user state that will be associated to a given host.
      */
-    void hostSetState(String host, String state, String value){
+    void hostStateDeclare(String host, String state) {
 
         HashMap<String, LinkedList<TState>> currentHostStates;
-        if(! hostStates.containsKey(host)) {
+        if (hostStates.containsKey(host)) {
             currentHostStates = hostStates.get(host);
         } else {
             currentHostStates = new HashMap<String, LinkedList<TState>>();
         }
 
+
+        if (!currentHostStates.containsKey(state)) {
+            LinkedList<TState> listOfStates = new LinkedList<TState>();
+            currentHostStates.put(state, listOfStates);
+
+            hostStates.put(host, currentHostStates);
+        }
+
+    }
+
+    /**
+     * Declare a user state that will be associated to hosts.
+     */
+    public void hostStateDeclare(String state) {
+        for (String key : hostStates.keySet()) {
+            hostStateDeclare(key, state);
+        }
+    }
+
+
+    /**
+     * Declare a new value for a user state associated to hosts.
+     * @param state
+     * @param value
+     * @param color
+     */
+    public static void hostStateDeclareValue(String state, String value, String color){
+        //usefull only for MSG api
+        org.simgrid.trace.Trace.hostStateDeclareValue(state, value, color);
+    }
+
+    /**
+     * Set the user state to the given value.
+     *
+     * @param host
+     * @param state
+     * @param value
+     */
+    void hostSetState(String host, String state, String value) {
+        if (!hostStates.containsKey(host)) {
+            hostStateDeclare(host, state);
+        }
+        HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
+
         LinkedList<TState> listOfStates = new LinkedList<TState>();
+        listOfStates.add(new TState(value, Msg.getClock()));
+
+
+        currentHostStates.put(state, listOfStates);
+        hostStates.put(host, currentHostStates);
+
+        // TODO MSG.Trace code
+        // TODO JSON code
+        //TODO
+    }
+
+    /**
+     * Pop the last value of a state of a given host.
+     *
+     * @param host
+     * @param state
+     */
+    void hostPopState(String host, String state) {
+
+        if (!hostStates.containsKey(host)) {
+            hostStateDeclare(host, state);
+        }
+        HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
+
+        LinkedList<TState> listOfStates;
+        if (currentHostStates.containsKey(state)) {
+            listOfStates = currentHostStates.get(host);
+        } else {
+            listOfStates = new LinkedList<TState>();
+        }
+
         listOfStates.add(new TState(state, Msg.getClock()));
 
         currentHostStates.put(state, listOfStates);
 
         hostStates.put(host, currentHostStates);
 
-        // TODO MSG.Trace code
-        // TODO JSON code
-    }
-
-    /**
-     *   Pop the last value of a state of a given host.
-     * @param host
-     * @param state
-     */
-    static void hostPopState(String host, String state){
-
 
     }
 
     /**
-     *  Push a new value for a state of a given host.
+     * Push a new value for a state of a given host.
+     *
      * @param host
      * @param state
      * @param value
      */
-    static void hostPushState(java.lang.String host, java.lang.String state, java.lang.String value){
+    void hostPushState(java.lang.String host, java.lang.String state, java.lang.String value) {
+
+        HashMap<String, LinkedList<TState>> currentHostStates;
+        if (!hostStates.containsKey(host)) {
+            currentHostStates = hostStates.get(host);
+        } else {
+            currentHostStates = new HashMap<String, LinkedList<TState>>();
+        }
+
+        LinkedList<TState> listOfStates;
+        if (currentHostStates.containsKey(state)) {
+            listOfStates = currentHostStates.get(host);
+        } else {
+            listOfStates = new LinkedList<TState>();
+        }
+
+        listOfStates.add(new TState(state, Msg.getClock()));
+
+        currentHostStates.put(state, listOfStates);
+
+        hostStates.put(host, currentHostStates);
 
     }
 
 
+
+
+    void hostVariableDeclare(String host, String variable) {
+
+        HashMap<String, TValue> currentHostVariables;
+        if (hostVariables.containsKey(host)) {
+            currentHostVariables = hostVariables.get(host);
+        } else {
+            currentHostVariables = new HashMap<String, TValue>();
+        }
+
+        if (!currentHostVariables.containsKey(variable)) {
+            currentHostVariables.put(variable, new TValue(0,Msg.getClock()));
+
+            hostVariables.put(host, currentHostVariables);
+        }
+
+    }
+
     /**
-     *   Declare a new user variable associated to hosts.
+     * Declare a new user variable associated to hosts.
+     *
      * @param variable
      */
-    static void    hostVariableDeclare(String variable){
-
+    void hostVariableDeclare(String variable) {
+        for (String key : hostVariables.keySet()) {
+            hostVariableDeclare(key, variable);
+        }
     }
 
     /**
-     *  Set the value of a variable of a host.
+     * Set the value of a variable of a host.
+     *
      * @param host
      * @param variable
      * @param value
      */
-    static void  hostVariableSet(java.lang.String host, java.lang.String variable, double value) {
+    void  hostVariableSet(String host, String variable, double value) {
+        if (!hostVariables.containsKey(host)) {
+            hostVariableDeclare(host, variable);
+        }
+        HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
+        currentHostVariable.put(variable, new TValue(value, Msg.getClock()));
+        hostVariables.put(host, currentHostVariable);
     }
 
     /**
-     *  Subtract a value from a variable of a host.
+     * Subtract a value from a variable of a host.
+     *
      * @param host
      * @param variable
      * @param value
      */
-    static void     hostVariableSub(java.lang.String host, java.lang.String variable, double value) {
+    void hostVariableSub(java.lang.String host, java.lang.String variable, double value) {
+        if (!hostVariables.containsKey(host)) {
+            hostVariableDeclare(host, variable);
+        }
+        HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
+        double tmp = currentHostVariable.get(variable).getValue();
+        currentHostVariable.put(variable, new TValue((tmp - value), Msg.getClock());
+        hostVariables.put(host, currentHostVariable);
     }
 
     /**
-     *     Add a value to a variable of a host.
+     * Add a value to a variable of a host.
+     *
      * @param host
      * @param variable
      * @param value
      */
-    static void     hostVariableAdd(java.lang.String host, java.lang.String variable, double value) {
+    void hostVariableAdd(java.lang.String host, java.lang.String variable, double value) {
+        if (!hostVariables.containsKey(host)) {
+            hostVariableDeclare(host, variable);
+        }
+        HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
+
+        double tmp = currentHostVariable.get(variable).getValue();
+        currentHostVariable.put(variable, new TValue((tmp+value),Msg.getClock()));
+        hostVariables.put(host, currentHostVariable);
 
     }
 }
