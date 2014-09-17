@@ -2,6 +2,8 @@ package trace;
 
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
+import scheduling.entropyBased.dvms2.dvms.LoggingActor;
+import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -54,6 +56,10 @@ public class Trace {
      * Hashmap for host states: key : name of the host, value hashMap of Linkedlist of states
      */
     HashMap<String, HashMap<String, LinkedList<TState>>> hostStates;
+
+    void writeJson(double time, String origin, String state, double duration) {
+        LoggingActor.write(new LoggingProtocol.PopState(time, origin, state, duration));
+    }
 
     /**
      * Hashmap for host variables: key : name of the host, value hashMap of variables
@@ -130,6 +136,11 @@ public class Trace {
         }
         HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
 
+        while(!currentHostStates.get(state).isEmpty()) {
+            hostPopState(host, state);
+        }
+
+
         LinkedList<TState> listOfStates = new LinkedList<TState>();
         listOfStates.add(new TState(value, Msg.getClock()));
 
@@ -150,6 +161,8 @@ public class Trace {
      */
     void hostPopState(String host, String state) {
 
+        double now = Msg.getClock();
+
         if (!hostStates.containsKey(host)) {
             hostStateDeclare(host, state);
         }
@@ -158,11 +171,19 @@ public class Trace {
         LinkedList<TState> listOfStates;
         if (currentHostStates.containsKey(state)) {
             listOfStates = currentHostStates.get(host);
+
+            if(listOfStates.size() > 0) {
+                TState lastState = listOfStates.removeLast();
+
+                double duration = now - lastState.datetime;
+
+                writeJson(now, host, state, duration);
+            }
+
         } else {
             listOfStates = new LinkedList<TState>();
         }
 
-        listOfStates.add(new TState(state, Msg.getClock()));
 
         currentHostStates.put(state, listOfStates);
 
@@ -180,12 +201,10 @@ public class Trace {
      */
     void hostPushState(java.lang.String host, java.lang.String state, java.lang.String value) {
 
-        HashMap<String, LinkedList<TState>> currentHostStates;
         if (!hostStates.containsKey(host)) {
-            currentHostStates = hostStates.get(host);
-        } else {
-            currentHostStates = new HashMap<String, LinkedList<TState>>();
+            hostStateDeclare(host, state);
         }
+        HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
 
         LinkedList<TState> listOfStates;
         if (currentHostStates.containsKey(state)) {
