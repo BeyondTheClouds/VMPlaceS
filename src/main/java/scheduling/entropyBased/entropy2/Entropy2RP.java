@@ -14,7 +14,7 @@ import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import trace.Trace;
+import trace.TraceImpl;
 import scheduling.entropyBased.EntropyProperties;
 import scheduling.Scheduler;
 
@@ -261,12 +261,12 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         Entropy2RPRes enRes = new Entropy2RPRes();
 
 		/* Tracing code */
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute");
+        TraceImpl.hostSetState(Host.currentHost().getName(), "SERVICE", "compute");
         int i;
         for (XHost h : hostsToCheck) {
             if (!h.isViable())
-                Trace.hostPushState(h.getName(), "PM", "violation-det");
-            Trace.hostSetState(h.getName(), "SERVICE", "booked");
+                TraceImpl.hostPushState(h.getName(), "PM", "violation-det");
+            TraceImpl.hostSetState(h.getName(), "SERVICE", "booked");
         }
 
         Msg.info("Launching scheduler (loopId = " + loopID + ") - start to compute");
@@ -292,7 +292,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 			/* Tracing code */
             // TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
             for (XHost h : hostsToCheck)
-                Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
+                TraceImpl.hostSetState(h.getName(), "SERVICE", "reconfigure");
 
             Msg.info("Starting reconfiguration");
             double startReconfigurationTime = Msg.getClock();
@@ -314,9 +314,9 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
 		/* Tracing code */
         for (XHost h : hostsToCheck)
-            Trace.hostSetState(h.getName(), "SERVICE", "free");
+            TraceImpl.hostSetState(h.getName(), "SERVICE", "free");
 
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
+        TraceImpl.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
         return enRes;
     }
 
@@ -349,7 +349,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     private int ongoingMigration = 0 ;
 
     private void incMig(){
-        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);
+        TraceImpl.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);
         this.ongoingMigration++ ;
     }
     private void decMig() {
@@ -401,11 +401,11 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
                                     if (!destHost.isViable()) {
                                         Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
-                                        Trace.hostSetState(destHost.getName(), "PM", "violation-out");
+                                        TraceImpl.hostSetState(destHost.getName(), "PM", "violation-out");
                                     }
                                     if (sourceHost.isViable()) {
                                         Msg.info("SOLVED VIOLATION ON " + sourceHost.getName() + "\n");
-                                        Trace.hostSetState(sourceHost.getName(), "PM", "normal");
+                                        TraceImpl.hostSetState(sourceHost.getName(), "PM", "normal");
                                     }
                                 }
                                 decMig();

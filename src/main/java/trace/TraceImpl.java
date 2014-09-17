@@ -1,6 +1,5 @@
 package trace;
 
-import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 import scheduling.entropyBased.dvms2.dvms.LoggingActor;
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
@@ -26,7 +25,7 @@ import java.util.LinkedList;
  * @author: adrien.lebre@inria.fr
  * @author: jonathan.pastor@inria.fr
  */
-public class Trace {
+public class TraceImpl {
 
     class TState {
 
@@ -64,20 +63,20 @@ public class Trace {
     /**
      * Hashmap for host variables: key : name of the host, value hashMap of variables
      */
-    HashMap<String, HashMap<String, TValue>> hostVariables;
+    private HashMap<String, HashMap<String, TValue>> hostVariables;
 
-    private Trace instance;
+    private static TraceImpl instance;
 
-    public Trace getInstance() {
+    public static TraceImpl getInstance() {
         if(instance == null) {
-            instance = new Trace();
+            instance = new TraceImpl();
         }
         return instance;
     }
 
-    public Trace() {
+    public TraceImpl() {
         hostStates = new HashMap<String, HashMap<String, LinkedList<TState>>>();
-        hostVariables = new HashMap<String, HashMap<String, TValue>>;
+        hostVariables = new HashMap<String, HashMap<String, TValue>>();
     }
 
 
@@ -292,7 +291,7 @@ public class Trace {
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
         double tmp = currentHostVariable.get(variable).getValue();
-        currentHostVariable.put(variable, new TValue((tmp - value), Msg.getClock());
+        currentHostVariable.put(variable, new TValue((tmp - value), Msg.getClock()));
         hostVariables.put(host, currentHostVariable);
     }
 
