@@ -1,5 +1,7 @@
 package trace;
 
+import org.simgrid.msg.Host;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -24,8 +26,6 @@ import java.util.LinkedList;
  */
 public class Trace {
 
-
-
     class TState{
         String Value;
         double timestamp;
@@ -34,13 +34,14 @@ public class Trace {
     /**
      * Hashmap: key : name of the host, value hashMap of Linkedlist of states
      */
-    HashMap<String, HashMap<String,LinkedList<TState>>> hostStates;
-  
+    static HashMap<String, HashMap<String,LinkedList<TState>>> hostStates = new HashMap<String, HashMap<String,LinkedList<TState>>>();
+
     /**
      *     Declare a user state that will be associated to hosts.
      */
-    static void hostStateDeclare(String name) {
-
+    public static void hostStateDeclare(String name) {
+        for (int i=0; i< Host.all().length; i++)
+            hostStates.put(Host.all()[i].getName(), new HashMap<String, LinkedList<TState>>())
     }
 
     /**
@@ -49,7 +50,7 @@ public class Trace {
      * @param value
      * @param color
      */
-    static void    hostStateDeclareValue(String state, String value, String color){
+    public static void    hostStateDeclareValue(String state, String value, String color){
 
 
     }
@@ -60,7 +61,7 @@ public class Trace {
      * @param state
      * @param value
      */
-    static void    hostSetState(String host, String state, String value){
+    public static void    hostSetState(String host, String state, String value){
         // TODO write in the json file: name of the host, name of the state + name of the value + timestamp
 
     }
