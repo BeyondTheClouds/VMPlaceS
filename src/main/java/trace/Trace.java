@@ -7,22 +7,21 @@ import java.util.LinkedList;
 
 /**
  * Copyright 2012-2013-2014. The SimGrid Team. All rights reserved.
- *
+ * <p/>
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the license (GNU LGPL) which comes with this package.
- *
+ * <p/>
  * This file is the launcher on the Simgrid VM injector
  * The main is composed of three part:
  * 1./ Generate the deployment file according to the number of nodes and the algorithm you want to evaluate
  * 2./ Configure, instanciate and assign each VM on the different PMs
  * 3./ Launch the injector and the other simgrid processes in order to run the simulation.
- *
+ * <p/>
  * Please note that all parameters of the simulation are given in the ''simulator.properties'' file available
  * in the ''config'' directory
  *
  * @author: adrien.lebre@inria.fr
  * @author: jonathan.pastor@inria.fr
- *
  */
 public class Trace {
 
@@ -30,7 +29,7 @@ public class Trace {
     private Trace instance;
 
     public Trace getInstance() {
-        if(instance == null) {
+        if (instance == null) {
             instance = new Trace();
         }
         return instance;
@@ -42,7 +41,7 @@ public class Trace {
         private String value;
         private double datetime;
 
-        public TState (String value, double datetime) {
+        public TState(String value, double datetime) {
             this.value = value;
             this.datetime = datetime;
         }
@@ -51,43 +50,130 @@ public class Trace {
     /**
      * Hashmap: key : name of the host, value hashMap of Linkedlist of states
      */
-    static HashMap<String, HashMap<String, LinkedList<TState>>> hostStates = new HashMap<String, HashMap<String,LinkedList<TState>>>();
-  
-    /**
-     *     Declare a user state that will be associated to hosts.
-     */
-    static void hostStateDeclare(String name) {
-
-    }
+    static HashMap<String, HashMap<String, LinkedList<TState>>> hostStates = new HashMap<String, HashMap<String, LinkedList<TState>>>();
 
     /**
-     *  Declare a new value for a user state associated to hosts.
-     * @param state
-     * @param value
-     * @param color
+     * Declare a user state that will be associated to a given host.
      */
-    static void    hostStateDeclareValue(String state, String value, String color){
-
-
-    }
-
-    /**
-     *  Set the user state to the given value.
-     * @param host
-     * @param state
-     * @param value
-     */
-    void hostSetState(String host, String state, String value){
-        // TODO write in the json file: name of the host, name of the state + name of the value + timestamp
+    void hostStateDeclare(String host, String state) {
 
         HashMap<String, LinkedList<TState>> currentHostStates;
-        if(! hostStates.containsKey(host)) {
+        if (hostStates.containsKey(host)) {
             currentHostStates = hostStates.get(host);
         } else {
             currentHostStates = new HashMap<String, LinkedList<TState>>();
         }
 
+
+        if (!currentHostStates.containsKey(state)) {
+            LinkedList<TState> listOfStates = new LinkedList<TState>();
+            currentHostStates.put(state, listOfStates);
+
+            hostStates.put(host, currentHostStates);
+        }
+
+    }
+
+    /**
+     * Declare a user state that will be associated to hosts.
+     */
+    void hostStateDeclare(String state) {
+
+        for (String key : hostStates.keySet()) {
+
+            hostStateDeclare(key, state);
+        }
+    }
+
+    /**
+     * Declare a new value for a user state associated to hosts.
+     *
+     * @param state
+     * @param value
+     * @param color
+     */
+    static void hostStateDeclareValue(String state, String value, String color) {
+
+
+    }
+
+    /**
+     * Set the user state to the given value.
+     *
+     * @param host
+     * @param state
+     * @param value
+     */
+    void hostSetState(String host, String state, String value) {
+        // TODO write in the json file: name of the host, name of the state + name of the value + timestamp
+
+
+        if (!hostStates.containsKey(host)) {
+            hostStateDeclare(host, state);
+        }
+        HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
+
         LinkedList<TState> listOfStates = new LinkedList<TState>();
+        listOfStates.add(new TState(value, Msg.getClock()));
+
+
+        currentHostStates.put(state, listOfStates);
+        hostStates.put(host, currentHostStates);
+
+    }
+
+    /**
+     * Pop the last value of a state of a given host.
+     *
+     * @param host
+     * @param state
+     */
+    void hostPopState(String host, String state) {
+
+        if (!hostStates.containsKey(host)) {
+            hostStateDeclare(host, state);
+        }
+        HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
+
+        LinkedList<TState> listOfStates;
+        if (currentHostStates.containsKey(state)) {
+            listOfStates = currentHostStates.get(host);
+        } else {
+            listOfStates = new LinkedList<TState>();
+        }
+
+        listOfStates.add(new TState(state, Msg.getClock()));
+
+        currentHostStates.put(state, listOfStates);
+
+        hostStates.put(host, currentHostStates);
+
+
+    }
+
+    /**
+     * Push a new value for a state of a given host.
+     *
+     * @param host
+     * @param state
+     * @param value
+     */
+    void hostPushState(java.lang.String host, java.lang.String state, java.lang.String value) {
+
+        HashMap<String, LinkedList<TState>> currentHostStates;
+        if (!hostStates.containsKey(host)) {
+            currentHostStates = hostStates.get(host);
+        } else {
+            currentHostStates = new HashMap<String, LinkedList<TState>>();
+        }
+
+        LinkedList<TState> listOfStates;
+        if (currentHostStates.containsKey(state)) {
+            listOfStates = currentHostStates.get(host);
+        } else {
+            listOfStates = new LinkedList<TState>();
+        }
+
         listOfStates.add(new TState(state, Msg.getClock()));
 
         currentHostStates.put(state, listOfStates);
@@ -96,62 +182,46 @@ public class Trace {
 
     }
 
-    /**
-     *   Pop the last value of a state of a given host.
-     * @param host
-     * @param state
-     */
-    static void hostPopState(String host, String state){
-
-
-    }
 
     /**
-     *  Push a new value for a state of a given host.
-     * @param host
-     * @param state
-     * @param value
-     */
-    static void hostPushState(java.lang.String host, java.lang.String state, java.lang.String value){
-
-    }
-
-
-    /**
-     *   Declare a new user variable associated to hosts.
+     * Declare a new user variable associated to hosts.
+     *
      * @param variable
      */
-    static void    hostVariableDeclare(String variable){
+    static void hostVariableDeclare(String variable) {
 
     }
 
     /**
-     *  Set the value of a variable of a host.
+     * Set the value of a variable of a host.
+     *
      * @param host
      * @param variable
      * @param value
      */
-    static void     hostVariableSet(java.lang.String host, java.lang.String variable, double value) {
+    static void hostVariableSet(java.lang.String host, java.lang.String variable, double value) {
 
     }
 
     /**
-     *  Subtract a value from a variable of a host.
+     * Subtract a value from a variable of a host.
+     *
      * @param host
      * @param variable
      * @param value
      */
-    static void     hostVariableSub(java.lang.String host, java.lang.String variable, double value) {
+    static void hostVariableSub(java.lang.String host, java.lang.String variable, double value) {
 
     }
 
     /**
-     *     Add a value to a variable of a host.
+     * Add a value to a variable of a host.
+     *
      * @param host
      * @param variable
      * @param value
      */
-    static void     hostVariableAdd(java.lang.String host, java.lang.String variable, double value) {
+    static void hostVariableAdd(java.lang.String host, java.lang.String variable, double value) {
 
     }
 }
