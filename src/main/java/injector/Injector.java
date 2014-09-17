@@ -8,7 +8,7 @@ import org.simgrid.msg.Msg;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
-import org.simgrid.trace.Trace;
+import trace.Trace;
 
 import scheduling.entropyBased.EntropyProperties;
 import simulation.*;

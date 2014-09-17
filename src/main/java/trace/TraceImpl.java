@@ -88,7 +88,7 @@ public class TraceImpl {
             HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
             for (String state : hostStates.get(host).keySet()) {
                 // For each state, retrieve the states stack and pop them
-                while(!currentHostStates.get(state).isEmpty()) {
+                while(currentHostStates.containsKey(state) && !currentHostStates.get(state).isEmpty()) {
                     hostPopState(host, state);
                 }
             }
@@ -152,7 +152,7 @@ public class TraceImpl {
         }
         HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
 
-        while(!currentHostStates.get(state).isEmpty()) {
+        while(currentHostStates.containsKey(state) && !currentHostStates.get(state).isEmpty()) {
             hostPopState(host, state);
         }
 
@@ -182,7 +182,7 @@ public class TraceImpl {
 
         LinkedList<TState> listOfStates;
         if (currentHostStates.containsKey(state)) {
-            listOfStates = currentHostStates.get(host);
+            listOfStates = currentHostStates.get(state);
 
             if(listOfStates.size() > 0) {
                 TState lastState = listOfStates.removeLast();
@@ -216,7 +216,7 @@ public class TraceImpl {
 
         LinkedList<TState> listOfStates;
         if (currentHostStates.containsKey(state)) {
-            listOfStates = currentHostStates.get(host);
+            listOfStates = currentHostStates.get(state);
         } else {
             listOfStates = new LinkedList<TState>();
         }

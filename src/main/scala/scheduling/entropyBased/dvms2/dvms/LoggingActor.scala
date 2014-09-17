@@ -72,7 +72,7 @@ object LoggingActor {
 
 
     case PopState(time: Double, origin: String, state: String, duration: Double) =>
-      writer.write( s"""{"event": "trace_event", "origin": "$origin", "state_name": "$state", time": "$time", "duration": $duration}\n""")
+      writer.write( s"""{"event": "trace_event", "origin": "$origin", "state_name": "$state", "time": "$time", "duration": $duration}\n""")
       writer.flush()
 
     case ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) =>

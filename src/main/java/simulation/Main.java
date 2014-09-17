@@ -24,11 +24,12 @@ import configuration.SimulatorProperties;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
-import trace.TraceImpl;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Date;
+
+import trace.Trace;
 
 //import scheduling.entropyBased.dvms2.dvms.LoggingActor;
 //import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
@@ -114,22 +115,22 @@ import java.util.Date;
 
       /* Prepare TRACE variables */
         // A node can be underloaded
-        TraceImpl.hostStateDeclare("PM");
-        TraceImpl.hostStateDeclareValue("PM", "underloaded", "0 1 1");
-        TraceImpl.hostStateDeclareValue("PM", "normal", "1 1 1");
-        TraceImpl.hostStateDeclareValue("PM", "violation-inject", "1 0 0");
-        TraceImpl.hostStateDeclareValue("PM", "violation-detbyentr", "0 1 0");
-        TraceImpl.hostStateDeclareValue("PM", "violation-outduetoentr", "1 0 0");
+        Trace.hostStateDeclare("PM");
+        Trace.hostStateDeclareValue("PM", "underloaded", "0 1 1");
+        Trace.hostStateDeclareValue("PM", "normal", "1 1 1");
+        Trace.hostStateDeclareValue("PM", "violation-inject", "1 0 0");
+        Trace.hostStateDeclareValue("PM", "violation-detbyentr", "0 1 0");
+        Trace.hostStateDeclareValue("PM", "violation-outduetoentr", "1 0 0");
 
-        TraceImpl.hostStateDeclare("SERVICE");
-        TraceImpl.hostStateDeclareValue("SERVICE", "free", "1 1 1");
-        TraceImpl.hostStateDeclareValue("SERVICE", "booked", "0 0 1");
-        TraceImpl.hostStateDeclareValue("SERVICE", "compute", "1 0 1");
-        TraceImpl.hostStateDeclareValue("SERVICE", "reconfigure", "1 1 0");
+        Trace.hostStateDeclare("SERVICE");
+        Trace.hostStateDeclareValue("SERVICE", "free", "1 1 1");
+        Trace.hostStateDeclareValue("SERVICE", "booked", "0 0 1");
+        Trace.hostStateDeclareValue("SERVICE", "compute", "1 0 1");
+        Trace.hostStateDeclareValue("SERVICE", "reconfigure", "1 1 0");
 
-        TraceImpl.hostVariableDeclare("LOAD");
-        TraceImpl.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
-        TraceImpl.hostVariableDeclare("NB_MIG"); //Nb of migration
+        Trace.hostVariableDeclare("LOAD");
+        Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
+        Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
 
 	    /*  execute the simulation. */
         System.out.println("Begin simulation" + new Date().toString());

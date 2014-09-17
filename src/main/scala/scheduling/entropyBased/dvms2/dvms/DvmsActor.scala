@@ -30,7 +30,7 @@ import scheduling.entropyBased.dvms2.SGNodeRef
 import scheduling.entropyBased.dvms2.SGActor
 import configuration.XHost
 import simulation.SimulatorManager
-import org.simgrid.trace.Trace
+import trace.Trace
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 import scheduling.entropyBased.dvms2.dvms.LoggingActor
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol._

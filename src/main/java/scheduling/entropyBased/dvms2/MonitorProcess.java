@@ -4,7 +4,7 @@ import configuration.XHost;
 import configuration.XVM;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import org.simgrid.trace.Trace;
+import trace.Trace;
 import scheduling.entropyBased.dvms2.dvms.LoggingActor;
 import simulation.SimulatorManager;
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol.*;
