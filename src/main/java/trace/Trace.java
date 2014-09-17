@@ -92,7 +92,7 @@ public class Trace {
      * @param value
      * @param color
      */
-    static void hostStateDeclareValue(String state, String value, String color) {
+    void hostStateDeclareValue(String state, String value, String color) {
 
 
     }
@@ -142,7 +142,7 @@ public class Trace {
             listOfStates = new LinkedList<TState>();
         }
 
-        listOfStates.add(new TState(state, Msg.getClock()));
+        listOfStates.removeLast();
 
         currentHostStates.put(state, listOfStates);
 
@@ -160,12 +160,10 @@ public class Trace {
      */
     void hostPushState(java.lang.String host, java.lang.String state, java.lang.String value) {
 
-        HashMap<String, LinkedList<TState>> currentHostStates;
         if (!hostStates.containsKey(host)) {
-            currentHostStates = hostStates.get(host);
-        } else {
-            currentHostStates = new HashMap<String, LinkedList<TState>>();
+            hostStateDeclare(host, state);
         }
+        HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
 
         LinkedList<TState> listOfStates;
         if (currentHostStates.containsKey(state)) {
@@ -188,7 +186,7 @@ public class Trace {
      *
      * @param variable
      */
-    static void hostVariableDeclare(String variable) {
+    void hostVariableDeclare(String variable) {
 
     }
 
@@ -199,7 +197,7 @@ public class Trace {
      * @param variable
      * @param value
      */
-    static void hostVariableSet(java.lang.String host, java.lang.String variable, double value) {
+    void hostVariableSet(java.lang.String host, java.lang.String variable, double value) {
 
     }
 
@@ -210,7 +208,7 @@ public class Trace {
      * @param variable
      * @param value
      */
-    static void hostVariableSub(java.lang.String host, java.lang.String variable, double value) {
+    void hostVariableSub(java.lang.String host, java.lang.String variable, double value) {
 
     }
 
@@ -221,7 +219,7 @@ public class Trace {
      * @param variable
      * @param value
      */
-    static void hostVariableAdd(java.lang.String host, java.lang.String variable, double value) {
+    void hostVariableAdd(java.lang.String host, java.lang.String variable, double value) {
 
     }
 }
