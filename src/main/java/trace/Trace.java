@@ -1,6 +1,8 @@
 package trace;
 
 import org.simgrid.msg.Msg;
+import scheduling.entropyBased.dvms2.dvms.LoggingActor;
+import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -45,6 +47,10 @@ public class Trace {
             this.value = value;
             this.datetime = datetime;
         }
+    }
+
+    void writeJson(double time, String origin, String state, double duration) {
+        LoggingActor.write(new LoggingProtocol.PopState(time, origin, state, duration));
     }
 
     /**
@@ -130,6 +136,8 @@ public class Trace {
      */
     void hostPopState(String host, String state) {
 
+        double now = Msg.getClock();
+
         if (!hostStates.containsKey(host)) {
             hostStateDeclare(host, state);
         }
@@ -138,11 +146,19 @@ public class Trace {
         LinkedList<TState> listOfStates;
         if (currentHostStates.containsKey(state)) {
             listOfStates = currentHostStates.get(host);
+
+            if(listOfStates.size() > 0) {
+                TState lastState = listOfStates.removeLast();
+
+                double duration = now - lastState.datetime;
+
+                writeJson(now, host, state, duration);
+            }
+
         } else {
             listOfStates = new LinkedList<TState>();
         }
 
-        listOfStates.removeLast();
 
         currentHostStates.put(state, listOfStates);
 

@@ -29,6 +29,8 @@ case class LoggingPartition(initiator: String, leader: String, nodes: List[Strin
 
 object LoggingProtocol {
 
+  case class PopState(time: Double, origin: String, state: String, duration: Double) extends LoggingMessage
+
   case class ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) extends LoggingMessage
 
   case class ComputingSomeReconfigurationPlan(time: Double, origin: String, duration: Double, psize: Int, result: String) extends LoggingMessage
@@ -67,6 +69,11 @@ object LoggingActor {
   val writer = new PrintWriter(file)
 
   def write(message: LoggingMessage) = message match {
+
+
+    case PopState(time: Double, origin: String, state: String, duration: Double) =>
+      writer.write( s"""{"event": "trace_event", "origin": "$origin", "state_name": "$state", time": "$time", "duration": $duration}\n""")
+      writer.flush()
 
     case ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) =>
       writer.write( s"""{"event": "start_experiment", "origin": "$origin", "time": "$time", "server_count": $serverCount, "vm_count": $vmCount, "algo": "$algo"}\n""")
