@@ -70,7 +70,7 @@ public class CentralizedResolver extends Process {
             System.err.println(e);
             System.exit(-1);
         }
-        Msg.info("Entropy2RP did not find solutions "+numberOfCrash+" times / "+loopID+" and "+numberOfBrokenPlan+" plans have not been completely performed");
+        Msg.info("Entropy / "+loopID+" and "+numberOfBrokenPlan+" plans have not been completely performed");
 
     }
 

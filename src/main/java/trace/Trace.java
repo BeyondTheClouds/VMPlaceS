@@ -80,6 +80,23 @@ public class Trace {
         hostVariables = new HashMap<String, HashMap<String, TValue>>;
     }
 
+
+
+    public void flush(){
+        // Retrieve all hosts
+        for (String host : hostStates.keySet()) {
+            // Retrieve all states
+            HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
+            for (String state : hostStates.get(host).keySet()) {
+                // For each state, retrieve the states stack and pop them
+                while(!currentHostStates.get(state).isEmpty()) {
+                    hostPopState(host, state);
+                }
+            }
+        }
+
+    }
+    
     /**
      * Declare a user state that will be associated to a given host.
      */
@@ -140,7 +157,6 @@ public class Trace {
             hostPopState(host, state);
         }
 
-
         LinkedList<TState> listOfStates = new LinkedList<TState>();
         listOfStates.add(new TState(value, Msg.getClock()));
 
@@ -148,9 +164,6 @@ public class Trace {
         currentHostStates.put(state, listOfStates);
         hostStates.put(host, currentHostStates);
 
-        // TODO MSG.Trace code
-        // TODO JSON code
-        //TODO
     }
 
     /**
@@ -183,13 +196,9 @@ public class Trace {
         } else {
             listOfStates = new LinkedList<TState>();
         }
-
-
         currentHostStates.put(state, listOfStates);
 
         hostStates.put(host, currentHostStates);
-
-
     }
 
     /**

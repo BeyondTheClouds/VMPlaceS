@@ -24,7 +24,7 @@ import configuration.SimulatorProperties;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
-import org.simgrid.trace.Trace;
+import trace.Trace;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -104,14 +104,22 @@ import java.util.Date;
         Msg.createEnvironment(args[0]);
         Msg.deployApplication(args[1]);
 
-        /* Prepare TRACE variables */
+
+        /* Create all VM instances and assign them on the PMs */
+        /* The initial deployment is based on a round robin fashion */
+        System.out.println("Configure simulation" + new Date().toString());
+        SimulatorManager.cleanLog();
+        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
+        SimulatorManager.writeCurrentConfiguration();
+
+      /* Prepare TRACE variables */
         // A node can be underloaded
         Trace.hostStateDeclare ("PM");
         Trace.hostStateDeclareValue ("PM", "underloaded", "0 1 1");
         Trace.hostStateDeclareValue ("PM", "normal", "1 1 1");
-        Trace.hostStateDeclareValue ("PM", "violation", "1 0 0");
-        Trace.hostStateDeclareValue ("PM", "violation-det", "0 1 0");
-        Trace.hostStateDeclareValue ("PM", "violation-out", "1 0 0");
+        Trace.hostStateDeclareValue ("PM", "violation-inject", "1 0 0");
+        Trace.hostStateDeclareValue ("PM", "violation-detbyentr", "0 1 0");
+        Trace.hostStateDeclareValue ("PM", "violation-outduetoentr", "1 0 0");
 
         Trace.hostStateDeclare ("SERVICE");
         Trace.hostStateDeclareValue ("SERVICE","free", "1 1 1");
@@ -123,17 +131,12 @@ import java.util.Date;
         Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
         Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
 
-        /* Create all VM instances and assign them on the PMs */
-        /* The initial deployment is based on a round robin fashion */
-        System.out.println("Configure simulation" + new Date().toString());
-        SimulatorManager.cleanLog();
-        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
-        SimulatorManager.writeCurrentConfiguration();
-
 	    /*  execute the simulation. */
         System.out.println("Begin simulation" + new Date().toString());
         Msg.run();
+
         System.out.println("End simulation" + new Date().toString());
+
         Msg.info("End of run");
   	    Process.killAll(-1);
     }
