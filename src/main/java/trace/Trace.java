@@ -119,6 +119,11 @@ public class Trace {
         }
         HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
 
+        while(!currentHostStates.get(state).isEmpty()) {
+            hostPopState(host, state);
+        }
+
+
         LinkedList<TState> listOfStates = new LinkedList<TState>();
         listOfStates.add(new TState(value, Msg.getClock()));
 
