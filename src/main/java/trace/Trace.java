@@ -1,6 +1,7 @@
 package trace;
 
 import org.simgrid.msg.Host;
+import org.simgrid.msg.Msg;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -26,23 +27,48 @@ import java.util.LinkedList;
  */
 public class Trace {
 
-    class TState{
-        String Value;
-        double timestamp;
+
+    class TState {
+
+        private String value;
+        private double datetime;
+
+        public TState (String value, double datetime) {
+            this.value = value;
+            this.datetime = datetime;
+        }
     }
 
     /**
-     * Hashmap: key : name of the host, value hashMap of Linkedlist of states
+     * Hashmap for host states: key : name of the host, value hashMap of Linkedlist of states
      */
-    static HashMap<String, HashMap<String,LinkedList<TState>>> hostStates = new HashMap<String, HashMap<String,LinkedList<TState>>>();
+    HashMap<String, HashMap<String, LinkedList<TState>>> hostStates;
+
+    /**
+     * Hashmap for host variables: key : name of the host, value hashMap of variables
+     */
+    HashMap<String, HashMap<String, Double> hostVariables;
+
+    private Trace instance;
+
+    public Trace getInstance() {
+        if(instance == null) {
+            instance = new Trace();
+        }
+        return instance;
+    }
+
+    public Trace(){
+        hostStates = new HashMap<String, HashMap<String,LinkedList<TState>>>();
+        hostVariables = new HashMap<String, HashMap<String, Double>>;
+    }
+
 
     /**
      *     Declare a user state that will be associated to hosts.
      */
     public static void hostStateDeclare(String name) {
-        for (int i=0; i< Host.all().length; i++)
-            hostStates.put(Host.all()[i].getName(), new HashMap<String, LinkedList<TState>>())
-    }
+         }
 
     /**
      *  Declare a new value for a user state associated to hosts.
@@ -51,8 +77,8 @@ public class Trace {
      * @param color
      */
     public static void    hostStateDeclareValue(String state, String value, String color){
-
-
+           //usefull only for MSG api
+        org.simgrid.trace.Trace.hostStateDeclareValue(state, value, color);
     }
 
     /**
@@ -61,9 +87,24 @@ public class Trace {
      * @param state
      * @param value
      */
-    public static void    hostSetState(String host, String state, String value){
-        // TODO write in the json file: name of the host, name of the state + name of the value + timestamp
+    void hostSetState(String host, String state, String value){
 
+        HashMap<String, LinkedList<TState>> currentHostStates;
+        if(! hostStates.containsKey(host)) {
+            currentHostStates = hostStates.get(host);
+        } else {
+            currentHostStates = new HashMap<String, LinkedList<TState>>();
+        }
+
+        LinkedList<TState> listOfStates = new LinkedList<TState>();
+        listOfStates.add(new TState(state, Msg.getClock()));
+
+        currentHostStates.put(state, listOfStates);
+
+        hostStates.put(host, currentHostStates);
+
+        // TODO MSG.Trace code
+        // TODO JSON code
     }
 
     /**
@@ -72,6 +113,7 @@ public class Trace {
      * @param state
      */
     static void hostPopState(String host, String state){
+
 
     }
 
@@ -100,7 +142,9 @@ public class Trace {
      * @param variable
      * @param value
      */
-    static void     hostVariableSet(java.lang.String host, java.lang.String variable, double value)
+    static void  hostVariableSet(java.lang.String host, java.lang.String variable, double value) {
+
+    }
 
     /**
      *  Subtract a value from a variable of a host.
@@ -108,7 +152,9 @@ public class Trace {
      * @param variable
      * @param value
      */
-    static void     hostVariableSub(java.lang.String host, java.lang.String variable, double value)
+    static void     hostVariableSub(java.lang.String host, java.lang.String variable, double value) {
+
+    }
 
     /**
      *     Add a value to a variable of a host.
@@ -116,5 +162,7 @@ public class Trace {
      * @param variable
      * @param value
      */
-    static void     hostVariableAdd(java.lang.String host, java.lang.String variable, double value)
+    static void     hostVariableAdd(java.lang.String host, java.lang.String variable, double value) {
+
+    }
 }
