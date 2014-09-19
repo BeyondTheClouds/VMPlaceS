@@ -104,4 +104,13 @@ public class Trace {
     public static void hostVariableAdd(String host, String variable, double value) {
         TraceImpl.getInstance().hostVariableAdd(host, variable, value);
     }
+
+    /**
+     * Flush all data that has not been flushed to the disk.
+     * This function should be invoked at the end of your simulation ! 
+     */
+    public static void flush(){
+        TraceImpl.getInstance().flush();
+    }
+
 }

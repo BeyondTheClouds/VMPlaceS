@@ -1,5 +1,6 @@
 package trace;
 
+import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 import scheduling.entropyBased.dvms2.dvms.LoggingActor;
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
@@ -77,6 +78,10 @@ public class TraceImpl {
     public TraceImpl() {
         hostStates = new HashMap<String, HashMap<String, LinkedList<TState>>>();
         hostVariables = new HashMap<String, HashMap<String, TValue>>();
+        for (int i=0 ; i< Host.getCount(); i++){
+            hostStates.put(Host.all()[i].getName(),  new HashMap<String, LinkedList<TState>>());
+            hostVariables.put(Host.all()[i].getName(),  new HashMap<String, TValue>());
+        }
     }
 
 
