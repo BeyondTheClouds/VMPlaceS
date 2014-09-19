@@ -57,7 +57,8 @@ public class Injector extends Process {
 
         double lambda=lambdaPerVM*vms.length;
 
-        int maxCPUDemand = SimulatorProperties.getCPUCapacity()/SimulatorProperties.getNbOfCPUs();
+       // int maxCPUDemand = SimulatorProperties.getCPUCapacity()/SimulatorProperties.getNbOfCPUs();
+        int maxCPUDemand = SimulatorProperties.getVMMAXCPUConsumption();
         int nbOfCPUDemandSlots = SimulatorProperties.getNbOfCPUConsumptionSlots();
         int vmCPUDemand;
         long id=0;
