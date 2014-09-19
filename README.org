@@ -3,11 +3,17 @@
 - JAVA
 - https://github.com/BeyondTheClouds/SimgridInjector
 
-** Description
+** Overview
 A dedicated framework to evaluate and compare VM placement  algorithms.
-At coarse-grained, the framework is composed of two major components: the injecto   r and the VM placement algorithm.
+At coarse-grained, the framework is composed of two major components: the injector and the VM placement algorithm.
 The injector is the generic part of the framework (i.e. the one you can directly use) while the VM placement algorithm is the part you want to study (or compare with available algorithms).
+Currently, the SimgridInjector is released with three algorithms:
+ - Entropy [VEE09], a centralized approach using a constraint programming approach to solve the placement/reconfiguration VM problem
+ - Snooze [CCGRID12], a hierarchical approach where each manager of a group invokes Entropy to solve the placement/reconfiguration VM problem.
+   Note that in the CCGRID'12 paper, Snooze is using a specific heuristic to sovle the placement/reconfiguration VM problem. As the sake of simplicity, we have simply reused the entropy scheduling code.
+ - DVMS [SCALE12], a distributed approach that dynamically partitions the system and invokes Entropy on each partition.
 
+** Description of the Injector
 The injector executes different kind of events:
 - Load events:  every t seconds, the injector selects one VM and changes its CPU load according to a
 Gaussian distribution. t is a random variable that follows an exponential distribution
@@ -33,7 +39,7 @@ The ultimate objective of the Simgrid Injector VM framework is to deliver a buil
 ** Configure your development environment
 SBT TODO Jonathan Pastor
 
-** Launcher
+** Executing SimgridInjector
 Once you have configured the different parameters of your simulation (config/simulator.properties), you can run the simulation by executing the simulation.Main class.
 As Simgrid requires several parameters to run, we encourage you to use either Eclipse or Intellij.
 Under one of these environments, create a new configuration for launching the simulation.Main class and add the following information:
