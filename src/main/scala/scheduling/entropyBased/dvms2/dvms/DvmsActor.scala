@@ -30,7 +30,7 @@ import scheduling.entropyBased.dvms2.SGNodeRef
 import scheduling.entropyBased.dvms2.SGActor
 import configuration.XHost
 import simulation.SimulatorManager
-import org.simgrid.trace.Trace
+import trace.Trace
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 import scheduling.entropyBased.dvms2.dvms.LoggingActor
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol._
@@ -92,14 +92,18 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     })
   }
 
-  def dissolvePartition(reason: String) {
-    logInfo(s"$applicationRef: I dissolve the partition $currentPartition, because <$reason>")
+  def dissolvePartition(id: UUID, reason: String) {
+    currentPartition match {
+      case Some(partition) if(partition.id == id) =>
+        logInfo(s"$applicationRef: I dissolve the partition $currentPartition, because <$reason>")
 
-    lockedForFusion = false
-    lastPartitionUpdateDate = None
-    currentPartition = None
+        lockedForFusion = false
+        lastPartitionUpdateDate = None
+        currentPartition = None
 
-    LoggingActor.write(IsFree(Msg.getClock, s"${applicationRef.getId}"))
+        LoggingActor.write(IsFree(Msg.getClock, s"${applicationRef.getId}"))
+      case _ =>
+    }
   }
 
   def mergeWithThisPartition(partition: DvmsPartition) {
@@ -128,7 +132,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         logInfo(s"(a) I decide to dissolve $currentPartition")
         currentPartition.get.nodes.foreach(node => {
-          ask(node, DissolvePartition("violation resolved"))
+          ask(node, DissolvePartition(currentPartition.get.id, "violation resolved"))
         })
       }
       case ReconfigurationlNoSolution() => {
@@ -242,7 +246,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
           // it was enough: the partition is no more useful
           currentPartition.get.nodes.foreach(node => {
-            send(node, DissolvePartition("reconfigurationPlan applied"))
+            send(node, DissolvePartition(currentPartition.get.id, "reconfigurationPlan applied"))
           })
         }
         case ReconfigurationlNoSolution() => {
@@ -277,7 +281,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
               case (Blocked(), Blocked()) =>
                 if (remotePartition.initiator.getId == self().getId) {
-                  dissolvePartition("blocked partition went back to its initiator :(")
+                  dissolvePartition(currentPartition.get.id, "blocked partition went back to its initiator :(")
                 } else {
                   mergeWithThisPartition(remotePartition)
                 }
@@ -303,9 +307,9 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         if (duration > DvmsActor.partitionUpdateTimeout) {
           logInfo(s"$applicationRef: timeout of $duration at partition $currentPartition has been reached: I dissolve everything")
           p.nodes.filterNot(ref => ref.getId == applicationRef.getId).foreach(n => {
-            send(n, DissolvePartition("timeout"))
+            send(n, DissolvePartition(p.id, "timeout"))
           })
-          dissolvePartition("timeout")
+          dissolvePartition(p.id, "timeout")
         }
       }
       case _ =>
@@ -450,7 +454,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         logInfo(s"$applicationRef: reconfiguration plan $solution has been applied, dissolving partition $partition")
 
-        dissolvePartition("Reconfiguration plan has been applied")
+        dissolvePartition(partition.id, "Reconfiguration plan has been applied")
 //        partition.nodes.foreach(node => {
 //          send(node, DissolvePartition("Reconfiguration plan has been applied"))
 //        })
@@ -482,8 +486,8 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         lockedForFusion = true
       }
 
-    case DissolvePartition(reason) =>
-      dissolvePartition(reason)
+    case DissolvePartition(id, reason) =>
+      dissolvePartition(id, reason)
       send(returnCanal, true)
 
     case SetCurrentPartition(partition: DvmsPartition) =>

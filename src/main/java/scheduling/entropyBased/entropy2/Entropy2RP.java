@@ -14,7 +14,7 @@ import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import trace.Trace;
+import trace.TraceImpl;
 import scheduling.entropyBased.EntropyProperties;
 import scheduling.Scheduler;
 
@@ -30,6 +30,8 @@ import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
 import simulation.SimulatorManager;
+
+import trace.Trace;
 
 public class Entropy2RP extends AbstractScheduler implements Scheduler {
 	

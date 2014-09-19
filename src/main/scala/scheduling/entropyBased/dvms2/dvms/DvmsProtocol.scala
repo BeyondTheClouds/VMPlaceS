@@ -21,6 +21,7 @@ package org.discovery.dvms.dvms
 
 import org.discovery.dvms.dvms.DvmsModel._
 import scheduling.entropyBased.dvms2.SGNodeRef
+import java.util.UUID
 
 trait DvmsMessage
 
@@ -31,7 +32,7 @@ object DvmsProtocol {
 
    // Message used for the base of DVMS
    case class SetCurrentPartition(partition: DvmsPartition)
-   case class DissolvePartition(reason: String)
+   case class DissolvePartition(partitionId: UUID, reason: String)
    case class TransmissionOfAnISP(currentPartition: DvmsPartition)
 //   case class IAmTheNewLeader(partition: DvmsPartition)
 

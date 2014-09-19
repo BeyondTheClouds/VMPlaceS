@@ -21,7 +21,7 @@ import configuration.XVM;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
-import org.simgrid.trace.Trace;
+import trace.Trace;
 
 import java.io.*;
 import java.util.*;
@@ -418,13 +418,13 @@ public class SimulatorManager {
 
             if(previouslyViable) {
                 if (!tmpHost.isViable()) {
-        //            Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
+//                    Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
                     tmpHost.incViolation();
                     Trace.hostSetState(tmpHost.getName(), "PM", "violation");
                 }
                 else if(!previouslyViable){
                     if (tmpHost.isViable()) {
-        //                Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
+//                        Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
                         Trace.hostSetState (tmpHost.getName(), "PM", "normal");
                     }
                 }
