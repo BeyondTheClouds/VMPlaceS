@@ -107,7 +107,7 @@ public class Trace {
 
     /**
      * Flush all data that has not been flushed to the disk.
-     * This function should be invoked at the end of your simulation ! 
+     * This function should be invoked at the end of your simulation !
      */
     public static void flush(){
         TraceImpl.getInstance().flush();

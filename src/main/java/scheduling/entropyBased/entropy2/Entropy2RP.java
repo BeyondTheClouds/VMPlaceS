@@ -351,8 +351,8 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     private int ongoingMigration = 0 ;
 
     private void incMig(){
-        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);
         this.ongoingMigration++ ;
+        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);
     }
     private void decMig() {
         this.ongoingMigration-- ;

@@ -137,7 +137,7 @@ import trace.Trace;
         Msg.run();
 
         System.out.println("End simulation" + new Date().toString());
-
+        Trace.flush();
         Msg.info("End of run");
   	    Process.killAll(-1);
     }

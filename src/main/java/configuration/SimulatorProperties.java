@@ -88,7 +88,7 @@ public class SimulatorProperties extends Properties {
     /**
      * the consumption of one VM
      */
-	public final static String CPU_CONSUMPTION = "vm.cpuconsumption";
+	public final static String VM_MAXCPU_CONSUMPTION = "vm.cpuconsumption";
 
 	
 	//Other keys
@@ -137,8 +137,8 @@ public class SimulatorProperties extends Properties {
 	public final static int DEFAULT_MIN_PERCENTAGE_OF_ACTIVE_VMS = 40;
 	public final static int DEFAULT_MAX_PERCENTAGE_OF_ACTIVE_VMS = 70;
 	public final static int DEFAULT_NB_OF_VCPUS = 1;
-	public final static int DEFAULT_CPU_CONSUMPTION = 2000;
-	public final static int DEFAULT_MEMORY_CONSUMPTION = 1024;
+	public final static int DEFAULT_VMMAX_CPU_CONSUMPTION = 2000;
+	public final static int DEFAULT_VM_MEMORY_CONSUMPTION = 1024;
 	public final static int DEFAULT_NB_OF_CPU_CONSUMPTION_SLOTS = 2;
 	
 	//Other default values
@@ -279,14 +279,14 @@ public class SimulatorProperties extends Properties {
 	}*/
 
 	
-	@Deprecated
-	public static int getCPUConsumption(){
-		return getPropertyAsInt(CPU_CONSUMPTION, DEFAULT_CPU_CONSUMPTION);
+	//@Deprecated
+	public static int getVMMAXCPUConsumption(){
+		return getPropertyAsInt(VM_MAXCPU_CONSUMPTION, DEFAULT_VMMAX_CPU_CONSUMPTION);
 	}
 
 	/*@Deprecated
 	public static int getMemoryConsumption(){
-		return getPropertyAsInt(MEMORY_CONSUMPTION, DEFAULT_MEMORY_CONSUMPTION);
+		return getPropertyAsInt(MEMORY_CONSUMPTION, DEFAULT_VM_MEMORY_CONSUMPTION);
 	}*/
 
 	public static int getNbOfCPUConsumptionSlots(){
@@ -391,7 +391,7 @@ public class SimulatorProperties extends Properties {
 
         System.out.println("min percentage of active vms: " + SimulatorProperties.getMinPercentageOfActiveVMs());
 
-		System.out.println("cpu consumption: " + SimulatorProperties.getCPUConsumption());
+		System.out.println("cpu consumption: " + SimulatorProperties.getVMMAXCPUConsumption());
 
 		System.out.println("Simuation duration: " + SimulatorProperties.getDuration());
 		System.out.println("Load period: " + SimulatorProperties.getLoadPeriod());
