@@ -1,20 +1,20 @@
- /**
-  * Copyright 2012-2013-2014. The SimGrid Team. All rights reserved.
-  *
-  * This program is free software; you can redistribute it and/or modify it
-  * under the terms of the license (GNU LGPL) which comes with this package.
-  *
-  * This file is the launcher on the Simgrid VM injector
-  * The main is composed of three part:
-  * 1./ Generate the deployment file according to the number of nodes and the algorithm you want to evaluate
-  * 2./ Configure, instanciate and assign each VM on the different PMs
-  * 3./ Launch the injector and the other simgrid processes in order to run the simulation.
-  *
-  * Please note that all parameters of the simulation are given in the ''simulator.properties'' file available
-  * in the ''config'' directory
-  *
-  * @author: adrien.lebre@inria.fr
-  */
+/**
+ * Copyright 2012-2013-2014. The SimGrid Team. All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify it
+ * under the terms of the license (GNU LGPL) which comes with this package.
+ *
+ * This file is the launcher on the Simgrid VM injector
+ * The main is composed of three part:
+ * 1./ Generate the deployment file according to the number of nodes and the algorithm you want to evaluate
+ * 2./ Configure, instanciate and assign each VM on the different PMs
+ * 3./ Launch the injector and the other simgrid processes in order to run the simulation.
+ *
+ * Please note that all parameters of the simulation are given in the ''simulator.properties'' file available
+ * in the ''config'' directory
+ *
+ * @author: adrien.lebre@inria.fr
+ */
 
 package simulation;
 
@@ -31,18 +31,16 @@ import java.util.Date;
 
 import trace.Trace;
 
-//import scheduling.entropyBased.dvms2.dvms.LoggingActor;
-//import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
 
-
- public class Main {
+public class Main {
 
     /**
      * The Simulator launcher
+     *
      * @param args
      * @throws NativeException
      */
-	public static void main(String[] args) throws NativeException {
+    public static void main(String[] args) throws NativeException {
 
 
         /*
@@ -66,40 +64,36 @@ import trace.Trace;
         StatusPrinter.print(lc);
 
         // Init. internal values
-	    Msg.init(args);
+        Msg.init(args);
 
         // Automatically generate deployment file that is mandatory for launching the simgrid simulation.
         try {
-       
-    	    if(SimulatorProperties.getAlgo().equals("distributed")){
-    		    Msg.info("Distributed scheduling selected (generating deployment file)");
-    		    String[] cmd = {"/bin/sh", "-c", "python generate.py "+SimulatorProperties.getAlgo()+" "+
-                        SimulatorProperties.getNbOfHostingNodes()+" "+
-    			   				SimulatorProperties.getNbOfCPUs()+ " "+
-    			   					SimulatorProperties.getCPUCapacity()+ " "+ 
-    			   						SimulatorProperties.getMemoryTotal()+" 23000 > config/generated_deploy.xml"};
-    		    //"Usage: python generate.py nb_nodes nb_cpu total_cpu_cap ram port >
-    		    Runtime.getRuntime().exec(cmd);
-    	    }
-    	    else if (SimulatorProperties.getAlgo().equals("hierarchical")) {
-              Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
+
+            if (SimulatorProperties.getAlgo().equals("distributed")) {
+                Msg.info("Distributed scheduling selected (generating deployment file)");
+                String[] cmd = {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " +
+                        SimulatorProperties.getNbOfHostingNodes() + " " +
+                        SimulatorProperties.getNbOfCPUs() + " " +
+                        SimulatorProperties.getCPUCapacity() + " " +
+                        SimulatorProperties.getMemoryTotal() + " 23000 > config/generated_deploy.xml"};
+                //"Usage: python generate.py nb_nodes nb_cpu total_cpu_cap ram port >
+                Runtime.getRuntime().exec(cmd);
+            } else if (SimulatorProperties.getAlgo().equals("hierarchical")) {
+                Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
 
                 //"Usage: python generate.py nb_nodes
-                String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfHostingNodes()+" "+SimulatorProperties.getNbOfServiceNodes()+" > config/generated_deploy.xml"};
+                String[] cmd = {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " " + SimulatorProperties.getNbOfServiceNodes() + " > config/generated_deploy.xml"};
                 Runtime.getRuntime().exec(cmd);
             } else { //(SimulatorProperties.getAlgo().equals("centralized"))
-    		    Msg.info("Default selected (generating deployment file for centralized approach)");
-    		 
-    		    //"Usage: python generate.py nb_nodes
-    		    String[] cmd = {"/bin/sh", "-c","python generate.py "+SimulatorProperties.getAlgo()+" "+SimulatorProperties.getNbOfHostingNodes()+" > config/generated_deploy.xml"};
-    		    Runtime.getRuntime().exec(cmd);
-       		}
-       	} catch (IOException e) {
-       		e.printStackTrace();
-   		}
+                Msg.info("Default selected (generating deployment file for centralized approach)");
 
-//        LoggingActor.write(new LoggingProtocol.ExperimentInformation(0, "main", SimulatorProperties.getNbOfNodes(), SimulatorProperties.getNbOfVMs(), SimulatorProperties.getAlgo()));
-
+                //"Usage: python generate.py nb_nodes
+                String[] cmd = {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " > config/generated_deploy.xml"};
+                Runtime.getRuntime().exec(cmd);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         /* construct the platform and deploy the application */
         Msg.createEnvironment(args[0]);
@@ -113,7 +107,9 @@ import trace.Trace;
         SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
         SimulatorManager.writeCurrentConfiguration();
 
-      /* Prepare TRACE variables */
+        Trace.simulationDeclare(SimulatorProperties.getAlgo(), SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfVMs());
+
+        /* Prepare TRACE variables */
         // A node can be underloaded
         Trace.hostStateDeclare("PM");
         Trace.hostStateDeclareValue("PM", "underloaded", "0 1 1");
@@ -132,6 +128,7 @@ import trace.Trace;
         Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
         Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
 
+
 	    /*  execute the simulation. */
         System.out.println("Begin simulation" + new Date().toString());
         Msg.run();
@@ -139,6 +136,6 @@ import trace.Trace;
         System.out.println("End simulation" + new Date().toString());
 
         Msg.info("End of run");
-  	    Process.killAll(-1);
+        Process.killAll(-1);
     }
 }

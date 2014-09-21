@@ -1,0 +1,121 @@
+#!/usr/bin/Rscript
+
+{% set algos_size = algos|count %}
+{% set tuple_size = x_axis|count %}
+{% set group_by_nodes_count = group_by_nodes|count %}
+
+data <- read.table("{{source}}", header=T,sep=",")
+attach(data)
+
+# Compute the range of the series 
+g_range <- range(0{% for algo in algos %},{{ algo }} {% endfor %})
+
+# Plot the first serie
+plot({{algos[0]}}, type="o", col="blue", ylim=g_range, 
+   axes=FALSE, ann=FALSE)
+
+# Generate x-axis
+{% set count = 0 %}
+axis(1, at=1:{{tuple_size}}, lab=c({% for server_count,vm_count in x_axis %}{% if count > 0 %},{% endif %}"{{server_count}} nodes\n{{vm_count}} vms"{% set count = count +1 %}{% endfor %}))
+
+print(g_range[2])
+
+# Generate x-axis
+axis(2)
+
+# Create box around plot
+box()
+
+# Graph other series of data
+{% set count = 0 %}
+{% for algo in algos %}{% if count > 0 %}lines({{ algo }}, type="o", pch=22, lty=2, col="red"){% endif %}{% set count = count +1 %}
+{% endfor %}
+
+# 		Create a title with a red, bold/italic font
+{% if group_by_nodes_count > 0 %}
+title(main="Cumulated {{title}}", col.main="red", font.main=4)
+{% else %}
+title(main="{{title|capitalize}}", col.main="red", font.main=4)
+{% endif %}
+# 		Label the x and y axes with dark green text
+title(xlab="{{x_label}}", col.lab=rgb(0,0.5,0))
+title(ylab="{{y_label}}", col.lab=rgb(0,0.5,0))
+
+#abline(h=3600,col="black",lty=2)
+text(1.5, (3600+g_range[2]/40), "3600 s", col = "black")
+
+# 		Create a legend at (1, g_range[2]) that is slightly smaller 
+# 		(cex) and uses the same line colors and points used by 
+# 		the actual plots 
+{% set count = 0 %}
+legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, 
+   col=c("blue","red"), pch=21:22, lty=1:2);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% if group_by_nodes_count > 0 %}
+
+data <- read.table("{{source}}", header=T,sep=",")
+attach(data)
+
+# Compute the range of the series 
+g_range <- range(0{% for algo in group_by_nodes %},{{ algo }} {% endfor %}/nodes{% for algo in not_group_by_nodes %},{{ algo }} {% endfor %})
+
+# Plot the first serie
+plot({{group_by_nodes[0]}}/nodes, type="o", col="blue", ylim=g_range, 
+   axes=FALSE, ann=FALSE)
+
+# Generate x-axis
+{% set count = 0 %}
+axis(1, at=1:{{tuple_size}}, lab=c({% for server_count,vm_count in x_axis %}{% if count > 0 %},{% endif %}"{{server_count}} nodes\n{{vm_count}} vms"{% set count = count +1 %}{% endfor %}))
+
+print(g_range[2])
+
+# Generate x-axis
+axis(2)
+
+# Create box around plot
+box()
+
+# Graph other series of data
+{% set count = 0 %}
+{% for algo in group_by_nodes %}{% if count > 0 %}lines({{ algo }}/nodes, type="o", pch=22, lty=2, col="red"){% endif %}{% set count = count +1 %}
+{% endfor %}
+{% for algo in not_group_by_nodes %}lines({{ algo }}, type="o", pch=22, lty=2, col="red"){% set count = count +1 %}
+{% endfor %}
+
+# 		Create a title with a red, bold/italic font
+title(main="{{title|capitalize}} per node", col.main="red", font.main=4)
+
+# 		Label the x and y axes with dark green text
+title(xlab="{{x_label}}", col.lab=rgb(0,0.5,0))
+title(ylab="{{y_label}}", col.lab=rgb(0,0.5,0))
+
+#abline(h=3600,col="black",lty=2)
+text(1.5, (3600+g_range[2]/40), "3600 s", col = "black")
+
+# 		Create a legend at (1, g_range[2]) that is slightly smaller 
+# 		(cex) and uses the same line colors and points used by 
+# 		the actual plots 
+{% set count = 0 %}
+legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, 
+   col=c("blue","red"), pch=21:22, lty=1:2);
+
+{% endif %}

@@ -31,15 +31,18 @@ public class TraceImpl {
 
         private String value;
         private double datetime;
+        private String data;
 
-        public TState(String value, double datetime) {
+        public TState(String value, String data, double datetime) {
             this.value = value;
+            this.data = data;
             this.datetime = datetime;
         }
 
         public String getValue() {
             return value;
         }
+        public String getData() { return data; }
     }
 
     class TValue{
@@ -64,8 +67,8 @@ public class TraceImpl {
         return Msg.getClock();
     }
 
-    void writeJson(double time, String origin, String state, String value, double duration) {
-        LoggingActor.write(new LoggingProtocol.PopState(time, origin, state, value, duration));
+    void writeJson(double time, String origin, String state, String value, String data, double duration) {
+        LoggingActor.write(new LoggingProtocol.PopState(time, origin, state, value, data, duration));
     }
 
     /**
@@ -102,6 +105,16 @@ public class TraceImpl {
             }
         }
 
+    }
+
+    /**
+     * Declare information about the simulation.
+     */
+    public void simulationDeclare(String algorithm, int serverCount, int vmCount) {
+
+        String simulationDescriptionAsJson = String.format("{\"algorithm\": \"%s\", \"server_count\": %d, \"vm_count\": %d}", algorithm, serverCount, vmCount);
+
+        writeJson(Msg.getClock(), "simulator", "SIMULATION", "START", simulationDescriptionAsJson, 0);
     }
     
     /**
@@ -155,6 +168,18 @@ public class TraceImpl {
      * @param value
      */
     void hostSetState(String host, String state, String value) {
+        hostSetState(host, state, value, "");
+    }
+
+    /**
+     * Set the user state to the given value and data.
+     *
+     * @param host
+     * @param state
+     * @param value
+     * @param data
+     */
+    void hostSetState(String host, String state, String value, String data) {
         if (!hostStates.containsKey(host)) {
             hostStateDeclare(host, state);
         }
@@ -165,7 +190,7 @@ public class TraceImpl {
         }
 
         LinkedList<TState> listOfStates = new LinkedList<TState>();
-        listOfStates.add(new TState(value, now()));
+        listOfStates.add(new TState(value, data, now()));
 
 
         currentHostStates.put(state, listOfStates);
@@ -197,7 +222,7 @@ public class TraceImpl {
 
                 double duration = now() - lastState.datetime;
 
-                writeJson(now, host, state, lastState.getValue(), duration);
+                writeJson(lastState.datetime, host, state, lastState.getValue(), lastState.getData(), duration);
             }
 
         } else {
@@ -215,7 +240,19 @@ public class TraceImpl {
      * @param state
      * @param value
      */
-    void hostPushState(java.lang.String host, java.lang.String state, java.lang.String value) {
+    void hostPushState(String host, String state, String value) {
+        hostPushState(host, state, value, "");
+    }
+
+    /**
+     * Push a new couple of value and data for a state of a given host.
+     *
+     * @param host
+     * @param state
+     * @param value
+     * @param data
+     */
+    void hostPushState(String host, String state, String value, String data) {
 
         if (!hostStates.containsKey(host)) {
             hostStateDeclare(host, state);
@@ -229,7 +266,7 @@ public class TraceImpl {
             listOfStates = new LinkedList<TState>();
         }
 
-        listOfStates.add(new TState(value, now()));
+        listOfStates.add(new TState(value, data, now()));
 
         currentHostStates.put(state, listOfStates);
 
@@ -316,9 +353,13 @@ public class TraceImpl {
         }
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
-        double tmp = currentHostVariable.get(variable).getValue();
-        currentHostVariable.put(variable, new TValue((tmp+value), now()));
-        hostVariables.put(host, currentHostVariable);
+        if(!currentHostVariable.containsKey(variable)) {
+            hostVariableSet(host, variable, value);
+        } else {
+            double tmp = currentHostVariable.get(variable).getValue();
+            currentHostVariable.put(variable, new TValue((tmp+value), now()));
+            hostVariables.put(host, currentHostVariable);
+        }
 
     }
 }
