@@ -36,6 +36,10 @@ public class TraceImpl {
             this.value = value;
             this.datetime = datetime;
         }
+
+        public String getValue() {
+            return value;
+        }
     }
 
     class TValue{
@@ -56,8 +60,12 @@ public class TraceImpl {
      */
     HashMap<String, HashMap<String, LinkedList<TState>>> hostStates;
 
-    void writeJson(double time, String origin, String state, double duration) {
-        LoggingActor.write(new LoggingProtocol.PopState(time, origin, state, duration));
+    protected double now() {
+        return Msg.getClock();
+    }
+
+    void writeJson(double time, String origin, String state, String value, double duration) {
+        LoggingActor.write(new LoggingProtocol.PopState(time, origin, state, value, duration));
     }
 
     /**
@@ -157,7 +165,7 @@ public class TraceImpl {
         }
 
         LinkedList<TState> listOfStates = new LinkedList<TState>();
-        listOfStates.add(new TState(value, Msg.getClock()));
+        listOfStates.add(new TState(value, now()));
 
 
         currentHostStates.put(state, listOfStates);
@@ -173,7 +181,7 @@ public class TraceImpl {
      */
     void hostPopState(String host, String state) {
 
-        double now = Msg.getClock();
+        double now = now();
 
         if (!hostStates.containsKey(host)) {
             hostStateDeclare(host, state);
@@ -187,9 +195,9 @@ public class TraceImpl {
             if(listOfStates.size() > 0) {
                 TState lastState = listOfStates.removeLast();
 
-                double duration = now - lastState.datetime;
+                double duration = now() - lastState.datetime;
 
-                writeJson(now, host, state, duration);
+                writeJson(now, host, state, lastState.getValue(), duration);
             }
 
         } else {
@@ -221,7 +229,7 @@ public class TraceImpl {
             listOfStates = new LinkedList<TState>();
         }
 
-        listOfStates.add(new TState(state, Msg.getClock()));
+        listOfStates.add(new TState(value, now()));
 
         currentHostStates.put(state, listOfStates);
 
@@ -242,7 +250,7 @@ public class TraceImpl {
         }
 
         if (!currentHostVariables.containsKey(variable)) {
-            currentHostVariables.put(variable, new TValue(0,Msg.getClock()));
+            currentHostVariables.put(variable, new TValue(0, now()));
 
             hostVariables.put(host, currentHostVariables);
         }
@@ -273,7 +281,7 @@ public class TraceImpl {
         }
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
-        currentHostVariable.put(variable, new TValue(value, Msg.getClock()));
+        currentHostVariable.put(variable, new TValue(value, now()));
         hostVariables.put(host, currentHostVariable);
     }
 
@@ -291,7 +299,7 @@ public class TraceImpl {
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
         double tmp = currentHostVariable.get(variable).getValue();
-        currentHostVariable.put(variable, new TValue((tmp - value), Msg.getClock()));
+        currentHostVariable.put(variable, new TValue((tmp - value), now()));
         hostVariables.put(host, currentHostVariable);
     }
 
@@ -309,7 +317,7 @@ public class TraceImpl {
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
         double tmp = currentHostVariable.get(variable).getValue();
-        currentHostVariable.put(variable, new TValue((tmp+value),Msg.getClock()));
+        currentHostVariable.put(variable, new TValue((tmp+value), now()));
         hostVariables.put(host, currentHostVariable);
 
     }
