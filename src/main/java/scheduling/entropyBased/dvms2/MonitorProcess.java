@@ -42,7 +42,7 @@ public class MonitorProcess extends Process {
                 cpuConsumption += vm.getCPUDemand();
             }
 
-            LoggingActor.write(new CurrentLoadIs(Msg.getClock(), ref.getId()+"", cpuConsumption));
+//            LoggingActor.write(new CurrentLoadIs(Msg.getClock(), ref.getId()+"", cpuConsumption));
 
             if(cpuConsumption > this.xhost.getCPUCapacity()) {
                 if (!violation_detected){

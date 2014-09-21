@@ -29,7 +29,7 @@ case class LoggingPartition(initiator: String, leader: String, nodes: List[Strin
 
 object LoggingProtocol {
 
-  case class PopState(time: Double, origin: String, state: String, duration: Double) extends LoggingMessage
+  case class PopState(time: Double, origin: String, state: String, value: String, data: String, duration: Double) extends LoggingMessage
 
   case class ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) extends LoggingMessage
 
@@ -71,8 +71,20 @@ object LoggingActor {
   def write(message: LoggingMessage) = message match {
 
 
-    case PopState(time: Double, origin: String, state: String, duration: Double) =>
-      writer.write( s"""{"event": "trace_event", "origin": "$origin", "state_name": "$state", "time": "$time", "duration": $duration}\n""")
+    case PopState(time: Double, origin: String, state: String, value: String, data: String, duration: Double) =>
+
+      /* Quickly check wether value and data are json objects or not */
+      val valueJsonEscaped = (value.headOption, value.lastOption) match {
+        case (Some('{'), Some('}')) => value
+        case _ => s""" "$value" """
+      }
+
+      val dataJsonEscaped = (data.headOption, data.lastOption) match {
+        case (Some('{'), Some('}')) => data
+        case _ => s""" "$data" """
+      }
+
+      writer.write( s"""{"event": "trace_event", "origin": "$origin", "state_name": "$state", "time": "$time", "value": $valueJsonEscaped, "data": $dataJsonEscaped, "duration": $duration}\n""")
       writer.flush()
 
     case ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) =>
@@ -108,7 +120,7 @@ object LoggingActor {
       writer.flush()
 
     case ForwardingPartition(time: Double, origin: String, partition: LoggingPartition, to: String) =>
-    val partitionNodesAsToJsonArray: String = partition.nodes.map(s => s""" "$s" """).mkString("[",",","]")
+      val partitionNodesAsToJsonArray: String = partition.nodes.map(s => s""" "$s" """).mkString("[", ",", "]")
       writer.write( s"""{"event": "forwarding_partition", "origin": "$origin", "time": "$time",  "initiator": "${partition.initiator}", "leader": "${partition.initiator}", "nodes": ${partitionNodesAsToJsonArray} , "to": "$to"}\n""")
       writer.flush()
 

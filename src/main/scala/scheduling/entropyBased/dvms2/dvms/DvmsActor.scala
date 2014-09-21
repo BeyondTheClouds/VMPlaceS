@@ -35,6 +35,11 @@ import org.discovery.DiscoveryModel.model.ReconfigurationModel._
 import scheduling.entropyBased.dvms2.dvms.LoggingActor
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol._
 import scheduling.entropyBased.dvms2.overlay.SimpleOverlay
+import scheduling.entropyBased.entropy2.Entropy2RP
+import entropy.configuration.Configuration
+import java.util
+import org.discovery.DiscoveryModel.model.ReconfigurationModel
+import scala.collection.mutable
 
 object DvmsActor {
   val partitionUpdateTimeout: Double = 3.5
@@ -319,12 +324,47 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
   /* Methods and functions related to reconfiguration plans and migrations */
 
   def computeEntropy(): ReconfigurationResult = {
-    val timeBeforeComputeEntropy = new java.util.Date().getTime()
-    val computationResult = entropyActor.computeReconfigurationPlan(currentPartition.get.nodes)
-    val timeAfterComputeEntropy = new java.util.Date().getTime()
 
-    LoggingActor.write(ComputingSomeReconfigurationPlan(Msg.getClock, s"${applicationRef.getId}", timeAfterComputeEntropy-timeBeforeComputeEntropy, currentPartition.get.nodes.size, computationResult.toString))
-    computationResult
+    def updateTimeout(partition: DvmsPartition) {
+      partition.nodes.filterNot(n => n.getId == applicationRef.getId).foreach(node => {
+        ask(node, "updateLastPartitionUpdate")
+      })
+      updateLastUpdateTime()
+    }
+
+    val threadName = s"${applicationRef.getName}-${new Random().nextInt(10000)}"
+
+    val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-timeout", new Array[String](0)) {
+      def main(args: Array[String]) {
+        val startingPartitionId: UUID = currentPartition.get.id
+        var continue: Boolean = true
+        while (continue) {
+
+          updateTimeout(currentPartition.get)
+          waitFor(0.5)
+
+          continue = currentPartition match {
+            case Some(partition) if(partition.id == startingPartitionId) => true
+            case _ => false
+          }
+        }
+      }
+    }
+
+    val hostsToCheck: util.LinkedList[XHost] = new util.LinkedList[XHost]
+    import scala.collection.JavaConversions._
+    for (node <- currentPartition.get.nodes) {
+      hostsToCheck.add(SimulatorManager.getXHostByName(node.getName))
+    }
+
+    val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
+    timeoutProcess.start()
+    val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
+    timeoutProcess.kill()
+    entropyRes.getRes match {
+      case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
+      case _ => ReconfigurationlNoSolution()
+    }
   }
 
   def applyMigration(m: MakeMigration) {

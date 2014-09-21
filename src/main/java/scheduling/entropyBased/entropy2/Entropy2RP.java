@@ -34,7 +34,7 @@ import simulation.SimulatorManager;
 import trace.Trace;
 
 public class Entropy2RP extends AbstractScheduler implements Scheduler {
-	
+
 	private ChocoCustomRP planner;//Entropy2.1
 //	private ChocoCustomPowerRP planner;//Entropy2.0
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
@@ -263,7 +263,6 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         Entropy2RPRes enRes = new Entropy2RPRes();
 
 		/* Tracing code */
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute");
         int i;
         for (XHost h : hostsToCheck) {
             if (!h.isViable())
@@ -277,6 +276,19 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         computingState = this.computeReconfigurationPlan();
         endTimeOfCompute = System.currentTimeMillis();
         computationTime = (endTimeOfCompute - beginTimeOfCompute);
+
+        /* Tracing code */
+        double computationTimeAsDouble = ((double) computationTime) / 1000;
+
+        int migrationCount = 0;
+        if(computingState.equals(ComputingState.SUCCESS)) {
+            migrationCount = this.reconfigurationPlan.size();
+        }
+
+        int partitionSize = hostsToCheck.size();
+
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"result\" : %b, \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, (computingState.equals(ComputingState.SUCCESS)), migrationCount, partitionSize));
+
 
         try {
             org.simgrid.msg.Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
@@ -368,15 +380,15 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         return this.abortRP;
     }
 
-    public void relocateVM(String VMName, String sourceName, String destName) {
+    public void relocateVM(final String vmName, final String sourceName, final String destName) {
         Random rand = new Random(SimulatorProperties.getSeed());
 
-        Msg.info("Relocate VM "+VMName+" (from "+sourceName+" to "+destName+")");
+        Msg.info("Relocate VM "+vmName+" (from "+sourceName+" to "+destName+")");
 
         if(destName != null){
             String[] args = new String[3];
 
-            args[0] = VMName;
+            args[0] = vmName;
             args[1] = sourceName;
             args[2] = destName;
             // Asynchronous migration
@@ -394,10 +406,12 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                             e.printStackTrace();
                             System.err.println("You are trying to migrate from/to a non existing node");
                         }
+                        double timeStartingMigration = Msg.getClock();
                         if(destHost != null) {
                             if (!sourceHost.isOff() && !destHost.isOff()) {
                                 incMig();
-                                if (sourceHost.migrate(args[0], destHost) == 0) {
+                                int migrationResult = sourceHost.migrate(args[0], destHost);
+                                if (migrationResult == 0) {
                                     res = 1;
                                     Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
 
@@ -409,6 +423,11 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                         Msg.info("SOLVED VIOLATION ON " + sourceHost.getName() + "\n");
                                         Trace.hostSetState(sourceHost.getName(), "PM", "normal");
                                     }
+
+                                    /* Export that the migration has finished */
+                                    double migrationDuration = Msg.getClock() - timeStartingMigration;
+                                    Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+                                    Trace.hostPopState(vmName, "migration");
                                 }
                                 decMig();
                             }
@@ -432,7 +451,9 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     }
 
 
-    public class Entropy2RPRes{
+    public class Entropy2RPRes {
+
+
 
         private int res; // 0 everything is ok, -1 no viable configuration, -2 reconfiguration plan aborted
         private long duration;

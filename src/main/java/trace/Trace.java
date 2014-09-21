@@ -6,6 +6,13 @@ package trace;
 public class Trace {
 
     /**
+     * Declare information about the simulation.
+     */
+    public static void simulationDeclare(String algorithm, int serverCount, int vmCount) {
+        TraceImpl.getInstance().simulationDeclare(algorithm, serverCount, vmCount);
+    }
+
+    /**
      * Declare a user state that will be associated to a given host.
      */
     public static void hostStateDeclare(String host, String state) {
@@ -41,6 +48,19 @@ public class Trace {
         TraceImpl.getInstance().hostSetState(host, state, value);
     }
 
+
+    /**
+     * Set the state to the given value and data.
+     *
+     * @param host
+     * @param state
+     * @param value
+     * @param data
+     */
+    public static void hostSetState(String host, String state, String value, String data) {
+        TraceImpl.getInstance().hostSetState(host, state, value, data);
+    }
+
     /**
      * Pop the last value of a state of a given host.
      *
@@ -60,6 +80,17 @@ public class Trace {
      */
     public static void hostPushState(String host, String state, String value) {
         TraceImpl.getInstance().hostPushState(host, state, value);
+    }
+
+    /**
+     * Push a new value for a state of a given host.
+     *
+     * @param host
+     * @param state
+     * @param value
+     */
+    public static void hostPushState(String host, String state, String value, String data) {
+        TraceImpl.getInstance().hostPushState(host, state, value, data);
     }
 
 

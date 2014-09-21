@@ -1,0 +1,3 @@
+nodes {% for algo in algos %},{{ algo }} {% endfor %}
+{% for server_count in server_counts %}{{ server_count }}{% for algo in algos %}, {{data["%s-%s" % (algo, server_count)]}} {% endfor %}
+{% endfor %}
