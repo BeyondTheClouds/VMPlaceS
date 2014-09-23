@@ -38,8 +38,8 @@ public class Test extends Process {
     public void main(String[] strings) throws MsgException {
 //        procAddLCs();
 //        procAddGMs();
-        procFailGLs();
-        procFailGMs();
+//        procFailGLs();
+//        procFailGMs();
         while (!testsToBeTerminated) {
             dispInfo();
             sleep(1000*SnoozeProperties.getInfoPeriodicity());
