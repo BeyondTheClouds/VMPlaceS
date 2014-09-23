@@ -116,19 +116,22 @@ public class Injector extends Process {
 
         while(currentTime < duration){
             // select a host that is not already off.
-            do {
+           // do {
                 tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
-            }while(isStillOff(tempHost, faultQueue, currentTime));
+            //}while(isStillOff(tempHost, faultQueue, currentTime));
 
-            // and change its state
-            // false = off , on = true
-            // Add a new event queue
-            faultQueue.add(new FaultEvent(id++, currentTime,tempHost, false));
-            if(currentTime+300 < duration)
-                //For the moment, downtime of a node is arbitrarily set to 5 min
-                faultQueue.add(new FaultEvent(id++, currentTime+(300),tempHost, true));
-            currentTime+=exponentialDis(randExpDis, lambda);
-            //        System.err.println(eventQueue.size());
+            if(isStillOff(tempHost, faultQueue, currentTime)) {
+            // TODO if the node is off, we should remove the next On event and postpone it at currenttime +300sec.
+                // and change its state
+                // false = off , on = true
+                // Add a new event queue
+                faultQueue.add(new FaultEvent(id++, currentTime, tempHost, false));
+                if (currentTime + 300 < duration)
+                    //For the moment, downtime of a node is arbitrarily set to 5 min
+                    faultQueue.add(new FaultEvent(id++, currentTime + (300), tempHost, true));
+                //        System.err.println(eventQueue.size());
+            }
+            currentTime += exponentialDis(randExpDis, lambda);
         }
         Msg.info("Number of events:"+faultQueue.size());
 
