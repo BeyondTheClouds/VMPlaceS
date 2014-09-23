@@ -237,7 +237,7 @@ public class GroupManager extends Process {
                 if (joining) {
                     procSendMyBeats();
                     procSendMyCharge();
-//                    procScheduling();
+                    procScheduling();
                     newLCPool = new ThreadPool(this, RunNewLC.class.getName(), 3);
                     Logger.info("[GM.glBeats] GM Join finished: " + m);
                     joining = false;
