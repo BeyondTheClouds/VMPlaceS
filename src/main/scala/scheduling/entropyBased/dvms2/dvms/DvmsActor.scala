@@ -57,6 +57,8 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 //    SimpleOverlay.giveSomeNeighbour(filter)
 //  }
 
+  val random = new scala.util.Random(applicationRef.getId)
+
   var firstOut: Option[SGNodeRef] = None
 
   var currentPartition: Option[DvmsPartition] = None
@@ -332,7 +334,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       updateLastUpdateTime()
     }
 
-    val threadName = s"${applicationRef.getName}-${new Random().nextInt(10000)}"
+    val threadName = s"${applicationRef.getName}-${random.nextInt(10000)}"
 
     val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-timeout", new Array[String](0)) {
       def main(args: Array[String]) {
@@ -447,7 +449,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
           })
         })
 
-        val threadName = s"${applicationRef.getName}-${new Random().nextInt(10000)}"
+        val threadName = s"${applicationRef.getName}-${random.nextInt(10000)}"
 
         val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-timeout", new Array[String](0)) {
           def main(args: Array[String]) {

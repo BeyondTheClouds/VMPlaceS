@@ -68,22 +68,22 @@ public class XVM {
      * Temporary fix due to a simgrid issue
      * See https://gforge.inria.fr/tracker/index.php?func=detail&aid=17636&group_id=12&atid=165
      */
-//    private boolean vmIsMigrating; //Temporary fix to prevent migrating the same VM twice
+    private boolean vmIsMigrating; //Temporary fix to prevent migrating the same VM twice
 
-    public class Migration {
-
-        public Migration(String originName, String destinationName, String vmName) {
-            this.originName = originName;
-            this.destinationName = destinationName;
-            this.vmName = vmName;
-        }
-
-        public String originName;
-        public String destinationName;
-        public String vmName;
-    }
-
-    public static List<Migration> pendingMigrations = new ArrayList<Migration>();
+//    public class Migration {
+//
+//        public Migration(String originName, String destinationName, String vmName) {
+//            this.originName = originName;
+//            this.destinationName = destinationName;
+//            this.vmName = vmName;
+//        }
+//
+//        public String originName;
+//        public String destinationName;
+//        public String vmName;
+//    }
+//
+//    public static List<Migration> pendingMigrations = new ArrayList<Migration>();
 
     /**
      * Construcor
@@ -183,12 +183,14 @@ public class XVM {
 
 
     public boolean isMigrating() {
-        for (Migration migration : pendingMigrations) {
-            if(migration.vmName == this.getName()) {
-                return true;
-            }
-        }
-        return false;
+//        for (Migration migration : pendingMigrations) {
+//            if(migration.vmName == this.getName()) {
+//                return true;
+//            }
+//        }
+//        return false;
+
+        return vmIsMigrating;
     }
 
     /**
@@ -198,8 +200,8 @@ public class XVM {
     public void migrate(XHost host) throws HostFailureException {
         if (!this.isMigrating()) {
 
-            Migration currentMigration = new Migration(this.host.getName(), host.getName(), this.getName());
-            pendingMigrations.add(currentMigration);
+//            Migration currentMigration = new Migration(this.host.getName(), host.getName(), this.getName());
+//            pendingMigrations.add(currentMigration);
 
 //            this.vmIsMigrating = true;
             Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
@@ -210,8 +212,8 @@ public class XVM {
                 this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
                 //The dummy cpu action is not bounded.
                 Msg.info("End of migration of VM " + this.getName() + " to node " + host.getName());
-//                this.vmIsMigrating = false;
             } catch (Exception e){
+                this.vmIsMigrating = false;
                 e.printStackTrace();
                 Msg.info("Something strange occurs during the migration");
                 Msg.info("TODO Adrien, migrate should return 0 or -1, -2, ... according to whether the migration succeeded or not.");
@@ -220,9 +222,9 @@ public class XVM {
                 // This value can be then use at highler level to check whether the reconfiguration plan has been aborted or not.
             }
 
-            if(pendingMigrations.contains(currentMigration)) {
-                pendingMigrations.remove(currentMigration);
-            }
+//            if(pendingMigrations.contains(currentMigration)) {
+//                pendingMigrations.remove(currentMigration);
+//            }
 
         } else {
             Msg.info("You are trying to migrate twice a VM... it is impossible ! Byebye");

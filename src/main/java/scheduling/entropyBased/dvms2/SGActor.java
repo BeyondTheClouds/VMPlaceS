@@ -1,9 +1,12 @@
 package scheduling.entropyBased.dvms2;
 
+import configuration.SimulatorProperties;
 import org.simgrid.msg.*;
+import java.util.Random;
 
 public class SGActor {
 
+    static Random random = new Random(SimulatorProperties.getSeed());
 
     public SGNodeRef ref = null;
 
@@ -19,10 +22,10 @@ public class SGActor {
 
     public void send(SGNodeRef node, Object message){
 
-        if(message != "checkTimeout" && message != "overloadingDetected") {
-            MSG_COUNT++;
-            System.out.println("MSG_COUNT["+ Msg.getClock()+"]: "+MSG_COUNT+" -> "+message+"@"+node);
-        }
+//        if(message != "checkTimeout" && message != "overloadingDetected") {
+//            MSG_COUNT++;
+//            System.out.println("MSG_COUNT["+ Msg.getClock()+"]: "+MSG_COUNT+" -> "+message+"@"+node);
+//        }
 
         MsgForSG msg = new MsgForSG(message,
                 node+"", ref.getName() ,null);
@@ -36,7 +39,7 @@ public class SGActor {
 
     public Object ask(SGNodeRef node, Object message){
         MsgForSG msg = new MsgForSG(message,
-                node+"", ref.getName(), Host.currentHost().getName()+":"+ Math.random());
+                node+"", ref.getName(), Host.currentHost().getName()+":"+ random.nextGaussian());
         msg.send();
         MsgForSG reply;
         try {

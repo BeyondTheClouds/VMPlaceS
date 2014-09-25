@@ -2,7 +2,7 @@ package scheduling.entropyBased.dvms2.overlay
 
 import scheduling.entropyBased.dvms2.SGNodeRef
 import simulation.DistributedResolver
-import configuration.XHost
+import configuration.{SimulatorProperties, XHost}
 
 /**
  * Created by jonathan on 17/07/14.
@@ -11,7 +11,7 @@ case class Tuple(id: String, ref: SGNodeRef, resolver: DistributedResolver)
 
 object SimpleOverlay {
 
-  val random = new scala.util.Random(12)
+  val random = new scala.util.Random(SimulatorProperties.getSeed)
   var listOfNodes: List[Tuple] = Nil
 
   def register(id: String, ref: SGNodeRef, resolver: DistributedResolver) {

@@ -239,11 +239,11 @@ public class XHost{
              * Temporary fix due to a simgrid issue
              * See https://gforge.inria.fr/tracker/index.php?func=detail&aid=17636&group_id=12&atid=165
              */
-            for (XVM.Migration migration : XVM.pendingMigrations) {
-                if(migration.originName == this.getName() || migration.destinationName== this.getName()) {
-                    XVM.pendingMigrations.remove(migration);
-                }
-            }
+//            for (XVM.Migration migration : XVM.pendingMigrations) {
+//                if(migration.originName == this.getName() || migration.destinationName== this.getName()) {
+//                    XVM.pendingMigrations.remove(migration);
+//                }
+//            }
 
         }
     }
