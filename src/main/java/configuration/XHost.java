@@ -187,16 +187,18 @@ public class XHost{
         // migrate the VM and reassign correctly to the corresponding host
         try {
             vm.migrate(dest);
+            hostedVMs.remove(vm);
+            dest.hostedVMs.add(vm);
         } catch (Exception e){
             Msg.info("Host failure exception");
+            e.printStackTrace();
+            System.out.println(String.format("Migration aborted %s", vmName));
             return -1; 
         }
         if(this.isOff() || dest.isOff()) {
             System.err.println("Dammed the migration may have crash");
             return -1;
         }
-        hostedVMs.remove(vm);
-        dest.hostedVMs.add(vm);
         return 0;
     }
 

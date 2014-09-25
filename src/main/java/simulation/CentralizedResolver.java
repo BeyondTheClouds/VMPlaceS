@@ -51,7 +51,7 @@ public class CentralizedResolver extends Process {
             entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
             previousDuration = entropyRes.getDuration();
             if (entropyRes.getRes() == 0) {
-                Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");
+                Msg.info("Reconfigurat`ion ok (duration: " + previousDuration + ")");
             } else if (entropyRes.getRes() == -1) {
                 Msg.info("No viable solution (duration: " + previousDuration + ")");
                 numberOfCrash++;

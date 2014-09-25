@@ -477,6 +477,7 @@ public class SimulatorManager {
      */
     public static void turnOff(XHost host) {
 
+
         if(!host.isOff()) {
             Msg.info("Turn off node "+host.getName());
 
@@ -500,7 +501,9 @@ public class SimulatorManager {
 
             int previousCount = org.simgrid.msg.Process.getCount();
             // Turn the node off
-            host.turnOff();
+            if(!host.isOff()) {
+                host.turnOff();
+            }
 
             // Finally, remove the node from the collection of running host and add it to the collection of off ones
             sgHostsOn.remove(host);

@@ -410,7 +410,14 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                         if(destHost != null) {
                             if (!sourceHost.isOff() && !destHost.isOff()) {
                                 incMig();
-                                int migrationResult = sourceHost.migrate(args[0], destHost);
+
+                                int migrationResult = 0;
+                                try {
+                                    migrationResult = sourceHost.migrate(args[0], destHost);
+                                } catch (Exception e) {
+
+                                }
+
                                 if (migrationResult == 0) {
                                     res = 1;
                                     Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);

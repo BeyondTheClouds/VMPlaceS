@@ -132,7 +132,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       case solution: ReconfigurationSolution => {
         logInfo(s"(1) the partition $currentPartition is enough to reconfigure")
 
-        applySolution(solution)
+//        applySolution(solution)
 
 
         logInfo(s"(a) I decide to dissolve $currentPartition")
@@ -247,7 +247,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
           updatePartitionOnAllNodes(currentPartition.get)
 
           // Applying the reconfiguration plan
-          applySolution(solution)
+//          applySolution(solution)
 
           // it was enough: the partition is no more useful
           currentPartition.get.nodes.foreach(node => {
@@ -327,7 +327,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     def updateTimeout(partition: DvmsPartition) {
       partition.nodes.filterNot(n => n.getId == applicationRef.getId).foreach(node => {
-        ask(node, "updateLastPartitionUpdate")
+        send(node, "updateLastPartitionUpdate")
       })
       updateLastUpdateTime()
     }
@@ -360,7 +360,12 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
     timeoutProcess.start()
     val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
-    timeoutProcess.kill()
+
+    if(!timeoutProcess.isSuspended) {
+      timeoutProcess.kill()
+    }
+
+
     entropyRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()

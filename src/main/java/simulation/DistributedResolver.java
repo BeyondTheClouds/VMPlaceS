@@ -49,7 +49,7 @@ public class DistributedResolver extends Process {
 
         } catch (Exception e){
             Logger.flushAndClose();
-            e.printStackTrace();
+//            e.printStackTrace();
         }
 
     }
@@ -58,7 +58,7 @@ public class DistributedResolver extends Process {
     /**
      * @param args
      */
-    public void main(String[] args) throws MsgException{
+    public void main(String[] args) {
         if(args.length != 7){
             System.out.println("7 parameters required:");
             System.out.println("String nodeId, int nbCPUs, int cpuCapacity, int memoryTotal,\n" +
