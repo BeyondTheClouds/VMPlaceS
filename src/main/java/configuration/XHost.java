@@ -169,6 +169,7 @@ public class XHost{
     }
 
     /**
+    /**
      * Migrate the vm vmName from this host to the dest one.
      * @param vmName
      * @param dest
@@ -233,6 +234,17 @@ public class XHost{
             this.off=true;
             this.turnOffNb++;
             this.sgHost.off();
+
+            /**
+             * Temporary fix due to a simgrid issue
+             * See https://gforge.inria.fr/tracker/index.php?func=detail&aid=17636&group_id=12&atid=165
+             */
+            for (XVM.Migration migration : XVM.pendingMigrations) {
+                if(migration.originName == this.getName() || migration.destinationName== this.getName()) {
+                    XVM.pendingMigrations.remove(migration);
+                }
+            }
+
         }
     }
 
