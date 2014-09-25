@@ -35,8 +35,8 @@ import trace.Trace;
 
 public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
-	private ChocoCustomRP planner;//Entropy2.1
-//	private ChocoCustomPowerRP planner;//Entropy2.0
+    private ChocoCustomRP planner;//Entropy2.1
+    //	private ChocoCustomPowerRP planner;//Entropy2.0
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
     private boolean abortRP;
 
@@ -45,16 +45,16 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     }
 
     public Entropy2RP(Configuration initialConfiguration, int loopID) {
-		super(initialConfiguration);
-		planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
+        super(initialConfiguration);
+        planner = new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
 //		planner = new ChocoCustomPowerRP(new MockDurationEvaluator(2, 2, 2, 3, 6, 3, 1, 1));//Entropy2.0
-		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
-		planner.setTimeLimit(EntropyProperties.getEntropyPlanTimeout());
+        planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
+        planner.setTimeLimit(EntropyProperties.getEntropyPlanTimeout());
         this.loopID = loopID;
         this.abortRP = false;
         //Log the current Configuration
         try {
-            String fileName = "logs/entropy/configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt";
+            String fileName = "logs/entropy/configuration/" + loopID + "-" + System.currentTimeMillis() + ".txt";
             /*File file = new File("logs/entropy/configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt");
             file.getParentFile().mkdirs();
             PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
@@ -66,17 +66,17 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             e.printStackTrace();
         }
 
-	}
-	
-	@Override
-	public ComputingState computeReconfigurationPlan() {
-		ComputingState res = ComputingState.SUCCESS;
-		
-		// All VMs are encapsulated into the same vjob for the moment - Adrien, Nov 18 2011
-		List<VJob> vjobs = new ArrayList<VJob>();
-		VJob v = new DefaultVJob("v1");//Entropy2.1
+    }
+
+    @Override
+    public ComputingState computeReconfigurationPlan() {
+        ComputingState res = ComputingState.SUCCESS;
+
+        // All VMs are encapsulated into the same vjob for the moment - Adrien, Nov 18 2011
+        List<VJob> vjobs = new ArrayList<VJob>();
+        VJob v = new DefaultVJob("v1");//Entropy2.1
 //		VJob v = new BasicVJob("v1");//Entropy2.0
-		/*for(VirtualMachine vm : initialConfiguration.getRunnings()){
+        /*for(VirtualMachine vm : initialConfiguration.getRunnings()){
 			v.addVirtualMachine(vm);
 		}
 		
@@ -84,118 +84,116 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 			n.setPowerBase(100);
 			n.setPowerMax(200);
 		}*///Entropy2.0 Power
-		v.addVirtualMachines(initialConfiguration.getRunnings());//Entropy2.1
-		vjobs.add(v);
-		try {
-			timeToComputeVMRP = System.currentTimeMillis();
-			reconfigurationPlan = planner.compute(initialConfiguration, 
-					initialConfiguration.getRunnings(),
-					initialConfiguration.getWaitings(),
-					initialConfiguration.getSleepings(),
-					new SimpleManagedElementSet<VirtualMachine>(), 
-					initialConfiguration.getOnlines(), 
-					initialConfiguration.getOfflines(), vjobs);
-			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
-		} catch (PlanException e) {
-			e.printStackTrace();
-			res = ComputingState.RECONFIGURATION_FAILED ;
-			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
-			reconfigurationPlan = null;
-		}
-		
-		if(reconfigurationPlan != null){
-			if(reconfigurationPlan.getActions().isEmpty())
-				res = ComputingState.NO_RECONFIGURATION_NEEDED;
-			
-			reconfigurationPlanCost = reconfigurationPlan.getDuration();
-			newConfiguration = reconfigurationPlan.getDestination();
-			nbMigrations = computeNbMigrations();
-			reconfigurationGraphDepth = computeReconfigurationGraphDepth();
-		}
-		
-		return res; 
-	}
-		
-	//Get the number of migrations
-	private int computeNbMigrations(){
-		int nbMigrations = 0;
+        v.addVirtualMachines(initialConfiguration.getRunnings());//Entropy2.1
+        vjobs.add(v);
+        try {
+            timeToComputeVMRP = System.currentTimeMillis();
+            reconfigurationPlan = planner.compute(initialConfiguration,
+                    initialConfiguration.getRunnings(),
+                    initialConfiguration.getWaitings(),
+                    initialConfiguration.getSleepings(),
+                    new SimpleManagedElementSet<VirtualMachine>(),
+                    initialConfiguration.getOnlines(),
+                    initialConfiguration.getOfflines(), vjobs);
+            timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
+        } catch (PlanException e) {
+            e.printStackTrace();
+            res = ComputingState.RECONFIGURATION_FAILED;
+            timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
+            reconfigurationPlan = null;
+        }
 
-		for (Action a : reconfigurationPlan.getActions()){
-			if(a instanceof Migration){
-				nbMigrations++;
-			}
-		}
-		
-		return nbMigrations;
-	}
-	
-	//Get the depth of the reconfiguration graph
-	//May be compared to the number of steps in Entropy 1.1.1
-	//Return 0 if there is no action, and (1 + maximum number of dependencies) otherwise
-	private int computeReconfigurationGraphDepth(){
-		if(reconfigurationPlan.getActions().isEmpty()){
-			return 0;
-		}
-		
-		else{
-			int maxNbDeps = 0;
-			TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
-			int nbDeps;
-	
-			//Set the reverse dependencies map
-			for (Dependencies dep : g.extractDependencies()) {
-				nbDeps = dep.getUnsatisfiedDependencies().size();
-				
-				if (nbDeps > maxNbDeps)
-					maxNbDeps = nbDeps;
-			}
-	
-			return 1 + maxNbDeps;
-		}
-	}
-	
-	@Override
-	public void applyReconfigurationPlan() {
-		if(reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()){
-			//Log the reconfiguration plan
+        if (reconfigurationPlan != null) {
+            if (reconfigurationPlan.getActions().isEmpty())
+                res = ComputingState.NO_RECONFIGURATION_NEEDED;
+
+            reconfigurationPlanCost = reconfigurationPlan.getDuration();
+            newConfiguration = reconfigurationPlan.getDestination();
+            nbMigrations = computeNbMigrations();
+            reconfigurationGraphDepth = computeReconfigurationGraphDepth();
+        }
+
+        return res;
+    }
+
+    //Get the number of migrations
+    private int computeNbMigrations() {
+        int nbMigrations = 0;
+
+        for (Action a : reconfigurationPlan.getActions()) {
+            if (a instanceof Migration) {
+                nbMigrations++;
+            }
+        }
+
+        return nbMigrations;
+    }
+
+    //Get the depth of the reconfiguration graph
+    //May be compared to the number of steps in Entropy 1.1.1
+    //Return 0 if there is no action, and (1 + maximum number of dependencies) otherwise
+    private int computeReconfigurationGraphDepth() {
+        if (reconfigurationPlan.getActions().isEmpty()) {
+            return 0;
+        } else {
+            int maxNbDeps = 0;
+            TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
+            int nbDeps;
+
+            //Set the reverse dependencies map
+            for (Dependencies dep : g.extractDependencies()) {
+                nbDeps = dep.getUnsatisfiedDependencies().size();
+
+                if (nbDeps > maxNbDeps)
+                    maxNbDeps = nbDeps;
+            }
+
+            return 1 + maxNbDeps;
+        }
+    }
+
+    @Override
+    public void applyReconfigurationPlan() {
+        if (reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()) {
+            //Log the reconfiguration plan
             // Flavien / Adrien - In order to prevent random iterations due to the type of reconfiguration Plan (i.e. HashSet see Javadoc)
             LinkedList<Action> sortedActions = new LinkedList<Action>(reconfigurationPlan.getActions());
             Collections.sort(sortedActions, new Comparator<Action>() {
                 @Override
                 public int compare(Action a1, Action a2) {
-                    if ((a1 instanceof Migration) && (a2 instanceof Migration)){
-                        return ((Migration)a1).getVirtualMachine().getName().compareTo(((Migration)a2).getVirtualMachine().getName());
+                    if ((a1 instanceof Migration) && (a2 instanceof Migration)) {
+                        return ((Migration) a1).getVirtualMachine().getName().compareTo(((Migration) a2).getVirtualMachine().getName());
                     }
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.
                 }
             });
 
-			try {
-				File file = new File("logs/entropy/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
-				file.getParentFile().mkdirs();
-				PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-			   //pw.write(reconfigurationPlan.toString());
+            try {
+                File file = new File("logs/entropy/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
+                file.getParentFile().mkdirs();
+                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+                //pw.write(reconfigurationPlan.toString());
                 for (Action a : sortedActions) {
-                    pw.write(a.toString()+"\n");
+                    pw.write(a.toString() + "\n");
                 }
-				pw.flush();
-				pw.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+                pw.flush();
+                pw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
-			// Apply the reconfiguration plan.
-			try {
-				applyReconfigurationPlanLogically(sortedActions);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} 
-		}
-	}
+            // Apply the reconfiguration plan.
+            try {
+                applyReconfigurationPlanLogically(sortedActions);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
 
     //Apply the reconfiguration plan logically (i.e. create/delete Java objects)
-    private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException{
+    private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException {
         Map<Action, List<Dependencies>> revDependencies = new HashMap<Action, List<Dependencies>>();
         TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
 
@@ -212,7 +210,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         //Start the feasible actions
         // ie, actions with a start moment equals to 0.
         for (Action a : sortedActions) {
-            if ((a.getStartMoment() == 0)  && !isReconfigurationPlanAborted()) {
+            if ((a.getStartMoment() == 0) && !isReconfigurationPlanAborted()) {
                 instantiateAndStart(a);
             }
 
@@ -230,7 +228,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
         // If you reach that line, it means that either the execution of the plan has been completely launched or the
         // plan has been aborted. In both cases, we should wait for the completion of on-going migrations
-        while(this.ongoingMigration()){
+        while (this.ongoingMigration()) {
             try {
                 org.simgrid.msg.Process.currentProcess().waitFor(1);
             } catch (HostFailureException e) {
@@ -240,11 +238,11 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     }
 
 
-    private void instantiateAndStart(Action a) throws InterruptedException{
-        if(a instanceof Migration){
-            Migration migration = (Migration)a;
+    private void instantiateAndStart(Action a) throws InterruptedException {
+        if (a instanceof Migration) {
+            Migration migration = (Migration) a;
             this.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
-        } else{
+        } else {
             Logger.log("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
         }
     }
@@ -281,7 +279,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         double computationTimeAsDouble = ((double) computationTime) / 1000;
 
         int migrationCount = 0;
-        if(computingState.equals(ComputingState.SUCCESS)) {
+        if (computingState.equals(ComputingState.SUCCESS)) {
             migrationCount = this.reconfigurationPlan.size();
         }
 
@@ -339,7 +337,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         Configuration currConf = new SimpleConfiguration();
 
         // Add nodes
-        for (XHost tmpH:xhosts){
+        for (XHost tmpH : xhosts) {
             // Consider only hosts that are turned on
             if (tmpH.isOff()) {
                 System.err.println("WTF, you are asking me to analyze a dead node (" + tmpH.getName() + ")");
@@ -350,7 +348,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             currConf.addOnline(tmpENode);
             for (XVM tmpVM : tmpH.getRunnings()) {
                 currConf.setRunOn(new SimpleVirtualMachine(tmpVM.getName(), (int) tmpVM.getCoreNumber(), 0,
-                                tmpVM.getMemSize(), (int) tmpVM.getCPUDemand(), tmpVM.getMemSize()),
+                        tmpVM.getMemSize(), (int) tmpVM.getCPUDemand(), tmpVM.getMemSize()),
                         tmpENode
                 );
             }
@@ -360,21 +358,24 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         return currConf;
     }
 
-    private int ongoingMigration = 0 ;
+    private int ongoingMigration = 0;
 
-    private void incMig(){
+    private void incMig() {
         Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);
-        this.ongoingMigration++ ;
+        this.ongoingMigration++;
     }
+
     private void decMig() {
-        this.ongoingMigration-- ;
+        this.ongoingMigration--;
     }
 
     private boolean ongoingMigration() {
         return (this.ongoingMigration != 0);
     }
 
-    private void abortReconfigurationPlan() {this.abortRP = true;}
+    private void abortReconfigurationPlan() {
+        this.abortRP = true;
+    }
 
     private boolean isReconfigurationPlanAborted() {
         return this.abortRP;
@@ -383,9 +384,9 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     public void relocateVM(final String vmName, final String sourceName, final String destName) {
         Random rand = new Random(SimulatorProperties.getSeed());
 
-        Msg.info("Relocate VM "+vmName+" (from "+sourceName+" to "+destName+")");
+        Msg.info("Relocate VM " + vmName + " (from " + sourceName + " to " + destName + ")");
 
-        if(destName != null){
+        if (destName != null) {
             String[] args = new String[3];
 
             args[0] = vmName;
@@ -394,11 +395,11 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             // Asynchronous migration
             // The process is launched on the source node
             try {
-                new Process(Host.getByName(sourceName),"Migrate-"+rand.nextDouble(),args) {
-                    public void main(String[] args){
+                new Process(Host.getByName(sourceName), "Migrate-" + rand.nextDouble(), args) {
+                    public void main(String[] args) {
                         XHost destHost = null;
                         XHost sourceHost = null;
-                        int res=0;
+
                         try {
                             sourceHost = SimulatorManager.getXHostByName(args[1]);
                             destHost = SimulatorManager.getXHostByName(args[2]);
@@ -406,20 +407,17 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                             e.printStackTrace();
                             System.err.println("You are trying to migrate from/to a non existing node");
                         }
+
                         double timeStartingMigration = Msg.getClock();
-                        if(destHost != null) {
+                        if (destHost != null) {
                             if (!sourceHost.isOff() && !destHost.isOff()) {
                                 incMig();
 
-                                int migrationResult = 0;
-                                try {
-                                    migrationResult = sourceHost.migrate(args[0], destHost);
-                                } catch (Exception e) {
 
-                                }
+                                int res = sourceHost.migrate(args[0], destHost);
 
-                                if (migrationResult == 0) {
-                                    res = 1;
+
+                                if (res == 0) {
                                     Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
 
                                     if (!destHost.isViable()) {
@@ -435,15 +433,22 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                     double migrationDuration = Msg.getClock() - timeStartingMigration;
                                     Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
                                     Trace.hostPopState(vmName, "migration");
+                                } else {
+
+
+                                    Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
+                                    Msg.info("Reconfiguration plan cannot be completely applied so abort it");
+                                    abortReconfigurationPlan();
+
+
+                                    System.out.println("Current processus killed by SIMGRID!!!");
+                                    Process.currentProcess().exit();
+//                                    System.out.println("continue...");
                                 }
                                 decMig();
                             }
                         }
-                        if (res != 1){
-                             Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
-                             Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                             abortReconfigurationPlan();
-                         }
+
                     }
                 }.start();
 
@@ -461,11 +466,10 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     public class Entropy2RPRes {
 
 
-
         private int res; // 0 everything is ok, -1 no viable configuration, -2 reconfiguration plan aborted
         private long duration;
 
-        Entropy2RPRes(){
+        Entropy2RPRes() {
             this.res = 0;
             this.duration = 0;
         }
