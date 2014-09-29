@@ -383,9 +383,9 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     public void relocateVM(final String vmName, final String sourceName, final String destName) {
         Random rand = new Random(SimulatorProperties.getSeed());
 
-        Msg.info("Relocate VM "+vmName+" (from "+sourceName+" to "+destName+")");
+        Msg.info("Relocate VM " + vmName + " (from " + sourceName + " to " + destName + ")");
 
-        if(destName != null){
+        if (destName != null) {
             String[] args = new String[3];
 
             args[0] = vmName;
@@ -394,11 +394,11 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             // Asynchronous migration
             // The process is launched on the source node
             try {
-                new Process(Host.getByName(sourceName),"Migrate-"+rand.nextDouble(),args) {
-                    public void main(String[] args){
+                new Process(Host.getByName(sourceName), "Migrate-" + rand.nextDouble(), args) {
+                    public void main(String[] args) {
                         XHost destHost = null;
                         XHost sourceHost = null;
-                        int res=0;
+
                         try {
                             sourceHost = SimulatorManager.getXHostByName(args[1]);
                             destHost = SimulatorManager.getXHostByName(args[2]);
@@ -406,13 +406,17 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                             e.printStackTrace();
                             System.err.println("You are trying to migrate from/to a non existing node");
                         }
+
                         double timeStartingMigration = Msg.getClock();
-                        if(destHost != null) {
+                        if (destHost != null) {
                             if (!sourceHost.isOff() && !destHost.isOff()) {
                                 incMig();
-                                int migrationResult = sourceHost.migrate(args[0], destHost);
-                                if (migrationResult == 0) {
-                                    res = 1;
+
+
+                                int res = sourceHost.migrate(args[0], destHost);
+
+
+                                if (res == 0) {
                                     Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
 
                                     if (!destHost.isViable()) {
@@ -428,15 +432,22 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                     double migrationDuration = Msg.getClock() - timeStartingMigration;
                                     Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
                                     Trace.hostPopState(vmName, "migration");
+                                } else {
+
+
+                                    Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
+                                    Msg.info("Reconfiguration plan cannot be completely applied so abort it");
+                                    abortReconfigurationPlan();
+
+
+                                    System.out.println("Current processus killed by SIMGRID!!!");
+                                    Process.currentProcess().exit();
+//                                    System.out.println("continue...");
                                 }
                                 decMig();
                             }
                         }
-                        if (res != 1){
-                             Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
-                             Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                             abortReconfigurationPlan();
-                         }
+
                     }
                 }.start();
 
@@ -449,7 +460,6 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             System.exit(-1);
         }
     }
-
 
     public class Entropy2RPRes {
 

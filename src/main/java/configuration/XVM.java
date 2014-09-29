@@ -178,7 +178,6 @@ public class XVM {
                 this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
                 //The dummy cpu action is not bounded.
                 Msg.info("End of migration of VM " + this.getName() + " to node " + host.getName());
-                this.vmIsMigrating = false;
             } catch (Exception e){
                 e.printStackTrace();
                 Msg.info("Something strange occurs during the migration");
@@ -191,6 +190,7 @@ public class XVM {
             Msg.info("You are trying to migrate twice a VM... it is impossible ! Byebye");
             System.exit(-1);
         }
+        this.vmIsMigrating = false;
     }
 
     /**
