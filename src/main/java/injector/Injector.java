@@ -120,7 +120,7 @@ public class Injector extends Process {
                 tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
             //}while(isStillOff(tempHost, faultQueue, currentTime));
 
-            if(isStillOff(tempHost, faultQueue, currentTime)) {
+            if(!isStillOff(tempHost, faultQueue, currentTime)) {
             // TODO if the node is off, we should remove the next On event and postpone it at currenttime +300sec.
                 // and change its state
                 // false = off , on = true
