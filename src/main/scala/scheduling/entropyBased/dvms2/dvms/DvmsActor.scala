@@ -28,7 +28,7 @@ import org.simgrid.msg.{HostFailureException, Host, Msg}
 import org.discovery.dvms.entropy.EntropyActor
 import scheduling.entropyBased.dvms2.SGNodeRef
 import scheduling.entropyBased.dvms2.SGActor
-import configuration.XHost
+import configuration.{XVM, XHost}
 import simulation.SimulatorManager
 import trace.Trace
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
@@ -40,6 +40,7 @@ import entropy.configuration.Configuration
 import java.util
 import org.discovery.DiscoveryModel.model.ReconfigurationModel
 import scala.collection.mutable
+import scala.collection.JavaConversions._
 
 object DvmsActor {
   val partitionUpdateTimeout: Double = 3.5
@@ -63,6 +64,11 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
   var lastPartitionUpdateDate: Option[Double] = None
   var lockedForFusion: Boolean = false
   val entropyActor = new EntropyActor(applicationRef)
+
+  def isPerformingMigrations: Boolean = {
+    val vms: java.util.Collection[XVM] = SimulatorManager.getXHostByName(applicationRef.getName).getRunnings
+    ! vms.toList.forall(vm => !vm.isMigrating)
+  }
 
   implicit def selfSender: SGNodeRef = self
 
@@ -217,7 +223,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     logInfo(s"check if $remotePartition is still valid? $partitionIsStillValid")
 
-    if (partitionIsStillValid) {
+    if (!isPerformingMigrations && partitionIsStillValid) {
 
       // the current node is becoming the leader of the incoming ISP
       val newPartition: DvmsPartition = new DvmsPartition(
@@ -546,7 +552,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     case "overloadingDetected" =>
       currentPartition match {
-        case None => {
+        case None => if(!isPerformingMigrations) {
           logInfo("Dvms has detected a new cpu violation")
 
           currentPartition = Some(DvmsPartition(

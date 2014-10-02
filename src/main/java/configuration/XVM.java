@@ -65,7 +65,7 @@ public class XVM {
      * Temporary fix due to a simgrid issue
      * See https://gforge.inria.fr/tracker/index.php?func=detail&aid=17636&group_id=12&atid=165
      */
-    private boolean vmIsMigrating; //Temporary fix to prevent migrating the same VM twice
+    private boolean isMigrating; //Temporary fix to prevent migrating the same VM twice
 
     /**
      * Construcor
@@ -100,7 +100,7 @@ public class XVM {
         this.daemon = new Daemon(this.vm, 100);
         this.host = host;
         this.NbOfLoadChanges = 0;
-        this.vmIsMigrating = false;
+        this.isMigrating = false;
    }
 
     /* Delegation method from MSG VM */
@@ -168,8 +168,8 @@ public class XVM {
      * @param host the host where to migrate the VM
      */
     public void migrate(XHost host) throws HostFailureException {
-        if (!this.vmIsMigrating) {
-            this.vmIsMigrating = true;
+        if (!this.isMigrating) {
+            this.isMigrating = true;
             Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
             Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
             try {
@@ -190,7 +190,7 @@ public class XVM {
             Msg.info("You are trying to migrate twice a VM... it is impossible ! Byebye");
             System.exit(-1);
         }
-        this.vmIsMigrating = false;
+        this.isMigrating = false;
     }
 
     /**
@@ -199,6 +199,15 @@ public class XVM {
     public int getMemSize(){
         return this.ramsize;
     }
+
+
+    /**
+     * @return the size of the RAM in MBytes
+     */
+    public boolean isMigrating(){
+        return isMigrating;
+    }
+
 
     /**
      * @return the current load of the VM
