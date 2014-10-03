@@ -18,6 +18,7 @@ public class GroupManager extends Process {
     Host host;
     private boolean glDead = false;
     private boolean joining = true;
+    private boolean scheduling = false;
     private boolean thisGMToBeStopped = false;
     String glHostname = "";   //@ Make private
     private double glTimestamp;
@@ -237,7 +238,7 @@ public class GroupManager extends Process {
                 if (joining) {
                     procSendMyBeats();
                     procSendMyCharge();
-                    procScheduling();
+//                    procScheduling();
                     newLCPool = new ThreadPool(this, RunNewLC.class.getName(), 3);
                     Logger.info("[GM.glBeats] GM Join finished: " + m);
                     joining = false;
@@ -372,9 +373,11 @@ public class GroupManager extends Process {
                     while (!thisGMToBeStopped) {
                         long wait = 0;
                         try {
-                            if (!glHostname.isEmpty()) {
+                            if (!scheduling && !glHostname.isEmpty() && !thisGMToBeStopped && !glDead) {
+                                scheduling = true;
                                 previousDuration = scheduleVMs();
                                 wait = period - previousDuration;
+                                scheduling = false;
                             }
                             if (wait > 0) Process.sleep(wait);
                         } catch (HostFailureException e) {

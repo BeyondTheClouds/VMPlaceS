@@ -47,6 +47,7 @@ public class LocalController extends Process {
             procLCChargeToGM();
             while (true) {
                 try {
+//                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
                     SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
                     handle(m);
                     gmDead();
@@ -312,6 +313,7 @@ public class LocalController extends Process {
                 public void main(String[] args) {
                     while (!thisLCToBeStopped) {
                         try {
+//                            gmDead();
                             BeatLCMsg m = new BeatLCMsg(Msg.getClock(), AUX.gmInbox(gmHostname), host.getName(), null);
                             m.send();
                             Logger.info("[LC.beat] " + m);
