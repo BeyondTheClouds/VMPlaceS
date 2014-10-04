@@ -167,7 +167,7 @@ public class XVM {
      * Migrate a VM from one XHost to another one.
      * @param host the host where to migrate the VM
      */
-    public void migrate(XHost host) throws HostFailureException {
+    public void migrate(XHost host) throws HostFailureException, DoubleMigrationException {
         if (!this.isMigrating) {
             this.isMigrating = true;
             Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
@@ -188,7 +188,7 @@ public class XVM {
             }
         } else {
             Msg.info("You are trying to migrate twice a VM... it is impossible ! Byebye");
-            System.exit(-1);
+            throw new DoubleMigrationException();
         }
         this.isMigrating = false;
     }
