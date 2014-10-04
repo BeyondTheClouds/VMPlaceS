@@ -96,6 +96,7 @@ public class SimulatorProperties extends Properties {
 	public final static String DURATION = "simulator.duration";
 	public final static String LOAD_PERIOD = "simulator.loadperiod";
     public final static String CRASH_PERIOD = "simulator.crashperiod";
+    public final static String CRASH_DURATION = "simulator.crashduration";
 
 	public final static String MEAN_LOAD = "load.mean";
 	public final static String STD_LOAD = "load.std";
@@ -145,7 +146,8 @@ public class SimulatorProperties extends Properties {
 	public final static String DEFAULT_CONFIGURATION_FILE = "config" + File.separator + "initialConfiguration.txt";
 	public final static int DEFAULT_DURATION = 1800; // in sec (default is 30min)
 	public final static int DEFAULT_LOAD_PERIOD = 10; // in sec
-    public final static int DEFAULT_CRASH_PERIOD = 300; // in sec
+    public final static int DEFAULT_CRASH_PERIOD = 604800;  // in sec => 7 days
+    public final static int DEFAULT_CRASH_DURATION = 300; // in sec
 
 	public final static String DEFAULT_MEAN_LOAD = "50.0";
 	public final static String DEFAULT_STD_LOAD = "50.0";	
@@ -313,6 +315,10 @@ public class SimulatorProperties extends Properties {
 	public static int getCrashPeriod(){
 		return getPropertyAsInt(CRASH_PERIOD, DEFAULT_CRASH_PERIOD);
 	}
+
+    public static int getCrashDuration(){
+        return getPropertyAsInt(CRASH_DURATION, DEFAULT_CRASH_DURATION);
+    }
 
 	public static long getSeed(){
 		return getPropertyAsLong(SEED, DEFAULT_SEED);

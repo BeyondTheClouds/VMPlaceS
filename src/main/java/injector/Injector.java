@@ -103,7 +103,7 @@ public class Injector extends Process {
         Random randExpDis=new Random(SimulatorProperties.getSeed());
         double currentTime = 0 ;
         double lambdaPerHost=1.0/faultPeriod ; // Nb crash per host (average)
-
+        double crashDuration = SimulatorProperties.getCrashDuration();
         int nbOfHosts=xhosts.length;
 
         double lambda=lambdaPerHost*nbOfHosts;
@@ -126,9 +126,9 @@ public class Injector extends Process {
                 // false = off , on = true
                 // Add a new event queue
                 faultQueue.add(new FaultEvent(id++, currentTime, tempHost, false));
-                if (currentTime + 300 < duration)
+                if (currentTime + crashDuration < duration)
                     //For the moment, downtime of a node is arbitrarily set to 5 min
-                    faultQueue.add(new FaultEvent(id++, currentTime + (300), tempHost, true));
+                    faultQueue.add(new FaultEvent(id++, currentTime + (crashDuration), tempHost, true));
                 //        System.err.println(eventQueue.size());
             }
             currentTime += exponentialDis(randExpDis, lambda);
