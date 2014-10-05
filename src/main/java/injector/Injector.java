@@ -25,7 +25,7 @@ public class Injector extends Process {
 	Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
 	    super(host, name, args);
        // System.out.println("Create the event queues");
-        loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
+      //  loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
         //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
         faultQueue =generateFaultQueue(SimulatorManager.getSGHosts().toArray(new XHost[SimulatorManager.getSGHosts().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
        // System.out.println("Size of fault queue:"+faultQueue.size());
@@ -115,19 +115,18 @@ public class Injector extends Process {
         Random randHostPicker = new Random(SimulatorProperties.getSeed());
 
         while(currentTime < duration){
-            // select a host that is not already off.
-           // do {
-                tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
-            //}while(isStillOff(tempHost, faultQueue, currentTime));
+            // select a host
+            tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
 
-            if(!isStillOff(tempHost, faultQueue, currentTime)) {
-            // TODO if the node is off, we should remove the next On event and postpone it at currenttime +300sec.
+            if(!ifStillOffUpdate(tempHost, faultQueue, currentTime)) {
+
                 // and change its state
                 // false = off , on = true
                 // Add a new event queue
                 faultQueue.add(new FaultEvent(id++, currentTime, tempHost, false));
-                if (currentTime + crashDuration < duration)
-                    //For the moment, downtime of a node is arbitrarily set to 5 min
+            }
+            if (currentTime + crashDuration < duration) {
+                    //For the moment, downtime of a node is arbitrarily set to crashDuration
                     faultQueue.add(new FaultEvent(id++, currentTime + (crashDuration), tempHost, true));
                 //        System.err.println(eventQueue.size());
             }
@@ -137,13 +136,31 @@ public class Injector extends Process {
 
         return faultQueue;
     }
-    public static boolean isStillOff(XHost tmp, LinkedList<FaultEvent> queue, double currentTime){
+    public static boolean isStillOff(XHost tmp, LinkedList<FaultEvent> queue, double currentTime, double crashDuration){
         ListIterator<FaultEvent> iterator = queue.listIterator(queue.size());
         while(iterator.hasPrevious()){
             FaultEvent evt = iterator.previous();
             if(evt.getState() == false){
-                if (evt.getTime() + 300 >= currentTime) {
+                if (evt.getTime() + crashDuration  >= currentTime) {
                     if (evt.getHost()== tmp)
+                        return true;
+                }
+                else
+                    break;
+            }
+        }
+        return false;
+    }
+    // if the node is off, we should remove the next On event and postpone it at currenttime +crashDuration
+    // Note that the update is performed in the upper function.
+    private static boolean ifStillOffUpdate(XHost tmp, LinkedList<FaultEvent> queue, double currentTime){
+        ListIterator<FaultEvent> iterator = queue.listIterator(queue.size());
+        while(iterator.hasPrevious()){
+            FaultEvent evt = iterator.previous();
+            if(evt.getState() == true){
+                if (evt.getTime()  >= currentTime) {
+                    if (evt.getHost()== tmp)
+                        iterator.remove();
                         return true;
                 }
                 else
