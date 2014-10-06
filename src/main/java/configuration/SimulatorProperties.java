@@ -145,7 +145,7 @@ public class SimulatorProperties extends Properties {
 	//Other default values
 	public final static String DEFAULT_CONFIGURATION_FILE = "config" + File.separator + "initialConfiguration.txt";
 	public final static int DEFAULT_DURATION = 1800; // in sec (default is 30min)
-	public final static int DEFAULT_LOAD_PERIOD = 10; // in sec
+	public final static int DEFAULT_LOAD_PERIOD = 180; // in sec
     public final static int DEFAULT_CRASH_PERIOD = 604800;  // in sec => 7 days
     public final static int DEFAULT_CRASH_DURATION = 300; // in sec
 
