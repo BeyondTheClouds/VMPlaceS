@@ -76,7 +76,7 @@ data <- read.table("{{source}}", header=T,sep=",")
 attach(data)
 
 # Compute the range of the series 
-g_range <- range(0{% for algo in group_by_nodes %},{{ algo }} {% endfor %}/nodes{% for algo in not_group_by_nodes %},{{ algo }} {% endfor %})
+g_range <- range(0{% for algo in group_by_nodes %},{{ algo }}/nodes {% endfor %}{% for algo in not_group_by_nodes %},{{ algo }} {% endfor %})
 
 # Plot the first serie
 plot({{group_by_nodes[0]}}/nodes, type="o", col="blue", ylim=g_range, 
