@@ -184,6 +184,7 @@ public class GroupLeader extends Process {
                         catch (TimeoutException e) {
                             Logger.exc("[GL.procGMInfo] PROBLEM? Timeout Exception");
                         } catch (HostFailureException e) {
+                            thisGLToBeTerminated = true;
                             break;
                         } catch (Exception e) {
                             Logger.exc("[GL.procGMInfo] Exception, " + host.getName() + ": " + e.getClass().getName());
@@ -220,6 +221,7 @@ public class GroupLeader extends Process {
                             // Acknowledge integration
                             Logger.info("[GL.procNewGM] GM added: " + m);
                         } catch (HostFailureException e) {
+                            thisGLToBeTerminated = true;
                             break;
                         } catch (Exception e) {
                             Logger.exc("[GL.procNewGM] Exception, " + host.getName() + ": " + e.getClass().getName());
@@ -250,6 +252,7 @@ public class GroupLeader extends Process {
                             Logger.info("[GL.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval);
                         } catch (HostFailureException e) {
+                            thisGLToBeTerminated = true;
                             break;
                         } catch (Exception e) { e.printStackTrace(); }
                     }

@@ -185,7 +185,7 @@ public class GroupManager extends Process {
             } catch (TimeoutException e) {
                 Logger.exc("[GM.RunNewLC] PROBLEM? Timeout Exception");
             } catch (HostFailureException e) {
-                Logger.err("[GM.RunNewLC] HostFailure Exception should never happen!: " + host.getName());
+                return;
             } catch (Exception e) {
                 Logger.exc("[GM.RunNewLC] Exception");
             }
@@ -308,8 +308,7 @@ public class GroupManager extends Process {
                     }
                 }
             }.start();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
