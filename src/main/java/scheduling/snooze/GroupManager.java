@@ -14,6 +14,7 @@ import java.util.*;
  * Created by sudholt on 25/05/2014.
  */
 public class GroupManager extends Process {
+    private GroupManager thisGM;
     private String name;
     Host host;
     private boolean glDead = false;
@@ -42,6 +43,7 @@ public class GroupManager extends Process {
 
     @Override
     public void main(String[] strings) {
+        thisGM = this;
         SnoozeMsg m = null;
         boolean success = false;
         int n = 1;
@@ -217,11 +219,15 @@ public class GroupManager extends Process {
         for (String lcHostname: lcInfo.keySet()) {
             if (AUX.timeDiff(lcInfo.get(lcHostname).timestamp) > AUX.HeartbeatTimeout) {
                 deadLCs.add(lcHostname);
-                Logger.err("[GM.deadLCs] " + lcHostname);
+                Logger.err("[GM.deadLCs] Identified: " + lcHostname);
             }
         }
         // Remove dead LCs
-        for (String lcHostname: deadLCs) lcInfo.remove(lcHostname);
+        lcInfo.keySet().removeAll(deadLCs);
+//        for (String lcHostname: deadLCs) {
+//            lcInfo.remove(lcHostname);
+//            Logger.info("[GM.deadLCs] Removed: " + lcHostname);
+//        }
     }
 
     void glBeats(SnoozeMsg m) {
@@ -232,7 +238,7 @@ public class GroupManager extends Process {
             if (!gl.isEmpty()) {
                 glHostname = m.getOrigin();
                 Logger.info("[GM.glBeats] Updated: " + glHostname + ", " + m);
-                NewGMMsg ms = new NewGMMsg(host.getName(), AUX.glInbox(glHostname) + "-newGM", null, null);
+                NewGMMsg ms = new NewGMMsg(this, AUX.glInbox(glHostname) + "-newGM", null, null);
                 ms.send();
 
                 if (joining) {
@@ -262,7 +268,7 @@ public class GroupManager extends Process {
         joining = true;
         try {
             // Register at Multicast
-            m = new NewGMMsg(host.getName(), AUX.multicast, null, null);
+            m = new NewGMMsg(this, AUX.multicast, null, null);
             m.send();
 
             // Trigger leader election
@@ -322,7 +328,7 @@ public class GroupManager extends Process {
                 public void main(String[] args) throws HostFailureException {
                     while (!thisGMToBeStopped) {
                         try {
-                            BeatGMMsg m = new BeatGMMsg(Msg.getClock(), AUX.multicast + "-relayGMBeats", host.getName(), null);
+                            BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
                             m.send();
                             Logger.info("[GM.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval);

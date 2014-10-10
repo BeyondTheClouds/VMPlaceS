@@ -97,9 +97,9 @@ public class Multicast extends Process {
     }
 
     void handleNewGM(SnoozeMsg m) {
-        String gm = (String) m.getMessage();
+        String gm = ((GroupManager) m.getMessage()).host.getName();
         gmInfo.put(gm, new GMInfo(AUX.gmInbox(gm), Msg.getClock(), true));
-        Logger.info("[MUL(NewGM)] GM added: " + m + ", " + lastPromotionOrElection);
+        Logger.info("[MUL(NewGM)] GM added: " + gm + ", " + m + ", " + lastPromotionOrElection);
         if (!glHostname.isEmpty() && (lastPromotionOrElection == 0.0
                 || AUX.timeDiff(lastPromotionOrElection) <= AUX.HeartbeatTimeout)) {
             m = new RBeatGLMsg(glTimestamp, AUX.gmInbox(gm) + "-glBeats", glHostname, null);
@@ -289,21 +289,22 @@ public class Multicast extends Process {
     /**
      * Relay GM beats to LCs
      */
-    void relayGMBeats(String gm, double ts) {
+    void relayGMBeats(GroupManager g, double ts) {
         // Send to GL
-        SnoozeMsg m = new RBeatGMMsg(ts, AUX.glInbox(glHostname)+"-gmPeriodic", gm, null);
+        String gm = g.host.getName();
+        SnoozeMsg m = new RBeatGMMsg(g, AUX.glInbox(glHostname)+"-gmPeriodic", gm, null);
         m.send();
         Logger.info("[MUL.relayGMBeats] " + m);
 
         // Send to LCs
-        for (String lc: lcInfo.keySet()) {
+        for (String lc: g.lcInfo.keySet()) {
             LCInfo lci = lcInfo.get(lc);
             if (lci != null) {
                 String gmLc = lci.gmHost;
 //            Logger.info("[MUL.relayGMBeats] LC: " + lc + ", GM: " + gm);
                 if (gm.equals(gmLc)) {
                     GMInfo gmi = gmInfo.get(gm);
-                    m = new RBeatGMMsg(gmi.timestamp, AUX.lcInbox(lc) + "-gmBeats", gm, null);
+                    m = new RBeatGMMsg(g, AUX.lcInbox(lc) + "-gmBeats", gm, null);
                     m.send();
                     Logger.info("[MUL.relayGMBeats] To LC: " + m);
                 }
@@ -340,6 +341,7 @@ public class Multicast extends Process {
                 Logger.err("[MUL.RunNewLC] HostFailure Exception should never happen!: " + host.getName());
             } catch (Exception e) {
                 Logger.exc("[MUL.RunNewLC] Exception");
+                e.printStackTrace();
             }
         }
     }
@@ -364,6 +366,7 @@ public class Multicast extends Process {
                             break;
                         } catch (Exception e) {
                             Logger.exc("[MUL.procNewLC] Exception");
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -383,13 +386,13 @@ public class Multicast extends Process {
                             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGMBeats", AUX.HeartbeatTimeout);
                             Logger.info("[MUL.procRelayGMBeats] " + m);
                             String gm = m.getOrigin();
-                            double ts = (double) m.getMessage();
+                            double ts = (double) Msg.getClock();
                             if (gmInfo.containsKey(gm)) {
                                 GMInfo gi = gmInfo.get(gm);
                                 gmInfo.put(gm, new GMInfo(gi.replyBox, ts, gi.joining));
                             }
                             else Logger.err("[MUL.procRelayGMBeats] Unknown GM: " + m);
-                            relayGMBeats(gm, ts);
+                            relayGMBeats(((GroupManager) m.getMessage()), ts);
                             sleep(AUX.DefaultComputeInterval);
                         } catch (TimeoutException e) {
                             glDead = true;
@@ -397,6 +400,7 @@ public class Multicast extends Process {
                             Logger.err("[MUL.main] HostFailure Exc. should never happen!: " + host.getName());
                         } catch (Exception e) {
                             Logger.exc("[MUL.procNewLC] Exception");
+                            e.printStackTrace();
                         }
                     }
                 }

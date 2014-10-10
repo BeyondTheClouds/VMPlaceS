@@ -95,7 +95,7 @@ public class GroupLeader extends Process {
 
     void gmBeats(SnoozeMsg m) {
         String gm = m.getOrigin();
-        double ts = (double) m.getMessage();
+        double ts = Msg.getClock();
         if (gmInfo.containsKey(gm)) {
             gmInfo.put(gm, new GMInfo(ts, gmInfo.get(gm).summary));
             Logger.info("[GL.gmBeats] TS updated: " + gm + ": " + ts);
@@ -212,14 +212,14 @@ public class GroupLeader extends Process {
 //                                continue;
 //                            }
 //                            Logger.info("[GL.procNewGM] " + m);
-                            String gmHostname = (String) m.getMessage();
+                            String gmHostname = ((GroupManager) m.getMessage()).host.getName();
                             if (gmInfo.containsKey(gmHostname))
                                 Logger.err("[GL.procNewGM] GM " + gmHostname + " exists already");
                             // Add GM
                             GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, Msg.getClock()));
                             gmInfo.put(gmHostname, gi);
                             // Acknowledge integration
-                            Logger.info("[GL.procNewGM] GM added: " + m);
+                            Logger.info("[GL.procNewGM] GM added: " + gmHostname + ", " + m);
                         } catch (HostFailureException e) {
                             thisGLToBeTerminated = true;
                             break;

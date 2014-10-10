@@ -73,6 +73,7 @@ public class LocalController extends Process {
         } catch (HostFailureException e) {
             thisLCToBeStopped = true;
         }
+        gmHostname = "";
     }
 
     void handle(SnoozeMsg m) throws HostFailureException {
@@ -290,10 +291,10 @@ public class LocalController extends Process {
                                 continue;
                             }
                             if (!gmHostname.equals(gm))   {
-                                Logger.err("[LC.procGMBeats] Multiple GMs" + gmHostname + ", " + gm);
+                                Logger.err("[LC.procGMBeats] Multiple GMs: " + gmHostname + ", " + gm);
                                 continue;  // Could be used for change of GM
                             }
-                            gmTimestamp = (double) m.getMessage();
+                            gmTimestamp = Msg.getClock();
                             Logger.info("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
 
                             sleep(AUX.HeartbeatInterval);
