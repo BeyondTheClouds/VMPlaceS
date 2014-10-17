@@ -86,10 +86,18 @@ public class GroupManager extends Process {
         String cs = m.getClass().getSimpleName();
 
         switch (cs) {
-            case "BeatLCMsg":   handleBeatLC(m);   break;
-            case "GMElecMsg":   handleGMElec(m);   break;
-            case "LCChargeMsg": handleLCCharge(m); break;
-            case "TermGMMsg":   stopThisGM(); break;
+            case "BeatLCMsg":
+                handleBeatLC(m);
+                break;
+            case "GMElecMsg":
+                handleGMElec(m);
+                break;
+            case "LCChargeMsg":
+                handleLCCharge(m);
+                break;
+            case "TermGMMsg":
+                stopThisGM();
+                break;
             case "SnoozeMsg":
                 Logger.err("[GM(SnoozeMsg)] Unknown message" + m + " on " + host);
                 break;
@@ -110,8 +118,7 @@ public class GroupManager extends Process {
         if (lcInfo.containsKey(lc)) {
             lcInfo.put(lc, new LCInfo(lcInfo.get(lc).charge, (double) m.getMessage()));
             Logger.info("[GM(BeatLC)] " + lc + ", " + lcInfo.get(lc).charge + ", " + lcInfo.get(lc).timestamp);
-        }
-        else Logger.err("[GM(BeatLC) Unknown LC] " + m);
+        } else Logger.err("[GM(BeatLC) Unknown LC] " + m);
     }
 
     void handleGMElec(SnoozeMsg m) throws HostFailureException {
@@ -244,8 +251,8 @@ public class GroupManager extends Process {
                 if (joining) {
                     procSendMyBeats();
                     procSendMyCharge();
-//                    procScheduling();
-                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(), 3);
+                    procScheduling();
+                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(), 1);
                     Logger.info("[GM.glBeats] GM Join finished: " + m);
                     joining = false;
                     Test.gms.add(this);
@@ -294,7 +301,7 @@ public class GroupManager extends Process {
                     while (!thisGMToBeStopped) {
                         try {
                             SnoozeMsg m = (SnoozeMsg)
-                                    Task.receive(inbox + "-glBeats", SnoozeProperties.getHeartBeatTimeout());
+                                    Task.receive(inbox + "-glBeats", AUX.HeartbeatTimeout);
                             glBeats(m);
                             sleep(AUX.DefaultComputeInterval);
                         } catch (TimeoutException e) {
@@ -365,6 +372,31 @@ public class GroupManager extends Process {
         }
     }
 
+//    static public boolean isOverloaded(Host host) {
+//
+//        int cpuConsumption = 0;
+//
+//        for (XVM vm : host.xhost.getRunnings()) {
+//            cpuConsumption += vm.getCPUDemand();
+//        }
+//
+////            LoggingActor.write(new CurrentLoadIs(Msg.getClock(), ref.getId()+"", cpuConsumption));
+//
+//        if (cpuConsumption > this.xhost.getCPUCapacity()) {
+//            if (!violation_detected) {
+//                // Monitor is considering that the node is overloaded
+//                Msg.info(ref.getName() + " monitoring service: node is overloaded");
+//                Trace.hostPushState(xhost.getName(), "PM", "violation-det");
+//                violation_detected = true;
+//            }
+//
+//            // Replace CpuViolationDetected() by a string
+//            send(ref, "overloadingDetected");
+//        } else if (cpuConsumption <= this.xhost.getCPUCapacity()) {
+//            Trace.hostPushState(Host.currentHost().getName(), "PM", "normal");
+//        }
+//    }
+
     /**
      * Sends beats to multicast group
      */
@@ -372,19 +404,25 @@ public class GroupManager extends Process {
         try {
             new Process(host, host.getName() + "-gmScheduling") {
                 public void main(String[] args) throws HostFailureException {
-                    long previousDuration;
                     long period = (SnoozeProperties.getSchedulingPeriodicity()*1000);
+                    boolean periodicScheduling = SnoozeProperties.getSchedulingPeriodic();
+                    Logger.info("[GM.procScheduling] periodicScheduling: " + periodicScheduling);
 
                     while (!thisGMToBeStopped) {
                         long wait = 0;
+                        long previousDuration = 0;
+                        boolean anyViolation = false;
                         try {
-                            if (!scheduling && !glHostname.isEmpty() && !thisGMToBeStopped && !glDead) {
+                            for (XHost h : getManagedXHosts()) if (!h.isViable()) anyViolation = true;
+                            if ((periodicScheduling || (!periodicScheduling && anyViolation))
+                                    && !scheduling && !glHostname.isEmpty() && !thisGMToBeStopped && !glDead) {
                                 scheduling = true;
                                 previousDuration = scheduleVMs();
                                 wait = period - previousDuration;
                                 scheduling = false;
                             }
-                            if (wait > 0) Process.sleep(wait);
+                            if (periodicScheduling) { if (wait > 0) Process.sleep(wait); }
+                            else Process.sleep(previousDuration+70); //
                         } catch (HostFailureException e) {
                             thisGMToBeStopped = true;
                             break;
