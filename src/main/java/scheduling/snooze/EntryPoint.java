@@ -7,10 +7,6 @@ import scheduling.snooze.msg.SnoozeMsg;
 
 /**
  * Created by sudholt on 22/06/2014.
- *
- * TODO: Do we need to consider the entry point?
- *         The direct creation of LCs and GMs and communication with Multicast seems sufficient
- *         (see Test.java)
  */
 public class EntryPoint extends Process {
     private String name;
