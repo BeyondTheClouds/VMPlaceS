@@ -10,7 +10,7 @@ import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
 import trace.Trace;
 
-import scheduling.entropyBased.EntropyProperties;
+import scheduling.entropyBased.entropy2.EntropyProperties;
 import simulation.*;
 
 import java.util.*;
