@@ -8,11 +8,11 @@ import org.simgrid.msg.Msg;
 public class Logger {
 
     public static void err(String s) {
-        Msg.info("ERRSNOO: " + s);
+        if (SnoozeProperties.getInfoLevel() <= 4) Msg.info("ERRSNOO: " + s);
     }
 
     public static void exc(String s) {
-        Msg.info("EXCSNOO: " + s);
+        if (SnoozeProperties.getInfoLevel() <= 4) Msg.info("EXCSNOO: " + s);
     }
 
     public static void tmp(String s) {

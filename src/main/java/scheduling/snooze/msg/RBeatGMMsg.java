@@ -1,5 +1,7 @@
 package scheduling.snooze.msg;
 
+import scheduling.snooze.GroupManager;
+
 /**
  * Created by sudholt on 14/07/2014.
  */
@@ -11,7 +13,7 @@ public class RBeatGMMsg extends SnoozeMsg {
      * @param origin    GL host
      * @param replyBox  null
      */
-    public RBeatGMMsg(double ts, String sendBox, String origin, String replyBox) {
-        super(ts, sendBox, origin, replyBox);
+    public RBeatGMMsg(GroupManager gm, String sendBox, String origin, String replyBox) {
+        super(gm, sendBox, origin, replyBox);
     }
 }

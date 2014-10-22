@@ -26,6 +26,7 @@ public class SnoozeProperties extends GeneralProperties {
         public final static String GM_NUMBER = "snooze.gm-number";
         public final static String HEARTBEAT_PERIODICITY = "snooze.hb-periodicity";
         public final static String HEARTBEAT_TIMEOUT = "snooze.hb-timeout";
+        public final static String SCHEDULING_PERIODIC = "snooze.scheduling-periodic";
         public final static String SCHEDULING_PERIODICITY = "snooze.scheduling-periodicity";
         public final static String INFO_LEVEL = "snooze.info-level";
         public final static String INFO_PERIODICITY = "snooze.info-periodicity";
@@ -35,6 +36,7 @@ public class SnoozeProperties extends GeneralProperties {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         public final static int DEFAULT_GM_NUMBER = SimulatorProperties.getNbOfServiceNodes();
         public final static long DEFAULT_HEARTBEAT_PERIODICITY = 2;
+        public final static boolean DEFAULT_SCHEDULING_PERIODIC = true;
         public final static long DEFAULT_SCHEDULING_PERIODICITY = 30;
         public static final long DEFAULT_HEARTBEAT_TIMEOUT = 5;
 
@@ -67,6 +69,10 @@ public class SnoozeProperties extends GeneralProperties {
 
         public static long getHeartBeatPeriodicity(){
             return INSTANCE.getPropertyAsLong(HEARTBEAT_PERIODICITY, DEFAULT_HEARTBEAT_PERIODICITY);
+        }
+
+        public static boolean getSchedulingPeriodic(){
+           return INSTANCE.getPropertyAsBoolean(SCHEDULING_PERIODIC, DEFAULT_SCHEDULING_PERIODIC);
         }
 
         public static long getSchedulingPeriodicity(){
