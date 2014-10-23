@@ -14,8 +14,6 @@ import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import trace.TraceImpl;
-import scheduling.entropyBased.EntropyProperties;
 import scheduling.Scheduler;
 
 import dvms.log.Logger;

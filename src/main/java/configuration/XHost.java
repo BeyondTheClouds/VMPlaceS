@@ -192,6 +192,7 @@ public class XHost{
             return -1; 
         }
         if(this.isOff() || dest.isOff()) {
+            // TODO, it is strange to return -1, because if the nodes have been turned off after the migration, the migration is correct. so returning -1 here is erroneous.
             System.err.println("Dammed the migration may have crash");
             return -1;
         }

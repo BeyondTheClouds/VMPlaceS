@@ -1,4 +1,4 @@
-package scheduling.entropyBased;
+package scheduling.entropyBased.entropy2;
 
 import configuration.SimulatorProperties;
 import scheduling.GeneralProperties;
@@ -39,14 +39,12 @@ public class EntropyProperties extends GeneralProperties {
 	//Property keys
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	public final static String ENTROPY_PERIODICITY = "entropy.periodicity";
 	public final static String ENTROPY_TIME_OUT = "controlLoop.custom.planTimeout";
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Property default values
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	public final static long DEFAULT_ENTROPY_PERIODICITY = 30;
 	public final static int DEFAULT_ENTROPY_TIME_OUT = 300;
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,10 +69,7 @@ public class EntropyProperties extends GeneralProperties {
 	//Class methods
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	public static double getEntropyPeriodicity(){
-		return INSTANCE.getPropertyAsDouble(ENTROPY_PERIODICITY, DEFAULT_ENTROPY_PERIODICITY);
-	}
-	
+
 	public static int getEntropyPlanTimeout(){
 		return Math.max(1, SimulatorProperties.getNbOfHostingNodes()/4);
 		//return INSTANCE.getPropertyAsInt(ENTROPY_TIME_OUT, DEFAULT_ENTROPY_TIME_OUT);
@@ -91,6 +86,5 @@ public class EntropyProperties extends GeneralProperties {
 	
 	public static void main(String[] args){
 		System.out.println(EntropyProperties.INSTANCE);
-		System.out.println("entropy periodicity" + getEntropyPeriodicity());
 	}
 }
