@@ -260,8 +260,11 @@ public class SimulatorManager {
             //The first condition controls the memory over provisioning issue while the second one enables to switch to
             // the next node if the ''balance'' mode is enabled.
             // If there is no more nodes, then we got an exception and the simulator.properties should be modified.
+
+            double vmsPerNodeRatio = ((double) nbOfVMs)/nbOfHostingHosts;
+
             try {
-                while ((nodeMemCons[nodeIndex] + vmClass.getMemSize() > sgHostTmp.getMemSize()) || (balance && nbVMOnNode >= nbOfVMs/nbOfHostingHosts)) {
+                while ((nodeMemCons[nodeIndex] + vmClass.getMemSize() > sgHostTmp.getMemSize()) || (balance && nbVMOnNode >= vmsPerNodeRatio)) {
                     sgHostTmp = sgHostsIterator.next();
                     nodeMemCons[++nodeIndex] = 0;
                     nbVMOnNode = 0;
