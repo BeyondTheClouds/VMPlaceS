@@ -1,5 +1,6 @@
 #!/usr/bin/Rscript
 
+{% set colors = ["red", "blue", "green", "orange", "purple"] %}
 {% set algos_size = algos|count %}
 {% set tuple_size = x_axis|count %}
 {% set group_by_nodes_count = group_by_nodes|count %}
@@ -11,7 +12,7 @@ attach(data)
 g_range <- range(0{% for algo in algos %},{{ algo }} {% endfor %})
 
 # Plot the first serie
-plot({{algos[0]}}, type="o", col="blue", ylim=g_range, 
+plot({{algos[0]}}, type="o", col="{{ colors[0] }}", ylim=g_range, 
    axes=FALSE, ann=FALSE)
 
 # Generate x-axis
@@ -28,7 +29,9 @@ box()
 
 # Graph other series of data
 {% set count = 0 %}
-{% for algo in algos %}{% if count > 0 %}lines({{ algo }}, type="o", pch=22, lty=2, col="red"){% endif %}{% set count = count +1 %}
+{% set pch_start = 20 %}
+{% set lty_start = 3 %}
+{% for algo in algos %}{% if count > 0 %}lines({{ algo }}, type="o", pch={{pch_start+count}}, lty={{lty_start+count}}, col="{{ colors[count] }}"){% endif %}{% set count = count +1 %}
 {% endfor %}
 
 # 		Create a title with a red, bold/italic font
@@ -49,21 +52,7 @@ text(1.5, (3600+g_range[2]/40), "3600 s", col = "black")
 # 		the actual plots 
 {% set count = 0 %}
 legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, 
-   col=c("blue","red"), pch=21:22, lty=1:2);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+   col=c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ colors[count] }}"{% set count = count +1 %}{% endfor %}), pch={{pch_start}}:{{pch_start + algos|length}}, lty={{lty_start}}:{{lty_start + algos|length}});
 
 
 
@@ -76,11 +65,13 @@ data <- read.table("{{source}}", header=T,sep=",")
 attach(data)
 
 # Compute the range of the series 
-g_range <- range(0{% for algo in group_by_nodes %},{{ algo }}/nodes {% endfor %}{% for algo in not_group_by_nodes %},{{ algo }} {% endfor %})
+#g_range <- range(0{% for algo in group_by_nodes %},{{ algo }}/nodes {% endfor %}{% for algo in not_group_by_nodes %},{{ algo }} {% endfor %})
+
+g_range <- range(0{% for algo in algos %}, {% if algo in not_group_by_nodes %}{{ algo }}{% else %}{{ algo }}/nodes{% endif %}{% endfor %})
 
 # Plot the first serie
-plot({{group_by_nodes[0]}}/nodes, type="o", col="blue", ylim=g_range, 
-   axes=FALSE, ann=FALSE)
+#plot({{group_by_nodes[0]}}/nodes, type="o", col="blue", ylim=g_range, axes=FALSE, ann=FALSE)
+plot({% if algos[0] in not_group_by_nodes %}{{ algos[0] }}{% else %}{{ algos[0] }}/nodes{% endif %}, type="o", col="{{ colors[0] }}", ylim=g_range, axes=FALSE, ann=FALSE)
 
 # Generate x-axis
 {% set count = 0 %}
@@ -96,9 +87,9 @@ box()
 
 # Graph other series of data
 {% set count = 0 %}
-{% for algo in group_by_nodes %}{% if count > 0 %}lines({{ algo }}/nodes, type="o", pch=22, lty=2, col="red"){% endif %}{% set count = count +1 %}
-{% endfor %}
-{% for algo in not_group_by_nodes %}lines({{ algo }}, type="o", pch=22, lty=2, col="red"){% set count = count +1 %}
+{% set pch_start = 20 %}
+{% set lty_start = 3 %}
+{% for algo in algos %}{% if count > 0 %}lines({% if algo in not_group_by_nodes %}{{ algo }}{% else %}{{ algo }}/nodes{% endif %}, type="o", pch={{pch_start+count}}, lty={{lty_start+count}}, col="{{ colors[count] }}"){% endif %}{% set count = count +1 %}
 {% endfor %}
 
 # 		Create a title with a red, bold/italic font
@@ -116,6 +107,6 @@ text(1.5, (3600+g_range[2]/40), "3600 s", col = "black")
 # 		the actual plots 
 {% set count = 0 %}
 legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, 
-   col=c("blue","red"), pch=21:22, lty=1:2);
+   col=c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ colors[count] }}"{% set count = count +1 %}{% endfor %}), pch={{pch_start}}:{{pch_start + algos|length}}, lty={{lty_start}}:{{lty_start + algos|length}});
 
 {% endif %}

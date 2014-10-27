@@ -26,8 +26,7 @@ import org.discovery.dvms.dvms.DvmsModel._
 import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
 import org.simgrid.msg.{HostFailureException, Host, Msg}
 import org.discovery.dvms.entropy.EntropyActor
-import scheduling.entropyBased.dvms2.SGNodeRef
-import scheduling.entropyBased.dvms2.SGActor
+import scheduling.entropyBased.dvms2.{DVMSProcess, SGNodeRef, SGActor}
 import configuration.{XVM, XHost}
 import simulation.SimulatorManager
 import trace.Trace
@@ -46,7 +45,7 @@ object DvmsActor {
   val partitionUpdateTimeout: Double = 3.5
 }
 
-class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
+class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends SGActor(applicationRef) {
 
   /* Local states of a DVMS agent */
 
@@ -99,7 +98,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     currentPartition = Some(partition)
     updateLastUpdateTime()
     partition.nodes.filterNot(member => member.getId == self().getId).foreach(member => {
-      ask(member, SetCurrentPartition(partition))
+      send(member, SetCurrentPartition(partition))
     })
   }
 
@@ -112,7 +111,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         lastPartitionUpdateDate = None
         currentPartition = None
 
-        LoggingActor.write(IsFree(Msg.getClock, s"${applicationRef.getId}"))
+//        LoggingActor.write(IsFree(Msg.getClock, s"${applicationRef.getId}"))
       case _ =>
     }
   }
@@ -143,7 +142,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         logInfo(s"(a) I decide to dissolve $currentPartition")
         currentPartition.get.nodes.foreach(node => {
-          ask(node, DissolvePartition(currentPartition.get.id, "violation resolved"))
+          send(node, DissolvePartition(currentPartition.get.id, "violation resolved"))
         })
       }
       case ReconfigurationlNoSolution() => {
@@ -235,7 +234,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         remotePartition.version + 1
       )
 
-      LoggingActor.write(IsBooked(Msg.getClock, s"${applicationRef.getId}"))
+//      LoggingActor.write(IsBooked(Msg.getClock, s"${applicationRef.getId}"))
 
       logInfo(s"$applicationRef: I am becoming the new leader of $newPartition")
 
@@ -333,7 +332,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     def updateTimeout(partition: DvmsPartition) {
       partition.nodes.filterNot(n => n.getId == applicationRef.getId).foreach(node => {
-        ask(node, "updateLastPartitionUpdate")
+        send(node, "updateLastPartitionUpdate")
       })
       updateLastUpdateTime()
     }
@@ -347,7 +346,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
         while (continue) {
 
           updateTimeout(currentPartition.get)
-          waitFor(0.5)
+          waitFor(1.5)
 
           continue = currentPartition match {
             case Some(partition) if(partition.id == startingPartitionId) => true
@@ -398,13 +397,13 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     }
     if (destHost != null) {
 
-      LoggingActor.write(StartingMigration(Msg.getClock, s"${applicationRef.getId}", m.vmName, m.from, m.to))
+//      LoggingActor.write(StartingMigration(Msg.getClock, s"${applicationRef.getId}", m.vmName, m.from, m.to))
 
       val timeBeforeMigration = Msg.getClock
       sourceHost.migrate(args(0), destHost)
       val timeAfterMigration = Msg.getClock
 
-      LoggingActor.write(FinishingMigration(Msg.getClock, s"${applicationRef.getId}", m.vmName, m.from, m.to, timeAfterMigration - timeBeforeMigration))
+//      LoggingActor.write(FinishingMigration(Msg.getClock, s"${applicationRef.getId}", m.vmName, m.from, m.to, timeAfterMigration - timeBeforeMigration))
 
       Msg.info("End of migration of VM " + args(0) + " from " + args(1) + " to " + args(2))
       //              CentralizedResolver.decMig
@@ -422,7 +421,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
   def applySolution(solution: ReconfigurationSolution) {
     def updateTimeout(partition: DvmsPartition) {
       partition.nodes.filterNot(n => n.getId == applicationRef.getId).foreach(node => {
-        ask(node, "updateLastPartitionUpdate")
+        send(node, "updateLastPartitionUpdate")
       })
       updateLastUpdateTime()
     }
@@ -487,7 +486,9 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
         while(migrationDone < migrationCount) {
           try {
-            org.simgrid.msg.Process.currentProcess.waitFor(1)
+//            wait(1000)
+              parentProcess.waitFor(1)
+//            org.simgrid.msg.Process.currentProcess.waitFor(1)
           }
           catch {
             case e: HostFailureException => {
@@ -521,7 +522,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     case "updateLastPartitionUpdate" =>
       updateLastUpdateTime()
-      send(returnCanal, true)
+//      send(returnCanal, true)
 
     case "checkTimeout" =>
       checkTimeout()
@@ -534,11 +535,11 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     case DissolvePartition(id, reason) =>
       dissolvePartition(id, reason)
-      send(returnCanal, true)
+//      send(returnCanal, true)
 
     case SetCurrentPartition(partition: DvmsPartition) =>
       val done = updateThePartitionWith(partition)
-      send(returnCanal, done)
+//      send(returnCanal, done)
 
     case msg@TransmissionOfAnISP(remotePartition) =>
       logInfo(s"received an ISP: $msg @$currentPartition and @$firstOut")
@@ -562,7 +563,7 @@ class DvmsActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
             Growing()
           ))
 
-          LoggingActor.write(IsBooked(Msg.getClock, s"${applicationRef.getId}"))
+//          LoggingActor.write(IsBooked(Msg.getClock, s"${applicationRef.getId}"))
 
           lastPartitionUpdateDate = Some(Msg.getClock)
 

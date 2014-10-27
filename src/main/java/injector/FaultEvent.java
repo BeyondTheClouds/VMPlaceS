@@ -9,6 +9,9 @@ package injector;
  */
 
 import configuration.XHost;
+import org.simgrid.msg.Msg;
+import scheduling.entropyBased.dvms2.dvms.LoggingActor;
+import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
 import simulation.SimulatorManager;
 
 public class FaultEvent implements InjectorEvent{
@@ -42,6 +45,7 @@ public class FaultEvent implements InjectorEvent{
             SimulatorManager.turnOn(this.host);
 
         } else {
+            LoggingActor.write(new LoggingProtocol.HasCrashed(Msg.getClock(), this.host.getName()));
             SimulatorManager.turnOff(this.host);
         }
     }

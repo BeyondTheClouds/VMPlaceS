@@ -38,7 +38,7 @@ public class DVMSProcess extends Process {
         this.neighborId = nameToId(neighborHostname);
 
 
-        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id));
+        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id), this);
     }
 
     public SGNodeRef self() {

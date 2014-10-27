@@ -115,9 +115,9 @@ public class TraceImpl {
     /**
      * Declare information about the simulation.
      */
-    public void simulationDeclare(String algorithm, int serverCount, int vmCount) {
+    public void simulationDeclare(String algorithm, int serverCount, int serviceNodeCount, int vmCount) {
 
-        String simulationDescriptionAsJson = String.format("{\"algorithm\": \"%s\", \"server_count\": %d, \"vm_count\": %d}", algorithm, serverCount, vmCount);
+        String simulationDescriptionAsJson = String.format("{\"algorithm\": \"%s\", \"server_count\": %d, \"service_node_count\": %d, \"vm_count\": %d}", algorithm, serverCount, serviceNodeCount, vmCount);
 
         writeJson(Msg.getClock(), "simulator", "SIMULATION", "START", simulationDescriptionAsJson, 0);
     }
