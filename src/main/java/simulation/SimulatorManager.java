@@ -457,6 +457,7 @@ public class SimulatorManager {
             if(sgHostingHosts.contains(host)) {
 
                 for (XVM vm: host.getRunnings()){
+                    System.out.println("TURNING NODE "+host.getName()+"ON - ADD VM "+vm.getName());
                     sgVMsOff.remove(vm);
                     sgVMsOn.add(vm);
                 }
@@ -488,6 +489,7 @@ public class SimulatorManager {
                 // First remove all VMs hosted on the node from the global collection
                 // The VMs are still referenced on the node
                 for (XVM vm : host.getRunnings()) {
+                    System.out.println("TURNING NODE "+host.getName()+"OFF - REMOVE VM "+vm.getName());
                     sgVMsOn.remove(vm);
                     sgVMsOff.add(vm);
                 }
