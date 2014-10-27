@@ -110,6 +110,7 @@ public class Main {
         Trace.simulationDeclare(SimulatorProperties.getAlgo(), SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfVMs());
 
         /* Prepare TRACE variables */
+        System.out.println("Prepare TRACE module" + new Date().toString());
         // A node can be underloaded
         Trace.hostStateDeclare("PM");
         Trace.hostStateDeclareValue("PM", "underloaded", "0 1 1");
