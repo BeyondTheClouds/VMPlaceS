@@ -42,6 +42,8 @@ public class Main {
      */
     public static void main(String[] args) throws NativeException {
 
+        double beginTimeOfSimulation = System.currentTimeMillis();
+        double endTimeOfSimulation;
 
         /*
         // Just a way to get the compilation time (useful to differentiate experiments)
@@ -55,7 +57,6 @@ public class Main {
         long manifestTime = manifest.getTime();  //in standard millis
         System.out.println("Compilation time: "+new Date(manifestTime));
         */
-
 
         // Historical fix to get the internal logs of Entropy correctly
         // assume SLF4J is bound to logback in the current environment
@@ -137,6 +138,9 @@ public class Main {
         System.out.println("End simulation" + new Date().toString());
         Trace.flush();
         Msg.info("End of run");
+        endTimeOfSimulation = System.currentTimeMillis();
+        System.out.println("Duration in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
+
         Process.killAll(-1);
     }
 }

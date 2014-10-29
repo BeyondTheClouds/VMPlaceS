@@ -201,10 +201,10 @@ public class Injector extends Process {
 
         /* Display the queue */
 
-        for(InjectorEvent evt: this.evtQueue){
+   /*     for(InjectorEvent evt: this.evtQueue){
             System.out.println(evt);
         }
-
+*/
 		/* Initialization is done in Main */
    
 		if(!SimulatorManager.isViable()){
@@ -212,12 +212,13 @@ public class Injector extends Process {
     	   System.exit(1);
        }
 		
-	   Trace.hostVariableSet("node0", "NB_MIG", 0); 
-	   Trace.hostVariableSet("node0", "NB_MC", 0); 
+	   Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MIG", 0);
+	   Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MC", 0);
 	   
 	   InjectorEvent evt = nextEvent();
 	   while(evt!=null){
 		   if(evt.getTime() - Msg.getClock()>0)
+           //    Msg.info("WaitFor"+(evt.getTime()- Msg.getClock()));
 			   waitFor(evt.getTime() - Msg.getClock());
 	       evt.play();
 	       evt=nextEvent();

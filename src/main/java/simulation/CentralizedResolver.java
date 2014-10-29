@@ -46,20 +46,20 @@ public class CentralizedResolver extends Process {
                 if (wait > 0)
                     Process.sleep(wait); // instead of waitFor that takes into account only seconds
 
-			/* Compute and apply the plan */
-            Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
-            scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
-            entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
-            previousDuration = entropyRes.getDuration();
-            if (entropyRes.getRes() == 0) {
-                Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");
-            } else if (entropyRes.getRes() == -1) {
-                Msg.info("No viable solution (duration: " + previousDuration + ")");
-                numberOfCrash++;
-            } else { // res == -2 Reconfiguration has not been correctly performed
-                Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
-                numberOfBrokenPlan++;
-            }
+			    /* Compute and apply the plan */
+             Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
+             scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
+             entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
+             previousDuration = entropyRes.getDuration();
+             if (entropyRes.getRes() == 0) {
+                 Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");
+             } else if (entropyRes.getRes() == -1) {
+                    Msg.info("No viable solution (duration: " + previousDuration + ")");
+                 numberOfCrash++;
+                } else { // res == -2 Reconfiguration has not been correctly performed
+                    Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
+                 numberOfBrokenPlan++;
+                }
             }
         } catch(HostFailureException e){
             System.err.println(e);
