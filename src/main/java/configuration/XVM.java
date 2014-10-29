@@ -135,6 +135,10 @@ public class XVM {
         NbOfLoadChanges++;
     }
 
+    public int getLoad(){
+        return this.currentLoadDemand;
+    }
+
     /**
      * @return the daemon process (i.e MSG Process) in charge of simulating the load of the VM
      */
