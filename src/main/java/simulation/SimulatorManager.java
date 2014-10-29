@@ -83,8 +83,8 @@ public class SimulatorManager {
 	public static void setEndOfInjection(){
 		endOfInjection=true;
 
-        Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
-        Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
+      //  Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
+      //  Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
 
         for (XHost host : SimulatorManager.getSGHosts()) {
             Msg.info(host.getName() + " has been turned off "+host.getTurnOffNb()+" times and violated "+host.getNbOfViolations());
