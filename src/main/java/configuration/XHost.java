@@ -68,6 +68,11 @@ public class XHost{
     private int nbOfViolations;
 
     /**
+     * current CPU Demand (a simple hack to avoid computing the CPU demand by going throughout all hosting VMs
+     */
+    private double currentCPUDemand;
+
+    /**
      * Constructor
      * Please note that by default a XHOST is off (you should invoke turnOn)
      * @param h MSG host to extend
@@ -88,6 +93,7 @@ public class XHost{
        this.off = true;
        this.turnOffNb = 0;
        this.nbOfViolations = 0;
+       this.currentCPUDemand = 0;
     }
 
     /**
@@ -142,11 +148,19 @@ public class XHost{
     /**
      * @return the sum of all CPU demands of the hosted VMs
      */
-    public double getCPUDemand(){
+    public double computeCPUDemand(){
         double cons=0;
         for (XVM vm: this.getRunnings())
             cons+=vm.getCPUDemand();
         return cons;
+    }
+
+    public double getCPUDemand(){
+        return this.currentCPUDemand;
+    }
+
+    public void setCPUDemand(double newDemand){
+        this.currentCPUDemand = newDemand;
     }
 
     /**
@@ -247,12 +261,18 @@ public class XHost{
     }
 
     /**
-     * @return whether the MSG host is on or off
+     * @return whether the MSG host is off
      */
     public boolean isOff(){
         return this.off;
     }
 
+    /**
+     * @return whether the MSG host is on
+     */
+    public boolean isOn() {
+        return !this.off ;
+    }
     /**
      * @return the number of times the host has been turned off since the beginning of the simulation
      */
@@ -273,4 +293,6 @@ public class XHost{
     public void incViolation() {
         nbOfViolations++;
     }
+
+
 }

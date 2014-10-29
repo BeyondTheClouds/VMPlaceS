@@ -65,7 +65,7 @@ public class CentralizedResolver extends Process {
             System.err.println(e);
             System.exit(-1);
         }
-        Msg.info("Entropy / "+loopID+" and "+numberOfBrokenPlan+" plans have not been completely performed");
+        Msg.info("Entropy has been invoked "+loopID+" times (crash: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
 
     }
 

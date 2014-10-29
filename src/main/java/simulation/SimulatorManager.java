@@ -72,8 +72,9 @@ public class SimulatorManager {
     private static boolean endOfInjection = false;
 
     /**
-     * Average CPU demand of the infrastructure (just a hack to avoid to compute the CPUdemand each time (computing the CPU demand is O(n)
+     * Average CPU demand of the infrastructure (just a hack to avoid to compute the CPUDemand each time (computing the CPU demand is O(n)
      */
+    // TODO Adrien the currentCPUDemand is currently not correctly assigned (this should be done in the update function)
     private static double currentCPUDemand = 0;
 
     /**
@@ -109,7 +110,7 @@ public class SimulatorManager {
      * (i.e. hosted on hosts that have been turned off)
      */
     public static Collection<XVM> getSGVMs(){
-        LinkedList<XVM> tmp = new LinkedList<XVM>(sgVMsOn.values());
+        LinkedList<XVM> tmp = new LinkedList<>(sgVMsOn.values());
         tmp.addAll(sgVMsOff.values());
         return tmp;
     }
@@ -201,7 +202,7 @@ public class SimulatorManager {
                 xtmp = new XHost (tmp, SimulatorProperties.getMemoryTotal(), SimulatorProperties.getNbOfCPUs(), SimulatorProperties.getCPUCapacity(), SimulatorProperties.getNetCapacity(), "127.0.0.1");
                 xtmp.turnOn();
                sgHostsOn.put("node"+i, xtmp);
-                sgHostingHosts.put("node"+i, xtmp);
+                sgHostingHosts.put("node" + i, xtmp);
             } catch (HostNotFoundException e) {
                 e.printStackTrace();
             }
@@ -214,8 +215,8 @@ public class SimulatorManager {
                 // The SimulatorProperties.getCPUCapacity returns the value indicated by nodes.cpucapacity in the simulator.properties file
                 xtmp = new XHost (tmp, SimulatorProperties.getMemoryTotal(), SimulatorProperties.getNbOfCPUs(), SimulatorProperties.getCPUCapacity(), SimulatorProperties.getNetCapacity(), "127.0.0.1");
                 xtmp.turnOn();
-                sgHostsOn.put("node"+i,xtmp);
-                sgServiceHosts.put("node"+i, xtmp);
+                sgHostsOn.put("node" + i, xtmp);
+                sgServiceHosts.put("node" + i, xtmp);
             } catch (HostNotFoundException e) {
                 e.printStackTrace();
             }
@@ -353,16 +354,20 @@ public class SimulatorManager {
 
     /**
      * @return the average expected load at a particular moment (i.e. average load of each node)
-     * Please note that we are considering only the host that are running.
+     * Please note that we are considering only the hosts hosting VMs and that are up.
      */
     public static double computeCPUDemand() {
         double cons=0;
         double tmpLoad = 0 ;
-        for(XHost h: sgHostsOn.values()){
-            tmpLoad = h.getCPUDemand()*100/h.getCPUCapacity();
-            cons+= tmpLoad ;
+        int i = 0;
+        for(XHost h: sgHostingHosts.values()){
+            if(h.isOn()) {
+                tmpLoad = h.getCPUDemand() * 100 / h.getCPUCapacity();
+                cons += tmpLoad;
+                i++;
+            }
         }
-        return cons/sgHostsOn.size();
+        return cons/i;
     }
 
     public static double getCPUDemand(){
@@ -419,6 +424,15 @@ public class SimulatorManager {
     public static void updateVM(XVM sgVM, int load) {
         XHost tmpHost = sgVM.getLocation();
         boolean previouslyViable = tmpHost.isViable();
+
+        // A simple hack to avoid computing on-the-fly the CPUDemand of each host
+        double vmPreviousLoad = sgVM.getCPUDemand();
+        double hostPreviousLoad = tmpHost.getCPUDemand();
+        Msg.info("Previous Load was" + hostPreviousLoad);
+
+        tmpHost.setCPUDemand(hostPreviousLoad-vmPreviousLoad+load);
+        Msg.info("New Load is "+ tmpHost.getCPUDemand());
+
         sgVM.setLoad(load);
 
         // If the node is off, we change the VM load but we do not consider it for possible violation and do not update
@@ -463,7 +477,7 @@ public class SimulatorManager {
             Msg.info("Turn on node "+host.getName());
             host.turnOn();
             sgHostsOff.remove(host.getName());
-            sgHostsOn.put(host.getName(),host);
+            sgHostsOn.put(host.getName(), host);
 
             // If your turn on an hosting node, then update the LOAD
             if(sgHostingHosts.containsKey(host.getName())) {
@@ -503,7 +517,7 @@ public class SimulatorManager {
                 for (XVM vm : host.getRunnings()) {
                     System.out.println("TURNING NODE "+host.getName()+"OFF - REMOVE VM "+vm.getName());
                     sgVMsOn.remove(vm.getName());
-                    sgVMsOff.put(vm.getName(),vm);
+                    sgVMsOff.put(vm.getName(), vm);
                 }
                 // Update getCPUDemand of the host
                 Trace.hostVariableSet(host.getName(), "LOAD", 0);
