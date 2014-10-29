@@ -68,7 +68,7 @@ public class MonitorProcess extends Process {
             while(! SimulatorManager.isEndOfInjection()) {
 
                 monitorActor.doMonitoring();
-                waitFor(1);
+                waitFor(5);
             }
         } catch(Exception e) {
             e.printStackTrace();

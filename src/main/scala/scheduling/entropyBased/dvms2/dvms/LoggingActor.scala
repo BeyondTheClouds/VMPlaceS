@@ -20,7 +20,7 @@ package scheduling.entropyBased.dvms2.dvms
  * ============================================================ */
 
 
-import java.io.{File, PrintWriter}
+import java.io.{FileWriter, BufferedWriter, File, PrintWriter}
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol._
 
 trait LoggingMessage
@@ -31,13 +31,15 @@ object LoggingProtocol {
 
   case class PopState(time: Double, origin: String, state: String, value: String, data: String, duration: Double) extends LoggingMessage
 
-  case class ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) extends LoggingMessage
+  case class ExperimentInformation(time: Double, origin: String, serverCount: Int, serviceNodeCount:Int, vmCount: Int, algo: String) extends LoggingMessage
 
   case class ComputingSomeReconfigurationPlan(time: Double, origin: String, duration: Double, psize: Int, result: String) extends LoggingMessage
 
   case class ApplyingSomeReconfigurationPlan(time: Double, origin: String) extends LoggingMessage
 
   case class ApplicationSomeReconfigurationPlanIsDone(time: Double, origin: String) extends LoggingMessage
+
+  case class HasCrashed(time: Double, origin: String) extends LoggingMessage
 
   case class IsBooked(time: Double, origin: String) extends LoggingMessage
 
@@ -66,7 +68,7 @@ object LoggingProtocol {
 object LoggingActor {
 
   val file = new File("events.json")
-  val writer = new PrintWriter(file)
+  val writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))
 
   def write(message: LoggingMessage) = message match {
 
@@ -85,30 +87,33 @@ object LoggingActor {
       }
 
       writer.write( s"""{"event": "trace_event", "origin": "$origin", "state_name": "$state", "time": "$time", "value": $valueJsonEscaped, "data": $dataJsonEscaped, "duration": $duration}\n""")
-      writer.flush()
+//      writer.flush()
 
-    case ExperimentInformation(time: Double, origin: String, serverCount: Int, vmCount: Int, algo: String) =>
-      writer.write( s"""{"event": "start_experiment", "origin": "$origin", "time": "$time", "server_count": $serverCount, "vm_count": $vmCount, "algo": "$algo"}\n""")
-      writer.flush()
+    case HasCrashed(time: Double, origin: String) =>
+      writer.write( s"""{"event": "crash_event", "origin": "$origin"}\n""")
+//      writer.flush()
+
+    case ExperimentInformation(time: Double, origin: String, serverCount: Int, serviceNodeCount:Int, vmCount: Int, algo: String) =>
+      writer.write( s"""{"event": "start_experiment", "origin": "$origin", "time": "$time", "server_count": $serverCount, "service_node_count": $serviceNodeCount, "vm_count": $vmCount, "algo": "$algo"}\n""")
 
     case ComputingSomeReconfigurationPlan(time: Double, origin: String, duration: Double, psize: Int, result: String) =>
       writer.write( s"""{"event": "computing_reconfiguration_plan", "origin": "$origin", "time": "$time", "psize": $psize, "duration": $duration, "result": "$result"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case ApplyingSomeReconfigurationPlan(time: Double, origin: String) =>
       writer.write( s"""{"event": "applying_reconfiguration_plan", "origin": "$origin", "time": "$time"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case ApplicationSomeReconfigurationPlanIsDone(time: Double, origin: String) =>
       writer.write( s"""{"event": "applying_reconfiguration_plan_is_done", "origin": "$origin", "time": "$time"}\n""")
 
     case IsBooked(time: Double, origin: String) =>
       writer.write( s"""{"event": "is_booked", "origin": "$origin", "time": "$time"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case IsFree(time: Double, origin: String) =>
       writer.write( s"""{"event": "is_free", "origin": "$origin", "time": "$time"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case FirstOutIs(time: Double, origin: String, firstOut: Option[String]) =>
       firstOut match {
@@ -117,7 +122,7 @@ object LoggingActor {
         case None =>
           writer.write( s"""{"event": "first_out_is", "origin": "$origin", "time": "$time",  "first_out": "", "first_out_defined": false }\n""")
       }
-      writer.flush()
+//      writer.flush()
 
     case ForwardingPartition(time: Double, origin: String, partition: LoggingPartition, to: String) =>
       val partitionNodesAsToJsonArray: String = partition.nodes.map(s => s""" "$s" """).mkString("[", ",", "]")
@@ -126,31 +131,31 @@ object LoggingActor {
 
     case AskingMigration(time: Double, origin: String, vm: String, from: String, to: String) =>
       writer.write( s"""{"event": "ask_migration", "origin": "$origin", "time": "$time",  "vm": "$vm", "from": "$from",  "to": "$to"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case StartingMigration(time: Double, origin: String, vm: String, from: String, to: String) =>
       writer.write( s"""{"event": "start_migration", "origin": "$origin", "time": "$time",  "vm": "$vm", "from": "$from",  "to": "$to"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case FinishingMigration(time: Double, origin: String, vm: String, from: String, to: String, duration: Double) =>
       writer.write( s"""{"event": "finish_migration", "origin": "$origin", "time": "$time",  "vm": "$vm", "from": "$from",  "to": "$to", "duration": $duration}\n""")
-      writer.flush()
+//      writer.flush()
 
     case AbortingMigration(time: Double, origin: String, vm: String, from: String, to: String) =>
       writer.write( s"""{"event": "abort_migration", "origin": "$origin", "time": "$time",  "vm": "$vm", "from": "$from",  "to": "$to"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case CurrentLoadIs(time: Double, origin: String, load: Double) =>
       writer.write( s"""{"event": "cpu_load", "origin": "$origin", "time": "$time",  "value": "$load"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case ViolationDetected(time: Double, origin: String) =>
       writer.write( s"""{"event": "overload", "origin": "$origin", "time": "$time"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case UpdateMigrationCount(time: Double, origin: String, count: Int) =>
       writer.write( s"""{"event": "migration_count", "origin": "$origin", "time": "$time", "value": "$count"}\n""")
-      writer.flush()
+//      writer.flush()
 
     case _ =>
   }

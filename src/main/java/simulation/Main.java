@@ -107,7 +107,7 @@ public class Main {
         SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
         SimulatorManager.writeCurrentConfiguration();
 
-        Trace.simulationDeclare(SimulatorProperties.getAlgo(), SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfVMs());
+        Trace.simulationDeclare(SimulatorProperties.getAlgo(), SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs());
 
         /* Prepare TRACE variables */
         System.out.println("Prepare TRACE module" + new Date().toString());

@@ -89,9 +89,9 @@ public class TraceImpl {
     public TraceImpl() {
         hostStates = new HashMap<String, HashMap<String, LinkedList<TState>>>();
         hostVariables = new HashMap<String, HashMap<String, TValue>>();
-        for (int i=0 ; i< Host.getCount(); i++){
-            hostStates.put(Host.all()[i].getName(),  new HashMap<String, LinkedList<TState>>());
-            hostVariables.put(Host.all()[i].getName(),  new HashMap<String, TValue>());
+        for (Host host : Host.all()) {
+            hostStates.put(host.getName(),  new HashMap<String, LinkedList<TState>>());
+            hostVariables.put(host.getName(),  new HashMap<String, TValue>());
         }
     }
 
@@ -115,9 +115,9 @@ public class TraceImpl {
     /**
      * Declare information about the simulation.
      */
-    public void simulationDeclare(String algorithm, int serverCount, int vmCount) {
+    public void simulationDeclare(String algorithm, int serverCount, int serviceNodeCount, int vmCount) {
 
-        String simulationDescriptionAsJson = String.format("{\"algorithm\": \"%s\", \"server_count\": %d, \"vm_count\": %d}", algorithm, serverCount, vmCount);
+        String simulationDescriptionAsJson = String.format("{\"algorithm\": \"%s\", \"server_count\": %d, \"service_node_count\": %d, \"vm_count\": %d}", algorithm, serverCount, serviceNodeCount, vmCount);
 
         writeJson(Msg.getClock(), "simulator", "SIMULATION", "START", simulationDescriptionAsJson, 0);
     }
