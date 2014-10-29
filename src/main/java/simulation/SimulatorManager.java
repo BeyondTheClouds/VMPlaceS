@@ -83,8 +83,8 @@ public class SimulatorManager {
 	public static void setEndOfInjection(){
 		endOfInjection=true;
 
-      //  Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
-      //  Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
+        Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
+        Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
 
         for (XHost host : SimulatorManager.getSGHosts()) {
             Msg.info(host.getName() + " has been turned off "+host.getTurnOffNb()+" times and violated "+host.getNbOfViolations());
@@ -428,10 +428,10 @@ public class SimulatorManager {
         // A simple hack to avoid computing on-the-fly the CPUDemand of each host
         double vmPreviousLoad = sgVM.getCPUDemand();
         double hostPreviousLoad = tmpHost.getCPUDemand();
-        Msg.info("Previous Load was" + hostPreviousLoad);
+       // Msg.info("Previous Load was" + hostPreviousLoad);
 
         tmpHost.setCPUDemand(hostPreviousLoad-vmPreviousLoad+load);
-        Msg.info("New Load is "+ tmpHost.getCPUDemand());
+      //  Msg.info("New Load is "+ tmpHost.getCPUDemand());
 
         sgVM.setLoad(load);
 
