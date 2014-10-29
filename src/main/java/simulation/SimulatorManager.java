@@ -443,28 +443,26 @@ public class SimulatorManager {
         //    Msg.info("Current getCPUDemand "+SimulatorManager.getCPUDemand()+"\n");
 
 
-            if(previouslyViable) {
-                if (!tmpHost.isViable()) {
-//                    Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
+            if(previouslyViable && (!tmpHost.isViable())) {
+//                  Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
                     tmpHost.incViolation();
                     Trace.hostSetState(tmpHost.getName(), "PM", "violation");
-                }
-                else if(!previouslyViable){
-                    if (tmpHost.isViable()) {
+
+            } else {//(!previouslyViable)
+                if (tmpHost.isViable()) {
 //                        Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
                         Trace.hostSetState (tmpHost.getName(), "PM", "normal");
-                    }
                 }
-
-
-                // Update getCPUDemand of the host
-                Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());
-
-                // TODO this is costly O(n) - SHOULD BE FIXED
-                //Update global getCPUDemand
-
-                Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
             }
+
+
+            // Update getCPUDemand of the host
+            Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());
+
+            // TODO this is costly O(HOST_NB) - SHOULD BE FIXED
+            //Update global getCPUDemand
+            Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
+
         }
     }
 
