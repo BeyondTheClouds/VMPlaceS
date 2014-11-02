@@ -102,8 +102,11 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 header_line = f.readline()
                 header_data = json.loads(header_line)
                 data = header_data["data"]
-                if not data["server_count"] in nodes_tuples:
-                    nodes_tuples += [data["server_count"]]
+
+                node_count = data["server_count"] + data["service_node_count"]
+
+                if not node_count in nodes_tuples:
+                    nodes_tuples += [node_count]
                 if not data["vm_count"] in vms_tuples:
                     vms_tuples += [data["vm_count"]]
                 # nodes_vms_tuple = "%s-%s" % (data["server_count"], data["vm_count"])
@@ -123,6 +126,8 @@ print nodes_vms_tuples
 ################################################################################
 # Fill data maps with computed metrics
 ################################################################################
+map_simulation_count = {}
+
 map_compute_time   = {}
 map_violation_time = {}
 map_migration_time = {}
@@ -144,7 +149,8 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 header_data = json.loads(header_line)
                 data = header_data["data"]
                 algo = data["algorithm"]
-                nodes_vms_tuple = "%s-%s" % (data["algorithm"], data["server_count"])
+                node_count = data["server_count"] + data["service_node_count"]
+                nodes_vms_tuple = "%s-%s" % (data["algorithm"], node_count)
                 
                 compute_time     = 0
                 violation_time   = 0
@@ -196,6 +202,11 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 except:
                     avg_migration_duration = 0
 
+                if not map_simulation_count.has_key(nodes_vms_tuple):
+                    map_simulation_count[nodes_vms_tuple] = 0
+                        
+                map_simulation_count[nodes_vms_tuple]   += 1
+
                 map_compute_time[nodes_vms_tuple]   = compute_time
                 map_violation_time[nodes_vms_tuple] = violation_time
                 map_migration_time[nodes_vms_tuple] = migrate_time
@@ -207,6 +218,24 @@ for dirname, dirnames, filenames in os.walk('./events'):
 
                 map_avg_psize[nodes_vms_tuple] = avg_psize
                 map_avg_migration_duration[nodes_vms_tuple] = avg_migration_duration
+
+################################################################################
+# Group statistics by simulation kind
+################################################################################
+
+for key in map_simulation_count:
+
+    simulation_count = map_simulation_count[key]
+
+    map_compute_time[key]               /= simulation_count
+    map_violation_time[key]             /= simulation_count
+    map_migration_time[key]             /= simulation_count
+    map_total_time[key]                 /= simulation_count
+    map_reconfigure_failure_count[key]  /= simulation_count
+    map_reconfigure_success_count[key]  /= simulation_count
+    map_migration_count[key]            /= simulation_count
+    map_avg_psize[key]                  /= simulation_count
+    map_avg_migration_duration[key]     /= simulation_count
 
 
 ################################################################################
