@@ -53,7 +53,7 @@ public class GroupManager extends Process {
 
         procGLBeats();
         newJoin();
-        while (true) {
+        while (!SimulatorManager.isEndOfInjection()){
             try {
                 if (!thisGMToBeStopped) {
                     m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
@@ -77,6 +77,7 @@ public class GroupManager extends Process {
                 deadLCs();
             }
         }
+        thisGMToBeStopped=true;
         Logger.err("[GM.main] GM stopped: " + host.getName() + ", " + m);
         Test.gms.remove(this);
     }

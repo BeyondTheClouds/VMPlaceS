@@ -3,6 +3,7 @@ package scheduling.snooze;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
+import simulation.SimulatorManager;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -37,7 +38,7 @@ public class GroupLeader extends Process {
         procSendMyBeats();
         procNewGM();
         procGMInfo();
-        while (true) {
+        while (!SimulatorManager.isEndOfInjection()) {
             try {
                 if (!thisGLToBeTerminated) {
                     SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
@@ -64,6 +65,7 @@ public class GroupLeader extends Process {
                 gmDead();
             }
         }
+        thisGLToBeTerminated=true;
     }
 
     void handle(SnoozeMsg m) {
