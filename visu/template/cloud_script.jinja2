@@ -1,0 +1,38 @@
+#!/usr/bin/Rscript
+
+algo1_matrix_data_in <- read.table("clouds/data/{{algo1}}-{{node_count}}/violations_in.csv", header=T,sep=",")
+colnames(algo1_matrix_data_in) <- c("algo1_in_time", "algo1_in_violation_time") 
+attach(algo1_matrix_data_in)
+
+algo1_matrix_data_out <- read.table("clouds/data/{{algo1}}-{{node_count}}/violations_out.csv", header=T,sep=",")
+colnames(algo1_matrix_data_out) <- c("algo1_out_time", "algo1_out_violation_time") 
+attach(algo1_matrix_data_out)
+
+algo2_matrix_data_in <- read.table("clouds/data/{{algo2}}-{{node_count}}/violations_in.csv", header=T,sep=",")
+colnames(algo2_matrix_data_in) <- c("algo2_in_time", "algo2_in_violation_time") 
+attach(algo2_matrix_data_in)
+
+algo2_matrix_data_out <- read.table("clouds/data/{{algo2}}-{{node_count}}/violations_out.csv", header=T,sep=",")
+colnames(algo2_matrix_data_out) <- c("algo2_out_time", "algo2_out_violation_time") 
+attach(algo2_matrix_data_out)
+
+dev.new(width=8, height=6)
+
+g_range <- range(algo1_in_violation_time, algo1_out_violation_time, algo2_in_violation_time, algo2_out_violation_time)
+col=c(rgb(100,0,0,80,maxColorValue=255),rgb(0,100,0,40,maxColorValue=255))
+plot(    algo1_in_time,   algo1_in_violation_time,     pch=15,   col=rgb(255,152,51,220,maxColorValue=255), ylim=g_range*1.2, 
+    ,xlab="Time (s)", ylab="Duration of the violation (s)")
+#title(main="Duration of each violation")
+points(  algo1_out_time,  algo1_out_violation_time,    pch=0,  col="red")
+points(  algo2_in_time,   algo2_in_violation_time,     pch=17,   col=rgb(51,152,255,180,maxColorValue=255))
+points(  algo2_out_time,  algo2_out_violation_time,    pch=2,  col="blue")
+
+legend("topleft", c(
+        "{{algo1 | capitalize}}",
+        "{{algo1 | capitalize}} false positive",
+        "{{algo2 | capitalize}}",
+        "{{algo2 | capitalize}} false positive"
+    ), ncol=2,
+   col=c(rgb(255,152,51,220,maxColorValue=255),"red",rgb(51,152,255,180,maxColorValue=255), "blue"), pch=c(15,0,17,2));
+
+
