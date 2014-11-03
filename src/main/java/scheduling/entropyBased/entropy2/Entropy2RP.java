@@ -286,7 +286,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
         int partitionSize = hostsToCheck.size();
 
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"result\" : %b, \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, (computingState.equals(ComputingState.SUCCESS)), migrationCount, partitionSize));
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"result\" : %s, \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingState, migrationCount, partitionSize));
 
 
         try {
