@@ -3,6 +3,7 @@ package scheduling.snooze;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
+import simulation.SimulatorManager;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -41,7 +42,7 @@ public class Multicast extends Process {
 
         procRelayGLBeats();
         procRelayGMBeats();
-        while (true) {
+        while (!SimulatorManager.isEndOfInjection()) {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
                 handle(m);
@@ -353,7 +354,7 @@ public class Multicast extends Process {
         try {
             new Process(host, host.getName() + "-relayGLBeats") {
                 public void main(String[] args) {
-                    while (true) {
+                    while (!SimulatorManager.isEndOfInjection()) {
                         try {
                             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGLBeats", AUX.HeartbeatTimeout);
 //                            Logger.info("[MUL.procRelayGLBeats] " + m);
@@ -381,7 +382,7 @@ public class Multicast extends Process {
         try {
             new Process(host, host.getName() + "-relayGMBeats") {
                 public void main(String[] args) {
-                    while (true) {
+                    while (!SimulatorManager.isEndOfInjection()) {
                         try {
                             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGMBeats", AUX.HeartbeatTimeout);
                             Logger.info("[MUL.procRelayGMBeats] " + m);

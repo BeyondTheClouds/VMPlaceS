@@ -475,7 +475,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
 
         private int res; // 0 everything is ok, -1 no viable configuration, -2 reconfiguration plan aborted
-        private long duration;
+        private long duration; // in ms
 
         Entropy2RPRes(){
             this.res = 0;

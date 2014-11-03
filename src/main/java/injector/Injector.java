@@ -214,19 +214,20 @@ public class Injector extends Process {
 		
 	   Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MIG", 0);
 	   Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MC", 0);
-	   
-	   InjectorEvent evt = nextEvent();
+
+      InjectorEvent evt = nextEvent();
 	   while(evt!=null){
 		   if(evt.getTime() - Msg.getClock()>0)
          	   waitFor(evt.getTime() - Msg.getClock());
 	       evt.play();
 	       evt=nextEvent();
        }
-	  Msg.info("End of Injection");   
+      waitFor(SimulatorProperties.getDuration() - Msg.getClock());
+	  Msg.info("End of Injection");
 	  SimulatorManager.setEndOfInjection();
-	  
-		// Wait for termination of On going scheduling
-		waitFor(EntropyProperties.getEntropyPlanTimeout());
+
+	  // Wait for termination of On going scheduling
+	  waitFor(EntropyProperties.getEntropyPlanTimeout());
     }
 
 	private InjectorEvent nextEvent() {

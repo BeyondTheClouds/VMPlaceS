@@ -6,6 +6,7 @@ import org.simgrid.msg.Process;
 import scheduling.snooze.msg.SnoozeMsg;
 import scheduling.snooze.msg.TestFailGLMsg;
 import scheduling.snooze.msg.TestFailGMMsg;
+import simulation.SimulatorManager;
 
 import java.util.ArrayList;
 
@@ -40,7 +41,7 @@ public class Test extends Process {
 //        procAddGMs();
 //        procFailGLs();
 //        procFailGMs();
-        while (!testsToBeTerminated) {
+        while (!testsToBeTerminated && !SimulatorManager.isEndOfInjection()) {
             dispInfo();
             sleep(1000*SnoozeProperties.getInfoPeriodicity());
         }

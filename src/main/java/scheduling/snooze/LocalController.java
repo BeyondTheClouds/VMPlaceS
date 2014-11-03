@@ -45,7 +45,7 @@ public class LocalController extends Process {
             procSendMyBeats();
             procGMBeats();
             procLCChargeToGM();
-            while (!thisLCToBeStopped) {
+            while (!thisLCToBeStopped && !SimulatorManager.isEndOfInjection()) {
                 try {
 //                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
                     SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
@@ -70,6 +70,7 @@ public class LocalController extends Process {
                     gmDead();
                 }
             }
+            thisLCToBeStopped = true;
         } catch (HostFailureException e) {
             thisLCToBeStopped = true;
         }
@@ -137,7 +138,7 @@ public class LocalController extends Process {
                 e.printStackTrace();
                 success = false;
             }
-        } while (!success);
+        } while (!success && !SimulatorManager.isEndOfInjection());
         joining = false;
         Logger.info("[LC.join] Finished, GM: " + gmHostname + ", TS: " + gmTimestamp);
     }
@@ -162,7 +163,7 @@ public class LocalController extends Process {
                 Logger.info("[LC.getGL] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
                 success = m.getClass().getSimpleName().equals("RBeatGLMsg") && !m.getOrigin().isEmpty();
-            } while (!success);
+            } while (!success && !SimulatorManager.isEndOfInjection());
             return gl;
 //            Logger.info("[LC.getGL] 1 Got GL: " + m);
         } catch (TimeoutException e) {
@@ -297,7 +298,7 @@ public class LocalController extends Process {
                             gmTimestamp = Msg.getClock();
                             Logger.info("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
 
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisLCToBeStopped = true;
                             break;
@@ -322,10 +323,9 @@ public class LocalController extends Process {
                             BeatLCMsg m = new BeatLCMsg(Msg.getClock(), AUX.gmInbox(gmHostname), host.getName(), null);
                             m.send();
                             Logger.info("[LC.beat] " + thisLCToBeStopped + " - " + m);
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisLCToBeStopped = true;
-                            return;
                         } catch (Exception e) { e.printStackTrace(); }
                     }
                 }
@@ -348,7 +348,7 @@ public class LocalController extends Process {
                             LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
                             m.send();
 //                            Logger.info("[LC.startLCChargeToGM] Charge sent: " + m);
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisLCToBeStopped = true;
                             break;

@@ -53,7 +53,7 @@ public class GroupManager extends Process {
 
         procGLBeats();
         newJoin();
-        while (true) {
+        while (!SimulatorManager.isEndOfInjection()){
             try {
                 if (!thisGMToBeStopped) {
                     m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
@@ -77,6 +77,7 @@ public class GroupManager extends Process {
                 deadLCs();
             }
         }
+        thisGMToBeStopped=true;
         Logger.err("[GM.main] GM stopped: " + host.getName() + ", " + m);
         Test.gms.remove(this);
     }
@@ -338,7 +339,7 @@ public class GroupManager extends Process {
                             BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
                             m.send();
                             Logger.info("[GM.procSendMyBeats] " + m);
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisGMToBeStopped = true;
                             break;
@@ -359,7 +360,7 @@ public class GroupManager extends Process {
                     while (!thisGMToBeStopped) {
                         try {
                             summaryInfoToGL();
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisGMToBeStopped = true;
                             break;
