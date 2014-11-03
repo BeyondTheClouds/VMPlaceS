@@ -271,6 +271,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
         Msg.info("Launching scheduler (loopId = " + loopID + ") - start to compute");
 
+        /** PLEASE NOTE THAT ALL COMPUTATIONS BELOW DOES NOT MOVE FORWARD THE MSG CLOCK ***/
         beginTimeOfCompute = System.currentTimeMillis();
         computingState = this.computeReconfigurationPlan();
         endTimeOfCompute = System.currentTimeMillis();
@@ -285,6 +286,8 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         }
 
         int partitionSize = hostsToCheck.size();
+
+        /** **** NOW LET'S GO BACK TO THE SIMGRID WORLD **** */
 
         Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"result\" : %s, \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingState, migrationCount, partitionSize));
 
@@ -307,6 +310,9 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             for (XHost h : hostsToCheck)
                 Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
 
+            Trace.hostPushState(Host.currentHost().getName(), "SERVICE", "reconfigure");
+
+
             Msg.info("Starting reconfiguration");
             double startReconfigurationTime = Msg.getClock();
             this.applyReconfigurationPlan();
@@ -320,6 +326,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             else
                 enRes.setRes(0);
 
+            Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
         } else {
             Msg.info("Entropy did not find any viable solution");
             enRes.setRes(-1);
@@ -412,8 +419,10 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                 incMig();
 
 
+                                Trace.hostPushState(vmName, "SERVICE", "migrate", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", vmName, sourceName, destName));
                                 int res = sourceHost.migrate(args[0], destHost);
-
+                                // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
+                                Trace.hostPopState(vmName, "SERVICE");
 
                                 if (res == 0) {
                                     Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
@@ -428,9 +437,9 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                     }
 
                                     /* Export that the migration has finished */
-                                    double migrationDuration = Msg.getClock() - timeStartingMigration;
-                                    Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
-                                    Trace.hostPopState(vmName, "migration");
+                                    //double migrationDuration = Msg.getClock() - timeStartingMigration;
+                                    //Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+                                    //Trace.hostPopState(vmName, "migration");
                                 } else {
 
 

@@ -218,8 +218,7 @@ public class Injector extends Process {
 	   InjectorEvent evt = nextEvent();
 	   while(evt!=null){
 		   if(evt.getTime() - Msg.getClock()>0)
-           //    Msg.info("WaitFor"+(evt.getTime()- Msg.getClock()));
-			   waitFor(evt.getTime() - Msg.getClock());
+         	   waitFor(evt.getTime() - Msg.getClock());
 	       evt.play();
 	       evt=nextEvent();
        }
