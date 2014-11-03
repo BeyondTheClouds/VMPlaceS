@@ -323,8 +323,13 @@ public class TraceImpl {
         }
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
+        double duration = now() - currentHostVariable.get(variable).datetime;
+
         currentHostVariable.put(variable, new TValue(value, now()));
         hostVariables.put(host, currentHostVariable);
+
+        String valueAsJson = String.format("{\"value\": %f}", value);
+        writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
     }
 
     /**
@@ -340,9 +345,14 @@ public class TraceImpl {
         }
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
+        double duration = now() - currentHostVariable.get(variable).datetime;
+
         double tmp = currentHostVariable.get(variable).getValue();
         currentHostVariable.put(variable, new TValue((tmp - value), now()));
         hostVariables.put(host, currentHostVariable);
+
+        String valueAsJson = String.format("{\"value\": %f}", tmp - value);
+        writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
     }
 
     /**
@@ -361,9 +371,14 @@ public class TraceImpl {
         if(!currentHostVariable.containsKey(variable)) {
             hostVariableSet(host, variable, value);
         } else {
+            double duration = now() - currentHostVariable.get(variable).datetime;
+
             double tmp = currentHostVariable.get(variable).getValue();
             currentHostVariable.put(variable, new TValue((tmp+value), now()));
             hostVariables.put(host, currentHostVariable);
+
+            String valueAsJson = String.format("{\"value\": %f}", tmp + value);
+            writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
         }
 
     }
