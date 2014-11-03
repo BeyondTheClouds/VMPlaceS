@@ -61,6 +61,18 @@ public class Trace {
         TraceImpl.getInstance().hostSetState(host, state, value, data);
     }
 
+
+    /**
+     * Pop the last value of a state of a given host.
+     *
+     * @param host
+     * @param state
+     */
+    public static void hostPopState(String host, String state, String data) {
+        TraceImpl.getInstance().hostPopState(host, state, data);
+    }
+
+
     /**
      * Pop the last value of a state of a given host.
      *

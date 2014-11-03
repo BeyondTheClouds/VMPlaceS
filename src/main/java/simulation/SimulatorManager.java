@@ -357,17 +357,17 @@ public class SimulatorManager {
      * Please note that we are considering only the hosts hosting VMs and that are up.
      */
     public static double computeCPUDemand() {
-        double cons=0;
-        double tmpLoad = 0 ;
-        int i = 0;
+
+        double globalCpuDemand = 0.0;
+        int globalCpuCapacity = 0;
+
         for(XHost h: sgHostingHosts.values()){
             if(h.isOn()) {
-                tmpLoad = h.getCPUDemand() * 100 / h.getCPUCapacity();
-                cons += tmpLoad;
-                i++;
+                globalCpuDemand += h.getCPUDemand();
+                globalCpuCapacity += h.getCPUCapacity();
             }
         }
-        return cons/i;
+        return 100 * globalCpuDemand / globalCpuCapacity;
     }
 
     public static double getCPUDemand(){
