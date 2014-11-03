@@ -211,7 +211,9 @@ public class XHost{
             return -1;
         }
         hostedVMs.remove(vm);
+        this.setCPUDemand(computeCPUDemand());
         dest.hostedVMs.add(vm);
+        dest.setCPUDemand(dest.computeCPUDemand());
         return 0;
     }
 
