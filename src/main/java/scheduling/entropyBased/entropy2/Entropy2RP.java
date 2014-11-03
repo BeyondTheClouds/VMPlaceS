@@ -421,6 +421,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
                                 Trace.hostPushState(vmName, "SERVICE", "migrate", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", vmName, sourceName, destName));
                                 int res = sourceHost.migrate(args[0], destHost);
+                                // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
                                 Trace.hostPopState(vmName, "SERVICE");
 
                                 if (res == 0) {
