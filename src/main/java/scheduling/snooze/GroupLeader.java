@@ -252,7 +252,7 @@ public class GroupLeader extends Process {
                                     new BeatGLMsg(Msg.getClock(), AUX.multicast+"-relayGLBeats", glHostname, null);
                             m.send();
                             Logger.info("[GL.procSendMyBeats] " + m);
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisGLToBeTerminated = true;
                             break;

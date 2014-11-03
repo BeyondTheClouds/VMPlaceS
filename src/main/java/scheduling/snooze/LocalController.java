@@ -45,7 +45,7 @@ public class LocalController extends Process {
             procSendMyBeats();
             procGMBeats();
             procLCChargeToGM();
-            while (!thisLCToBeStopped || (!SimulatorManager.isEndOfInjection())) {
+            while (!thisLCToBeStopped && !SimulatorManager.isEndOfInjection()) {
                 try {
 //                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
                     SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
@@ -298,7 +298,7 @@ public class LocalController extends Process {
                             gmTimestamp = Msg.getClock();
                             Logger.info("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
 
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisLCToBeStopped = true;
                             break;
@@ -323,7 +323,7 @@ public class LocalController extends Process {
                             BeatLCMsg m = new BeatLCMsg(Msg.getClock(), AUX.gmInbox(gmHostname), host.getName(), null);
                             m.send();
                             Logger.info("[LC.beat] " + thisLCToBeStopped + " - " + m);
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisLCToBeStopped = true;
                         } catch (Exception e) { e.printStackTrace(); }
@@ -348,7 +348,7 @@ public class LocalController extends Process {
                             LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
                             m.send();
 //                            Logger.info("[LC.startLCChargeToGM] Charge sent: " + m);
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisLCToBeStopped = true;
                             break;

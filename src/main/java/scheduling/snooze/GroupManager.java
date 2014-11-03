@@ -339,7 +339,7 @@ public class GroupManager extends Process {
                             BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
                             m.send();
                             Logger.info("[GM.procSendMyBeats] " + m);
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisGMToBeStopped = true;
                             break;
@@ -360,7 +360,7 @@ public class GroupManager extends Process {
                     while (!thisGMToBeStopped) {
                         try {
                             summaryInfoToGL();
-                            sleep(AUX.HeartbeatInterval);
+                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisGMToBeStopped = true;
                             break;

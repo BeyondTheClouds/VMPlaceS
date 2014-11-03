@@ -5,6 +5,7 @@ import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.SnoozeMsg;
+import simulation.SimulatorManager;
 
 import java.lang.reflect.Constructor;
 
@@ -53,7 +54,7 @@ public class ThreadPool {
 
         @Override
         public void main(String[] strings) throws MsgException {
-            while (true) {
+            while (!SimulatorManager.isEndOfInjection()) {
                 try {
                     Class runClass = Class.forName(runClassName);
                     Constructor<?> constructor = runClass.getDeclaredConstructors()[0];

@@ -20,13 +20,13 @@ public class AUX {
 //    static final String gmHeartbeatBeat = "gmHeartbeatBeat";  // HeartbeatGroup mbox
     static final long DefaultComputeInterval = 1;
   //  static final long EntropyComputationTime = 30000;
-    static final long HeartbeatInterval = 1000*SnoozeProperties.getHeartBeatPeriodicity();
+    static final long HeartbeatInterval = SnoozeProperties.getHeartBeatPeriodicity();
     static final long ReceiveTimeout = SnoozeProperties.getHeartBeatTimeout();
 //    static final long ReceiveTimeout = SnoozeProperties.getHeartBeatPeriodicity()/2;
-    static final long HeartbeatTimeout = 1000*SnoozeProperties.getHeartBeatTimeout();
+    static final long HeartbeatTimeout = SnoozeProperties.getHeartBeatTimeout();
     //static final long SchedulingPeriodicity = 1000*SnoozeProperties.getSchedulingPeriodicity();
-    static final long JoinAcknowledgementTimeout = 5000;
-    static final long GLCreationTimeout = 1000;
+//    static final long JoinAcknowledgementTimeout = 5000;
+//    static final long GLCreationTimeout = 1000;
     static final double MessageReceptionTimeout = 0.2;
 
     static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
@@ -47,6 +47,6 @@ public class AUX {
     static String lcInbox(String lcHost) { return lcHost + "-lcInbox"; }
 
     static double timeDiff(double oldTime) {
-        return (Msg.getClock()-oldTime)*1000;
+        return Msg.getClock()-oldTime;
     }
 }
