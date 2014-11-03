@@ -116,15 +116,16 @@ public class Main {
         Trace.hostStateDeclare("PM");
         Trace.hostStateDeclareValue("PM", "underloaded", "0 1 1");
         Trace.hostStateDeclareValue("PM", "normal", "1 1 1");
-        Trace.hostStateDeclareValue("PM", "violation-inject", "1 0 0");
-        Trace.hostStateDeclareValue("PM", "violation-detbyentr", "0 1 0");
-        Trace.hostStateDeclareValue("PM", "violation-outduetoentr", "1 0 0");
+        Trace.hostStateDeclareValue("PM", "violation", "1 0 0");
+        Trace.hostStateDeclareValue("PM", "violation-det", "0 1 0");
+        Trace.hostStateDeclareValue("PM", "violation-out", "1 0 0");
 
         Trace.hostStateDeclare("SERVICE");
         Trace.hostStateDeclareValue("SERVICE", "free", "1 1 1");
         Trace.hostStateDeclareValue("SERVICE", "booked", "0 0 1");
         Trace.hostStateDeclareValue("SERVICE", "compute", "1 0 1");
         Trace.hostStateDeclareValue("SERVICE", "reconfigure", "1 1 0");
+        Trace.hostStateDeclareValue("SERVICE", "migrate", "1 0 0");
 
         Trace.hostVariableDeclare("LOAD");
         Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
