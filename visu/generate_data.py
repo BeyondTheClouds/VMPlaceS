@@ -186,8 +186,8 @@ for dirname, dirnames, filenames in os.walk('./events'):
                                 reconfigure_success_count += 1
                                 servers_involved += data["data"]["psize"]
 
-                        if data["event"] == "trace_event" and data["state_name"] == "migration" and data["value"] == "finished":
-                            migrate_time += data["data"]["duration"]
+                        if data["event"] == "trace_event" and data["state_name"] == "SERVICE" and data["value"] == "migrate":
+                            migrate_time += data["duration"]
                             migration_count += 1
                     except:
                         pass

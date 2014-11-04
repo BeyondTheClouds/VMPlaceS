@@ -1,0 +1,40 @@
+#!/usr/bin/Rscript
+
+data <- read.table("loads/data/{{algo}}-{{node_count}}/load.csv", header=T,sep=",")
+attach(data)
+
+# Second graph
+# 		Calculate violation times for dvms and entropy
+
+g_range <- range(0, 101)
+
+plot(load ~ time, type="o", col="blue", ylim=g_range,
+   axes=FALSE, ann=FALSE, pch="")
+
+# 		Make x axis using experiments names
+axis(1, c(0, 1000, 2000, 3000, 3600))
+axis(2, c(0, 20, 40, 60, 80, 100), c("0%", "20%", "40%", "60%", "80%", "100%"))
+# 		Make y axis with horizontal labels that display ticks at 
+# 		every 4 marks. 4*0:g_range[2] is equivalent to c(0,4,8,12).
+#load_node0_50.csv
+
+# 		Create box around plot
+box()
+
+# 		Graph entropy with red dashed line and square points
+
+abline(h=70,col="black",lty=2)
+text(1.1, (70+g_range[2]/40), "    70%", col = "black")
+
+# 		Create a title with a red, bold/italic font
+title(main="Load of the cluster\nConsolidation rate= 10VMs/PM, Average VM load = 70%", col.main="red", font.main=4)
+
+# 		Label the x and y axes with dark green text
+title(xlab="Time (s)", col.lab=rgb(0,0.5,0))
+title(ylab="Load (%)", col.lab=rgb(0,0.5,0))
+
+# 		Create a legend at (1, g_range[2]) that is slightly smaller 
+# 		(cex) and uses the same line colors and points used by 
+# 		the actual plots 
+legend(1, g_range[2], c("load"), cex=0.8, 
+   col=c("blue"), pch="", lty=1:2);

@@ -1,10 +1,13 @@
 package trace;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 import scheduling.entropyBased.dvms2.dvms.LoggingActor;
 import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -191,7 +194,7 @@ public class TraceImpl {
         HashMap<String, LinkedList<TState>> currentHostStates = hostStates.get(host);
 
         while(currentHostStates.containsKey(state) && !currentHostStates.get(state).isEmpty()) {
-            hostPopState(host, state);
+            hostPopState(host, state, "");
         }
 
         LinkedList<TState> listOfStates = new LinkedList<TState>();
@@ -210,6 +213,17 @@ public class TraceImpl {
      * @param state
      */
     void hostPopState(String host, String state) {
+        hostPopState(host, state, "");
+    }
+
+    /**
+     * Pop the last value of a state of a given host.
+     *
+     * @param host
+     * @param state
+     * @param data
+     */
+    void hostPopState(String host, String state, String data) {
 
         double now = now();
 
@@ -227,7 +241,31 @@ public class TraceImpl {
 
                 double duration = now() - lastState.datetime;
 
-                writeJson(lastState.datetime, host, state, lastState.getValue(), lastState.getData(), duration);
+                /* Check if the state contains some data */
+                String mergingData;
+
+                if(!lastState.getData().isEmpty() && !data.isEmpty()) {
+                    Gson gson = new Gson();
+                    Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
+
+                    HashMap<String, Object> mapMerging = new HashMap<String, Object>();
+
+                    HashMap<String, Object> mapPush = gson.fromJson(lastState.getData(), type);
+                    HashMap<String, Object> mapPop  = gson.fromJson(data, type);
+
+                    mapMerging.putAll(mapPush);
+                    mapMerging.putAll(mapPop);
+
+                    mergingData = gson.toJson(mapMerging);
+                } else {
+                    if(data.isEmpty()) {
+                        mergingData = lastState.getData();
+                    } else {
+                        mergingData = data;
+                    }
+                }
+
+                writeJson(lastState.datetime, host, state, lastState.getValue(), mergingData, duration);
             }
 
         } else {
@@ -323,8 +361,13 @@ public class TraceImpl {
         }
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
+        double duration = now() - currentHostVariable.get(variable).datetime;
+
         currentHostVariable.put(variable, new TValue(value, now()));
         hostVariables.put(host, currentHostVariable);
+
+        String valueAsJson = String.format("{\"value\": %f}", value);
+        writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
     }
 
     /**
@@ -340,9 +383,14 @@ public class TraceImpl {
         }
         HashMap<String, TValue> currentHostVariable = hostVariables.get(host);
 
+        double duration = now() - currentHostVariable.get(variable).datetime;
+
         double tmp = currentHostVariable.get(variable).getValue();
         currentHostVariable.put(variable, new TValue((tmp - value), now()));
         hostVariables.put(host, currentHostVariable);
+
+        String valueAsJson = String.format("{\"value\": %f}", tmp - value);
+        writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
     }
 
     /**
@@ -361,9 +409,14 @@ public class TraceImpl {
         if(!currentHostVariable.containsKey(variable)) {
             hostVariableSet(host, variable, value);
         } else {
+            double duration = now() - currentHostVariable.get(variable).datetime;
+
             double tmp = currentHostVariable.get(variable).getValue();
             currentHostVariable.put(variable, new TValue((tmp+value), now()));
             hostVariables.put(host, currentHostVariable);
+
+            String valueAsJson = String.format("{\"value\": %f}", tmp + value);
+            writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
         }
 
     }

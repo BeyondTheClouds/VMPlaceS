@@ -289,7 +289,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
         /** **** NOW LET'S GO BACK TO THE SIMGRID WORLD **** */
 
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"result\" : %s, \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingState, migrationCount, partitionSize));
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"result\" : \"%s\", \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingState, migrationCount, partitionSize));
 
 
         try {
@@ -423,7 +423,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                 int res = sourceHost.migrate(args[0], destHost);
                                 // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
                                 // To this aim, please extend the hostPopState API to add meta data information
-                                Trace.hostPopState(vmName, "SERVICE");
+                                Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", vmName, res));
 
                                 if (res == 0) {
                                     Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);

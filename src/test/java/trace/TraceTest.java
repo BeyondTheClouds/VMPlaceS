@@ -1,58 +1,35 @@
-//package trace;
-//
-//import org.junit.Test;
-//
-//public class TraceTest {
-//
-//    private double datetime = 0;
-//
-//    class TraceImplForTesting extends TraceImpl {
-//
-//        @Override
-//        protected double now() {
-//            return datetime;
-//        }
-//
-//    }
-//
-//    public TraceImplForTesting trace = new TraceImplForTesting();
-//
-//    @Test
-//    public void testHostStateDeclare() {
-//
-//        datetime = 345.1;
-//        trace.hostStateDeclare("VIOLATION");
-//        datetime = 348.5;
-//        trace.hostPopState("node1", "VIOLATION");
-//
-//    }
-//
-//
-//    @Test
-//    public void testHostPushState() {
-//
-//        datetime = 345.1;
-//        trace.hostPushState("node1", "VIOLATION", "VIOLATED");
-//        datetime = 348.5;
-//        trace.hostPopState("node1", "VIOLATION");
-//
-//    }
-//
-//    @Test
-//    public void testHostVariableDeclare() {
-//
-//        datetime = 345.1;
-//        trace.hostVariableDeclare("VAR1");
-//        datetime = 348.5;
-//        trace.hostVariableDeclare("node1", "VAR2");
-//
-//    }
-//
-//    @Test
-//    public void testHostVariableAdd() {
-//
-//        datetime = 345.1;
-//        trace.hostVariableAdd("node1", "LOAD", 1);
-//
-//    }
-//}
+package trace;
+
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
+import java.util.HashMap;
+
+public class TraceTest {
+
+    public static void main(String[] args) {
+
+        HashMap<String, Object> map = new HashMap<String, Object>();
+        map.put("toto", "tata");
+        map.put("foo", "bar");
+        map.put("bar", 2);
+
+        HashMap<String, Object> map2 = new HashMap<String, Object>();
+        map.put("toto", "tata");
+        map.put("foo2", "babar");
+        map.put("bar2", 3);
+
+
+        Gson gson = new Gson();
+        map.putAll(map2);
+        String json = gson.toJson(map);
+        System.out.println(String.format("JSON: %s", json));
+
+        Type type = new TypeToken<HashMap<String, Object>>() {}.getType();
+
+        HashMap<String, Object> returnMap = gson.fromJson(json, type);
+        System.out.println(type);
+
+    }
+}
