@@ -65,6 +65,7 @@ public class ThreadPool {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
+               // TODO it would be better to have a GL notification to inform available GMS instead of an active loop
             }
         }
     }

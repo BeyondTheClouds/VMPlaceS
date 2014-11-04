@@ -51,7 +51,8 @@ public class LocalController extends Process {
                     SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
                     handle(m);
                     gmDead();
-                    sleep(AUX.DefaultComputeInterval);
+                    if(SnoozeProperties.shouldISleep())
+                        sleep(AUX.DefaultComputeInterval);
                 } catch (HostFailureException e) {
                     thisLCToBeStopped = true;
                     Logger.err("[LC.main] HostFailureException");
@@ -285,7 +286,7 @@ public class LocalController extends Process {
                     String gm;
                     while (!thisLCToBeStopped) {
                         try {
-                            m = (SnoozeMsg) Task.receive(inbox + "-gmBeats", AUX.HeartbeatTimeout);
+                            m = (SnoozeMsg) Task.receive(inbox + "-gmBeats", AUX.HeartbeatTimeout); // Please note that we do not have to wait AUX.HeartbeatTimeout since it is already done in Task.receive
                             gm = (String) m.getOrigin();
                             if (gmHostname.isEmpty()) {
                                 Logger.err("[LC.procGMBeats] No GM");
@@ -298,7 +299,6 @@ public class LocalController extends Process {
                             gmTimestamp = Msg.getClock();
                             Logger.info("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
 
-                            sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisLCToBeStopped = true;
                             break;
