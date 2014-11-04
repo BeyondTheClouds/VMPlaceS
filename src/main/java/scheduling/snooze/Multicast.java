@@ -48,7 +48,8 @@ public class Multicast extends Process {
                 handle(m);
                 glDead();
                 gmDead();
-                sleep(AUX.DefaultComputeInterval);
+                if(SnoozeProperties.shouldISleep())
+                    sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
                 Logger.err("[MUL.main] HostFailure Exception should never happen!: " + host.getName());
             } catch (Exception e) {
@@ -359,7 +360,8 @@ public class Multicast extends Process {
                             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGLBeats", AUX.HeartbeatTimeout);
 //                            Logger.info("[MUL.procRelayGLBeats] " + m);
                             relayGLBeats(m);
-                            sleep(AUX.DefaultComputeInterval);
+                            if(SnoozeProperties.shouldISleep())
+                                sleep(AUX.DefaultComputeInterval);
                         } catch (TimeoutException e) {
                             glDead = true;
                         } catch (HostFailureException e) {
@@ -394,7 +396,8 @@ public class Multicast extends Process {
                             }
                             else Logger.err("[MUL.procRelayGMBeats] Unknown GM: " + m);
                             relayGMBeats(((GroupManager) m.getMessage()), ts);
-                            sleep(AUX.DefaultComputeInterval);
+                            if(SnoozeProperties.shouldISleep())
+                                sleep(AUX.DefaultComputeInterval);
                         } catch (TimeoutException e) {
                             glDead = true;
                         } catch (HostFailureException e) {

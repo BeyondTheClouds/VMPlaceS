@@ -59,7 +59,8 @@ public class GroupManager extends Process {
                     m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
                     handle(m);
                     deadLCs();
-                    sleep(AUX.DefaultComputeInterval);
+                    if(SnoozeProperties.shouldISleep())
+                        sleep(AUX.DefaultComputeInterval);
                 } else break;
             } catch (HostFailureException e) {
                 thisGMToBeStopped = true;
@@ -304,7 +305,8 @@ public class GroupManager extends Process {
                             SnoozeMsg m = (SnoozeMsg)
                                     Task.receive(inbox + "-glBeats", AUX.HeartbeatTimeout);
                             glBeats(m);
-                            sleep(AUX.DefaultComputeInterval);
+                            if(SnoozeProperties.shouldISleep())
+                                sleep(AUX.DefaultComputeInterval);
                         } catch (TimeoutException e) {
                             if (!joining) {
                                 glDead = true;
@@ -418,12 +420,17 @@ public class GroupManager extends Process {
                             if ((periodicScheduling || (!periodicScheduling && anyViolation))
                                     && !scheduling && !glHostname.isEmpty() && !thisGMToBeStopped && !glDead) {
                                 scheduling = true;
-                                previousDuration = scheduleVMs();
+                                previousDuration = scheduleVMs(); // previousDuration is in ms.
                                 wait = period - previousDuration;
                                 scheduling = false;
                             }
-                            if (periodicScheduling) { if (wait > 0) Process.sleep(wait); }
-                            else Process.sleep(previousDuration+70); //
+                            if (periodicScheduling) {
+                                if (wait > 0) Process.sleep(wait);
+                            } else
+                                 Process.sleep(70); // This sleep simulates the communications between the GM and the LC to update the monitoring information (i.e. a pull model)
+                                                    // A push model would have been better but let's keep it simple and stupid ;)
+                                                    // 70 ms correspond to a round trip between GM and LCs.
+                                                    // TODO 70 ms is an arbitrary value, it would be better to get the RTT of the current topology based on the platform file.
                         } catch (HostFailureException e) {
                             thisGMToBeStopped = true;
                             break;

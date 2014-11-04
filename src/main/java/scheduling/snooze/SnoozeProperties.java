@@ -30,7 +30,7 @@ public class SnoozeProperties extends GeneralProperties {
         public final static String SCHEDULING_PERIODICITY = "snooze.scheduling-periodicity";
         public final static String INFO_LEVEL = "snooze.info-level";
         public final static String INFO_PERIODICITY = "snooze.info-periodicity";
-
+        public final static String SIMULATE_LOCALCOMPUTATION = "snooze.simulate-localcomputation";
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Property default values
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,14 +38,16 @@ public class SnoozeProperties extends GeneralProperties {
         public final static long DEFAULT_HEARTBEAT_PERIODICITY = 2;
         public final static boolean DEFAULT_SCHEDULING_PERIODIC = true;
         public final static long DEFAULT_SCHEDULING_PERIODICITY = 30;
-        public static final long DEFAULT_HEARTBEAT_TIMEOUT = 5;
+        public final static long DEFAULT_HEARTBEAT_TIMEOUT = 5;
+
 
         public final static int DEFAULT_INFO_LEVEL = 2;
         public final static int DEFAULT_INFO_PERIODICITY = 5;
+        public static boolean DEFAULT_SIMULATE_LOCALCOMPUTATION = false;
 
 
 
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Constructors
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -90,6 +92,10 @@ public class SnoozeProperties extends GeneralProperties {
         public static int getInfoPeriodicity() {
             return INSTANCE.getPropertyAsInt(INFO_PERIODICITY, DEFAULT_INFO_PERIODICITY);
         }
+
+    public static boolean shouldISleep() {
+        return INSTANCE.getPropertyAsBoolean(SIMULATE_LOCALCOMPUTATION, DEFAULT_SIMULATE_LOCALCOMPUTATION);
+    }
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

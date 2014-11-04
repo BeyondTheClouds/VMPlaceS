@@ -8,6 +8,7 @@ import simulation.SimulatorManager;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+
 /**
  * Created by sudholt on 25/05/2014.
  */
@@ -48,7 +49,8 @@ public class GroupLeader extends Process {
                     Logger.err("[GL.main] TBTerminated: " + host.getName());
                     break;
                 }
-                sleep(AUX.DefaultComputeInterval);
+                if(SnoozeProperties.shouldISleep())
+                    sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
                 thisGLToBeTerminated = true;
                 break;
@@ -180,8 +182,8 @@ public class GroupLeader extends Process {
                                 Logger.err("[GL.procGMInfo] Unknown message: " + m);
                                 continue;
                             }
-
-                            sleep(AUX.DefaultComputeInterval);
+                            if(SnoozeProperties.shouldISleep())
+                                sleep(AUX.DefaultComputeInterval);
                         }
                         catch (TimeoutException e) {
                             Logger.exc("[GL.procGMInfo] PROBLEM? Timeout Exception");
