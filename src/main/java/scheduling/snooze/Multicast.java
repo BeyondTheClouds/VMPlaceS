@@ -321,7 +321,7 @@ public class Multicast extends Process {
         public void run() {
             NewLCMsg m;
             try {
-                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.HeartbeatTimeout);
+                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.PoolingTimeout);
 //                            Logger.info("[MUL.procRelayGLBeats] " + m);
                 Logger.info("[MUL.RunNewLC] " + m);
                 if (m.getMessage() == null) {

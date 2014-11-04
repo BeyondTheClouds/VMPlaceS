@@ -272,7 +272,7 @@ public class GroupLeader extends Process {
             LCAssMsg m = null;
             try {
                 Logger.info("[GL.RunLCAss] Wait for tasks: " + GroupLeader.this.inbox + "-lcAssign");
-                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.HeartbeatInterval);
+                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.PoolingTimeout);
                 Logger.info("[GL.RunLCAss] Task received: " + m);
                 String gm = lcAssignment((String) m.getMessage());
                 m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
