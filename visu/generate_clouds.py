@@ -101,10 +101,12 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 header_data = json.loads(header_line)
                 data = header_data["data"]
 
-                node_count = data["server_count"] + data["service_node_count"]
+                compute_node_count = data["server_count"]
+                service_node_count = data["service_node_count"]
+                node_count = compute_node_count + service_node_count
 
-                if not node_count in nodes_tuples:
-                    nodes_tuples += [node_count]
+                if not compute_node_count in nodes_tuples:
+                    nodes_tuples += [compute_node_count]
                 if not data["vm_count"] in vms_tuples:
                     vms_tuples += [data["vm_count"]]
                 # nodes_vms_tuple = "%s-%s" % (data["server_count"], data["vm_count"])
@@ -145,13 +147,17 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 header_data = json.loads(header_line)
                 data = header_data["data"]
                 algo = data["algorithm"]
-                node_count = data["server_count"] + data["service_node_count"]
-                nodes_vms_tuple = "%s-%s" % (data["algorithm"], node_count)
-                
-                if not map_algos_size.has_key(node_count):
-                    map_algos_size[node_count] = []
 
-                map_algos_size[node_count] += [algo]
+                compute_node_count = data["server_count"]
+                service_node_count = data["service_node_count"]
+                node_count = compute_node_count + service_node_count
+                
+                nodes_vms_tuple = "%s-%s" % (data["algorithm"], compute_node_count)
+                
+                if not map_algos_size.has_key(compute_node_count):
+                    map_algos_size[compute_node_count] = []
+
+                map_algos_size[compute_node_count] += [algo]
 
                 violations_in = []
                 violations_out = []
@@ -173,7 +179,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     except:
                         pass
 
-                export_csv_data(algo, node_count, violations_in, violations_out)
+                export_csv_data(algo, compute_node_count, violations_in, violations_out)
 
 
 

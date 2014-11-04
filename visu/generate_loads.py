@@ -100,11 +100,13 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 header_line = f.readline()
                 header_data = json.loads(header_line)
                 data = header_data["data"]
+                
+                compute_node_count = data["server_count"]
+                service_node_count = data["service_node_count"]
+                node_count = compute_node_count + service_node_count
 
-                node_count = data["server_count"] + data["service_node_count"]
-
-                if not node_count in nodes_tuples:
-                    nodes_tuples += [node_count]
+                if not compute_node_count in nodes_tuples:
+                    nodes_tuples += [compute_node_count]
                 if not data["vm_count"] in vms_tuples:
                     vms_tuples += [data["vm_count"]]
                 # nodes_vms_tuple = "%s-%s" % (data["server_count"], data["vm_count"])
@@ -144,12 +146,16 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 header_data = json.loads(header_line)
                 data = header_data["data"]
                 algo = data["algorithm"]
-                node_count = data["server_count"] + data["service_node_count"]
-                nodes_vms_tuple = "%s-%s" % (data["algorithm"], node_count)
+
+                compute_node_count = data["server_count"]
+                service_node_count = data["service_node_count"]
+                node_count = compute_node_count + service_node_count
+
+                nodes_vms_tuple = "%s-%s" % (data["algorithm"], compute_node_count)
                 
                 service_node_name = "node%d" % (node_count)
 
-                simulations += [(algo, node_count)]
+                simulations += [(algo, compute_node_count)]
 
                 loads = []
 
@@ -167,7 +173,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     except:
                         pass
 
-                export_csv_data(algo, node_count, loads)
+                export_csv_data(algo, compute_node_count, loads)
 
 
 
@@ -208,7 +214,7 @@ for simulation in simulations:
     export_loads_data(algo, node_count)
 
     script_folder_name = "loads/scripts/%d-%s" % (node_count, algo)
-    out_file_path = "loads/results/%d-%s-.pdf" % (node_count, algo)
+    out_file_path = "loads/results/%d-%s.pdf" % (node_count, algo)
 
     execute_cmd(["/usr/bin/Rscript", "%s/compare.r" % (script_folder_name)])
 

@@ -3,6 +3,10 @@
 data <- read.table("loads/data/{{algo}}-{{node_count}}/load.csv", header=T,sep=",")
 attach(data)
 
+data2 <- setNames(aggregate(load ~ round(time), data, mean, na.rm=TRUE), c("time", "load"))
+detach(data)
+attach(data2)
+
 # Second graph
 # 		Calculate violation times for dvms and entropy
 
