@@ -11,9 +11,10 @@ public class LCChargeMsg extends SnoozeMsg {
     public static class LCCharge {
         private double procCharge;
         private int memUsed;
+        private double timestamp;
 
-        public LCCharge(double proc, int mem) {
-            this.setProcCharge(proc); this.setMemUsed(mem);
+        public LCCharge(double proc, int mem, double ts) {
+            this.setProcCharge(proc); this.setMemUsed(mem); this.setTimestamp(ts);
         }
 
         public double getProcCharge() {
@@ -30,6 +31,14 @@ public class LCChargeMsg extends SnoozeMsg {
 
         public void setMemUsed(int memUsed) {
             this.memUsed = memUsed;
+        }
+
+        public double getTimestamp() {
+            return timestamp;
+        }
+
+        public void setTimestamp(double timestamp) {
+            this.timestamp = timestamp;
         }
     }
 }

@@ -42,9 +42,9 @@ public class LocalController extends Process {
             init(SimulatorManager.getXHostByName(args[0]), args[1]);
             join();
             Test.lcs.add(this);
-            procSendMyBeats();
+//            procSendMyBeats();
             procGMBeats();
-            procLCChargeToGM();
+            procSendLCChargeToGM();
             while (!thisLCToBeStopped && !SimulatorManager.isEndOfInjection()) {
                 try {
 //                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
@@ -310,41 +310,41 @@ public class LocalController extends Process {
     }
 
 
-    /**
-     * Send LC beat to GM
-     */
-    void procSendMyBeats() {
-        try {
-            new Process(host.getSGHost(), host.getSGHost().getName() + "-lcBeats") {
-                public void main(String[] args) {
-                    while (!thisLCToBeStopped) {
-                        try {
-//                            gmDead();
-                            BeatLCMsg m = new BeatLCMsg(Msg.getClock(), AUX.gmInbox(gmHostname), host.getName(), null);
-                            m.send();
-                            Logger.info("[LC.beat] " + thisLCToBeStopped + " - " + m);
-                            sleep(AUX.HeartbeatInterval*1000);
-                        } catch (HostFailureException e) {
-                            thisLCToBeStopped = true;
-                        } catch (Exception e) { e.printStackTrace(); }
-                    }
-                }
-            }.start();
-        } catch (Exception e) { e.printStackTrace(); }
-    }
+//    /**
+//     * Send LC beat to GM
+//     */
+//    void procSendMyBeats() {
+//        try {
+//            new Process(host.getSGHost(), host.getSGHost().getName() + "-lcBeats") {
+//                public void main(String[] args) {
+//                    while (!thisLCToBeStopped) {
+//                        try {
+////                            gmDead();
+//                            BeatLCMsg m = new BeatLCMsg(Msg.getClock(), AUX.gmInbox(gmHostname), host.getName(), null);
+//                            m.send();
+//                            Logger.info("[LC.beat] " + thisLCToBeStopped + " - " + m);
+//                            sleep(AUX.HeartbeatInterval*1000);
+//                        } catch (HostFailureException e) {
+//                            thisLCToBeStopped = true;
+//                        } catch (Exception e) { e.printStackTrace(); }
+//                    }
+//                }
+//            }.start();
+//        } catch (Exception e) { e.printStackTrace(); }
+//    }
 
 
     /**
      * Send LC beats to GM
      */
-    void procLCChargeToGM() {
+    void procSendLCChargeToGM() {
         try {
             final XHost h = host;
             new Process(host.getSGHost(), host.getSGHost().getName() + "-lcCharge") {
                 public void main(String[] args) {
                     while (!thisLCToBeStopped) {
                         try {
-                            LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand());
+                            LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand(), Msg.getClock());
                             LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
                             m.send();
 //                            Logger.info("[LC.startLCChargeToGM] Charge sent: " + m);

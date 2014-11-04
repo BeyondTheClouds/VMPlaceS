@@ -88,9 +88,9 @@ public class GroupManager extends Process {
         String cs = m.getClass().getSimpleName();
 
         switch (cs) {
-            case "BeatLCMsg":
-                handleBeatLC(m);
-                break;
+//            case "BeatLCMsg":
+//                handleBeatLC(m);
+//                break;
             case "GMElecMsg":
                 handleGMElec(m);
                 break;
@@ -111,17 +111,6 @@ public class GroupManager extends Process {
         }
     }
 
-    /**
-     * Listen asynchronously for heartbeats from all known LCs
-     */
-    void handleBeatLC(SnoozeMsg m) {
-        Logger.info("[GM(BeatLC)] " + m);
-        String lc = m.getOrigin();
-        if (lcInfo.containsKey(lc)) {
-            lcInfo.put(lc, new LCInfo(lcInfo.get(lc).charge, (double) m.getMessage()));
-            Logger.info("[GM(BeatLC)] " + lc + ", " + lcInfo.get(lc).charge + ", " + lcInfo.get(lc).timestamp);
-        } else Logger.err("[GM(BeatLC) Unknown LC] " + m);
-    }
 
     void handleGMElec(SnoozeMsg m) throws HostFailureException {
         // This GM will be new leader
@@ -159,15 +148,27 @@ public class GroupManager extends Process {
         }
     }
 
+    //    /**
+//     * Listen asynchronously for heartbeats from all known LCs
+//     */
+//    void handleBeatLC(SnoozeMsg m) {
+//        Logger.info("[GM(BeatLC)] " + m);
+//        String lc = m.getOrigin();
+//        if (lcInfo.containsKey(lc)) {
+//            lcInfo.put(lc, new LCInfo(lcInfo.get(lc).charge, (double) m.getMessage()));
+//            Logger.info("[GM(BeatLC)] " + lc + ", " + lcInfo.get(lc).charge + ", " + lcInfo.get(lc).timestamp);
+//        } else Logger.err("[GM(BeatLC) Unknown LC] " + m);
+//    }
+
     void handleLCCharge(SnoozeMsg m) {
         try {
             String lcHostname = (String) m.getOrigin();
             if (lcHostname.equals("") || !lcInfo.containsKey(lcHostname)) return;
             LCChargeMsg.LCCharge cs = (LCChargeMsg.LCCharge) m.getMessage();
-            LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), Msg.getClock());
-            double oldBeat = lcInfo.get(lcHostname).timestamp;
-            lcInfo.put(lcHostname, new LCInfo(newCharge, oldBeat));
-//            Logger.info("[GM(LCCharge)] Charge updated: " + lcHostname + ", " + m);
+            LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), cs.getTimestamp());
+//            double oldBeat = lcInfo.get(lcHostname).timestamp;
+            lcInfo.put(lcHostname, new LCInfo(newCharge, cs.getTimestamp()));
+            Logger.info("[GM(LCCharge)] Charge et beat updated: " + lcHostname + ", " + m);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -180,7 +181,7 @@ public class GroupManager extends Process {
         public void run() {
             NewLCMsg m;
             try {
-                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.HeartbeatTimeout);
+                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.PoolingTimeout);
 //                            Logger.info("[GM.procRelayGLBeats] " + m);
                 Logger.info("[GM.RunNewLC] " + m);
                 String lc = (String) m.getMessage();
