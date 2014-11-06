@@ -502,9 +502,9 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
         logInfo(s"$applicationRef: reconfiguration plan $solution has been applied, dissolving partition $partition")
 
         dissolvePartition(partition.id, "Reconfiguration plan has been applied")
-//        partition.nodes.foreach(node => {
-//          send(node, DissolvePartition("Reconfiguration plan has been applied"))
-//        })
+        partition.nodes.filterNot(ref => ref.getId == applicationRef.getId).foreach(n => {
+          send(n, DissolvePartition(partition.id, "Reconfiguration plan has been applied"))
+        })
 
       case None =>
         logInfo("cannot apply reconfigurationSolution: current partition is undefined")
