@@ -133,8 +133,8 @@ def export_csv_data(algo, node_count, violations_in, violations_out):
 
     execute_cmd(["mkdir", "-p", folder_name])
 
-    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_in,  "labels": ["in_time", "in_violation_time"]},   "%s/violations_in.csv" % (folder_name))
-    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_out, "labels": ["out_time", "out_violation_time"]}, "%s/violations_out.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_in,  "labels": ["in_time", "in_violation_time", "node"]},   "%s/violations_in.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_out, "labels": ["out_time", "out_violation_time", "node"]}, "%s/violations_out.csv" % (folder_name))
 
 map_algos_size = {}
 
@@ -171,10 +171,10 @@ for dirname, dirnames, filenames in os.walk('./events'):
                         # print(data)
 
                         if data["event"] == "trace_event" and data["value"] == "violation-det":
-                            violations_in += [(data["time"], data["duration"])]
+                            violations_in += [(data["time"], data["duration"], data["origin"])]
 
                         if data["event"] == "trace_event" and data["value"] == "violation-out":
-                            violations_out += [(data["time"], data["duration"])]
+                            violations_out += [(data["time"], data["duration"], data["origin"])]
 
                     except:
                         pass
