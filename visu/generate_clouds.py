@@ -34,6 +34,7 @@ import time
 import os
 import json
 import jinja2
+import traceback
 
 ################################################################################
 # Functions of the script
@@ -127,16 +128,23 @@ print nodes_vms_tuples
 # Fill data maps with computed metrics
 ################################################################################
 
-def export_csv_data(algo, node_count, violations_in, violations_out):
+def export_csv_data(algo, node_count, violations_in, violations_out, violations_sched):
 
     folder_name = "clouds/data/%s-%d" % (algo, node_count)
 
     execute_cmd(["mkdir", "-p", folder_name])
 
-    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_in,  "labels": ["in_time", "in_violation_time", "node"]},   "%s/violations_in.csv" % (folder_name))
-    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_out, "labels": ["out_time", "out_violation_time", "node"]}, "%s/violations_out.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_in,    "labels": ["in_time", "in_violation_time", "node"]},       "%s/violations_in.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_out,   "labels": ["out_time", "out_violation_time", "node"]},     "%s/violations_out.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_sched, "labels": ["sched_time", "sched_violation_time", "node"]}, "%s/violations_sched.csv" % (folder_name))
 
 map_algos_size = {}
+
+
+# variable that is used to detect "violation-out", "violation-normal" and "violation-sched":
+# it will store the last line about "violations-out" or "violation-det", to detect if the next
+# "violation" has been already processed!
+last_line = None
 
 for dirname, dirnames, filenames in os.walk('./events'):
     # print path to all subdirectories first.
@@ -161,6 +169,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
 
                 violations_in = []
                 violations_out = []
+                violations_sched = []
 
                 for line in f.readlines():
                     try:
@@ -170,16 +179,25 @@ for dirname, dirnames, filenames in os.walk('./events'):
                             continue
                         # print(data)
 
+
                         if data["event"] == "trace_event" and data["value"] == "violation-det":
                             violations_in += [(data["time"], data["duration"], data["origin"])]
+                            last_line = data
 
                         if data["event"] == "trace_event" and data["value"] == "violation-out":
                             violations_out += [(data["time"], data["duration"], data["origin"])]
+                            last_line = data
 
-                    except:
+                        """As COUNT(violation) >> COUNT(violations_out) + COUNT(violation-det), the next block
+                        is in charge of detecting violation that have been resolved without action of the scheduler"""
+                        if data["event"] == "trace_event" and data["value"] == "violation" and last_line is not None:
+                            delta_time = (float(last_line["time"]) + float(last_line["duration"])) - (float(data["duration"]) + float(data["duration"]))
+                            if not (last_line["origin"] == data["origin"] and delta_time < 0.1):
+                                violations_sched += [(data["time"], data["duration"], data["origin"])]
+                    except Exception as e:
                         pass
 
-                export_csv_data(algo, compute_node_count, violations_in, violations_out)
+                export_csv_data(algo, compute_node_count, violations_in, violations_out, violations_sched)
 
 
 

@@ -8,6 +8,10 @@ algo1_matrix_data_out <- read.table("clouds/data/{{algo1}}-{{node_count}}/violat
 colnames(algo1_matrix_data_out) <- c("algo1_out_time", "algo1_out_violation_time") 
 attach(algo1_matrix_data_out)
 
+algo1_matrix_data_sched <- read.table("clouds/data/{{algo1}}-{{node_count}}/violations_sched.csv", header=T,sep=",")
+colnames(algo1_matrix_data_sched) <- c("algo1_sched_time", "algo1_sched_violation_time") 
+attach(algo1_matrix_data_sched)
+
 algo2_matrix_data_in <- read.table("clouds/data/{{algo2}}-{{node_count}}/violations_in.csv", header=T,sep=",")
 colnames(algo2_matrix_data_in) <- c("algo2_in_time", "algo2_in_violation_time") 
 attach(algo2_matrix_data_in)
@@ -16,23 +20,39 @@ algo2_matrix_data_out <- read.table("clouds/data/{{algo2}}-{{node_count}}/violat
 colnames(algo2_matrix_data_out) <- c("algo2_out_time", "algo2_out_violation_time") 
 attach(algo2_matrix_data_out)
 
+algo2_matrix_data_sched <- read.table("clouds/data/{{algo2}}-{{node_count}}/violations_sched.csv", header=T,sep=",")
+colnames(algo2_matrix_data_sched) <- c("algo2_sched_time", "algo2_sched_violation_time") 
+attach(algo2_matrix_data_sched)
+
 dev.new(width=8, height=6)
 
-g_range <- range(algo1_in_violation_time, algo1_out_violation_time, algo2_in_violation_time, algo2_out_violation_time)
+g_range <- range(algo1_in_violation_time, algo1_out_violation_time, algo1_sched_violation_time, algo2_in_violation_time, algo2_out_violation_time, algo2_sched_violation_time)
 col=c(rgb(100,0,0,80,maxColorValue=255),rgb(0,100,0,40,maxColorValue=255))
-plot(    algo1_in_time,   algo1_in_violation_time,     pch=15,   col=rgb(255,152,51,220,maxColorValue=255), ylim=g_range*1.2, 
+plot(    algo1_in_time,     algo1_in_violation_time,     pch=0 ,  col=rgb(178,200,217,255,maxColorValue=255), ylim=g_range*1.2, 
     ,xlab="Time (s)", ylab="Duration of the violation (s)")
 #title(main="Duration of each violation")
-points(  algo1_out_time,  algo1_out_violation_time,    pch=0,  col="red")
-points(  algo2_in_time,   algo2_in_violation_time,     pch=17,   col=rgb(51,152,255,180,maxColorValue=255))
-points(  algo2_out_time,  algo2_out_violation_time,    pch=2,  col="blue")
+points(  algo1_out_time,    algo1_out_violation_time,    pch=5 ,  col=rgb(119,157,191,255,maxColorValue=255))
+points(  algo1_sched_time,  algo1_sched_violation_time,  pch=3 ,  col=rgb(62 ,117,167,255,maxColorValue=255))
+
+points(  algo2_in_time,     algo2_in_violation_time,     pch=1 ,  col=rgb(169,204,143,255,maxColorValue=255))
+points(  algo2_out_time,    algo2_out_violation_time,    pch=2 ,  col=rgb(130,177,106,255,maxColorValue=255))
+points(  algo2_sched_time,  algo2_sched_violation_time,  pch=4 ,  col=rgb(92 ,151,70 ,255,maxColorValue=255))
 
 legend("topleft", c(
         "{{algo1 | capitalize}}",
         "{{algo1 | capitalize}} false positive",
+        "{{algo1 | capitalize}} without scheduling",
         "{{algo2 | capitalize}}",
-        "{{algo2 | capitalize}} false positive"
+        "{{algo2 | capitalize}} false positive",
+        "{{algo2 | capitalize}} without scheduling"
     ), ncol=2,
-   col=c(rgb(255,152,51,220,maxColorValue=255),"red",rgb(51,152,255,180,maxColorValue=255), "blue"), pch=c(15,0,17,2));
+   col=c(
+   		rgb(178,200,217,220,maxColorValue=255),
+   		rgb(119,157,191,220,maxColorValue=255),
+		rgb(62 ,117,167,220,maxColorValue=255),
+		rgb(169,204,143,180,maxColorValue=255),
+		rgb(130,177,106,180,maxColorValue=255),
+		rgb(92 ,151,70 ,180,maxColorValue=255)
+	), pch=c(0 , 5, 3, 1, 2, 4));
 
 
