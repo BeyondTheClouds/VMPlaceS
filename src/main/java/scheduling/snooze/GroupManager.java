@@ -1,5 +1,6 @@
 package scheduling.snooze;
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
@@ -255,7 +256,8 @@ public class GroupManager extends Process {
                     procSendMyBeats();
                     procSendMyCharge();
                     procScheduling();
-                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(), 1);
+                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(),
+                                  SimulatorProperties.getNbOfHostingNodes()/(Math.max((SimulatorProperties.getNbOfServiceNodes()-1)*10, 1)));
                     Logger.info("[GM.glBeats] GM Join finished: " + m);
                     joining = false;
                     Test.gms.add(this);
@@ -413,10 +415,17 @@ public class GroupManager extends Process {
                     Logger.info("[GM.procScheduling] periodicScheduling: " + periodicScheduling);
 
                     while (!thisGMToBeStopped) {
-                        long wait = 0;
+                        long wait = period;
                         long previousDuration = 0;
                         boolean anyViolation = false;
                         try {
+                            if (periodicScheduling) {
+                                if (wait > 0) Process.sleep(wait);
+                            } else
+                                Process.sleep(70); // This sleep simulates the communications between the GM and the LC to update the monitoring information (i.e. a pull model)
+                            // A push model would have been better but let's keep it simple and stupid ;)
+                            // 70 ms correspond to a round trip between GM and LCs.
+                            // TODO 70 ms is an arbitrary value, it would be better to get the RTT of the current topology based on the platform file.
                             for (XHost h : getManagedXHosts()) if (!h.isViable()) anyViolation = true;
                             if ((periodicScheduling || (!periodicScheduling && anyViolation))
                                     && !scheduling && !glHostname.isEmpty() && !thisGMToBeStopped && !glDead) {
@@ -425,13 +434,6 @@ public class GroupManager extends Process {
                                 wait = period - previousDuration;
                                 scheduling = false;
                             }
-                            if (periodicScheduling) {
-                                if (wait > 0) Process.sleep(wait);
-                            } else
-                                 Process.sleep(70); // This sleep simulates the communications between the GM and the LC to update the monitoring information (i.e. a pull model)
-                                                    // A push model would have been better but let's keep it simple and stupid ;)
-                                                    // 70 ms correspond to a round trip between GM and LCs.
-                                                    // TODO 70 ms is an arbitrary value, it would be better to get the RTT of the current topology based on the platform file.
                         } catch (HostFailureException e) {
                             thisGMToBeStopped = true;
                             break;

@@ -1,5 +1,6 @@
 package scheduling.snooze;
 
+import configuration.SimulatorProperties;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
@@ -18,6 +19,7 @@ public class GroupLeader extends Process {
     private String inbox;
     private boolean thisGLToBeTerminated = false;
     private ThreadPool lcAssPool;
+    private ThreadPool newGMPool;
 
     static enum AssignmentAlg { BESTFIT, ROUNDROBIN };
     private int roundRobin = 0;
@@ -30,14 +32,15 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) {
-        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), 10);
+        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1));
+        newGMPool = new ThreadPool(this, RunNewGM.class.getName(), Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1));
 
         int n = 1;
 
         Test.gl = this;
 //        Logger.debug("[GL.main] GL started: " + host.getName());
         procSendMyBeats();
-        procNewGM();
+//        procNewGM();
         procGMInfo();
         while (!SimulatorManager.isEndOfInjection()) {
             try {
@@ -203,42 +206,42 @@ public class GroupLeader extends Process {
         }
     }
 
-    void procNewGM() {
-        try {
-            new Process(host, host.getName() + "-newGM") {
-                public void main(String[] args) throws HostFailureException {
-                    while (!thisGLToBeTerminated) {
-                        try {
-                            NewGMMsg m = (NewGMMsg)
-                                    Task.receive(inbox + "-newGM", AUX.HeartbeatTimeout);
-//                            if (!m.getClass().getSimpleName().equals("NewGMMsg")) {
-//                                Logger.err("[GL.procNewGM] Unknown message: " + m);
-//                                continue;
-//                            }
-//                            Logger.info("[GL.procNewGM] " + m);
-                            String gmHostname = ((GroupManager) m.getMessage()).host.getName();
-                            if (gmInfo.containsKey(gmHostname))
-                                Logger.err("[GL.procNewGM] GM " + gmHostname + " exists already");
-                            // Add GM
-                            GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, Msg.getClock()));
-                            gmInfo.put(gmHostname, gi);
-                            // Acknowledge integration
-                            Logger.info("[GL.procNewGM] GM added: " + gmHostname + ", " + m);
-                        } catch (HostFailureException e) {
-                            thisGLToBeTerminated = true;
-                            break;
-                        } catch (Exception e) {
-                            Logger.exc("[GL.procNewGM] Exception, " + host.getName() + ": " + e.getClass().getName());
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }.start();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    void procNewGM() {
+//        try {
+//            new Process(host, host.getName() + "-newGM") {
+//                public void main(String[] args) throws HostFailureException {
+//                    while (!thisGLToBeTerminated) {
+//                        try {
+//                            NewGMMsg m = (NewGMMsg)
+//                                    Task.receive(inbox + "-newGM", AUX.HeartbeatTimeout);
+////                            if (!m.getClass().getSimpleName().equals("NewGMMsg")) {
+////                                Logger.err("[GL.procNewGM] Unknown message: " + m);
+////                                continue;
+////                            }
+////                            Logger.info("[GL.procNewGM] " + m);
+//                            String gmHostname = ((GroupManager) m.getMessage()).host.getName();
+//                            if (gmInfo.containsKey(gmHostname))
+//                                Logger.err("[GL.procNewGM] GM " + gmHostname + " exists already");
+//                            // Add GM
+//                            GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, Msg.getClock()));
+//                            gmInfo.put(gmHostname, gi);
+//                            // Acknowledge integration
+//                            Logger.info("[GL.procNewGM] GM added: " + gmHostname + ", " + m);
+//                        } catch (HostFailureException e) {
+//                            thisGLToBeTerminated = true;
+//                            break;
+//                        } catch (Exception e) {
+//                            Logger.exc("[GL.procNewGM] Exception, " + host.getName() + ": " + e.getClass().getName());
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }.start();
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * Sends beats to multicast group
@@ -263,6 +266,35 @@ public class GroupLeader extends Process {
                 }
             }.start();
         } catch (Exception e) { e.printStackTrace(); }
+    }
+
+    public class RunNewGM implements Runnable {
+        public RunNewGM() {};
+
+        public void run() {
+            try {
+                NewGMMsg m = (NewGMMsg)
+                        Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
+//                            if (!m.getClass().getSimpleName().equals("NewGMMsg")) {
+//                                Logger.err("[GL.procNewGM] Unknown message: " + m);
+//                                continue;
+//                            }
+//                            Logger.info("[GL.procNewGM] " + m);
+                String gmHostname = ((GroupManager) m.getMessage()).host.getName();
+                if (gmInfo.containsKey(gmHostname))
+                    Logger.err("[GL.RunNewGM] GM " + gmHostname + " exists already");
+                // Add GM
+                GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, Msg.getClock()));
+                gmInfo.put(gmHostname, gi);
+                // Acknowledge integration
+                Logger.info("[GL.RunNewGM] GM added: " + gmHostname + ", " + m);
+            } catch (HostFailureException e) {
+                thisGLToBeTerminated = true;
+            } catch (Exception e) {
+                Logger.exc("[GL.RunNewGM] Exception, " + host.getName() + ": " + e.getClass().getName());
+                e.printStackTrace();
+            }
+        }
     }
 
     public class RunLCAss implements Runnable {
