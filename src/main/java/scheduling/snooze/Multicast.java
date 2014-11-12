@@ -1,5 +1,6 @@
 package scheduling.snooze;
 
+import configuration.SimulatorProperties;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
@@ -38,7 +39,7 @@ public class Multicast extends Process {
 
         Test.multicast = this;
 
-        newLCPool = new ThreadPool(this, RunNewLC.class.getName(), 10);
+        newLCPool = new ThreadPool(this, RunNewLC.class.getName(), Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1));
 
         procRelayGLBeats();
         procRelayGMBeats();

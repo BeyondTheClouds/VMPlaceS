@@ -43,7 +43,8 @@ public class Test extends Process {
 //        procFailGMs();
         while (!testsToBeTerminated && !SimulatorManager.isEndOfInjection()) {
             dispInfo();
-            sleep(1000*SnoozeProperties.getInfoPeriodicity());
+//            sleep(1000*SnoozeProperties.getInfoPeriodicity());
+            sleep(1000);
         }
     }
 
