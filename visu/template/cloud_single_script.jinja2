@@ -1,0 +1,42 @@
+#!/usr/bin/Rscript
+
+algo1_matrix_data_smp_det_time <- read.table("clouds/data/{{algo}}-{{node_count}}/violations_smp_det.csv", header=T,sep=",")
+colnames(algo1_matrix_data_smp_det_time) <- c("algo1_smp_det_time", "algo1_smp_det_duration") 
+attach(algo1_matrix_data_smp_det_time)
+
+algo1_matrix_data_smp_hid_time <- read.table("clouds/data/{{algo}}-{{node_count}}/violations_smp_hid.csv", header=T,sep=",")
+colnames(algo1_matrix_data_smp_hid_time) <- c("algo1_smp_hid_time", "algo1_smp_hid_duration") 
+attach(algo1_matrix_data_smp_hid_time)
+
+algo1_matrix_data_out_det_time <- read.table("clouds/data/{{algo}}-{{node_count}}/violations_out_det.csv", header=T,sep=",")
+colnames(algo1_matrix_data_out_det_time) <- c("algo1_out_det_time", "algo1_out_det_duration") 
+attach(algo1_matrix_data_out_det_time)
+
+algo1_matrix_data_out_hid_time <- read.table("clouds/data/{{algo}}-{{node_count}}/violations_out_hid.csv", header=T,sep=",")
+colnames(algo1_matrix_data_out_hid_time) <- c("algo1_out_hid_time", "algo1_out_hid_duration") 
+attach(algo1_matrix_data_out_hid_time)
+
+dev.new(width=8, height=6)
+
+g_range <- range(algo1_smp_det_duration, algo1_smp_hid_duration, algo1_out_det_duration, algo1_out_hid_duration)
+plot(    algo1_smp_det_time, algo1_smp_det_duration,  pch=15,  col=rgb(32 , 32 , 32 , 255,maxColorValue=255), ylim=g_range*1.2, 
+    ,xlab="Time (s)", ylab="Duration of the violation (s)")
+#title(main="Duration of each violation")
+points(  algo1_smp_hid_time, algo1_smp_hid_duration,  pch=17,  col=rgb(64 , 64 , 64 , 255,maxColorValue=255))
+points(  algo1_out_det_time, algo1_out_det_duration,  pch=1 ,  col=rgb(96 , 96 , 96 , 255,maxColorValue=255))
+points(  algo1_out_hid_time, algo1_out_hid_duration,  pch=2 ,  col=rgb(128, 128, 128, 255,maxColorValue=255))
+
+legend("topleft", c(
+        "{{algo | capitalize}} violation detected",
+        "{{algo | capitalize}} violation hidden",        
+        "{{algo | capitalize}} violation out detected",
+        "{{algo | capitalize}} violation out hidden"
+    ), ncol=2,
+   col=c(
+   		rgb(32 , 32 , 32 , 255,maxColorValue=255),
+   		rgb(64 , 64 , 64 , 255,maxColorValue=255),
+		  rgb(96 , 96 , 96 , 255,maxColorValue=255),
+      rgb(128, 128, 128, 255,maxColorValue=255)
+	), pch=c(15 , 17, 1, 2))
+
+

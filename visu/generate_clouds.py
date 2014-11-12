@@ -128,15 +128,16 @@ print nodes_vms_tuples
 # Fill data maps with computed metrics
 ################################################################################
 
-def export_csv_data(algo, node_count, violations_in, violations_out, violations_sched):
+def export_csv_data(algo, node_count, violations_smp_detected, violations_smp_hidden, violations_out_detected, violations_out_hidden):
 
     folder_name = "clouds/data/%s-%d" % (algo, node_count)
 
     execute_cmd(["mkdir", "-p", folder_name])
 
-    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_in,    "labels": ["in_time", "in_violation_time", "node"]},       "%s/violations_in.csv" % (folder_name))
-    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_out,   "labels": ["out_time", "out_violation_time", "node"]},     "%s/violations_out.csv" % (folder_name))
-    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_sched, "labels": ["sched_time", "sched_violation_time", "node"]}, "%s/violations_sched.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_smp_detected, "labels": ["smp_det_time", "smp_det_duration", "node", "type"]}, "%s/violations_smp_det.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_smp_hidden,   "labels": ["smp_hid_time", "smp_hid_duration", "node", "type"]}, "%s/violations_smp_hid.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_out_detected, "labels": ["out_det_time", "out_det_duration", "node", "type"]}, "%s/violations_out_det.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_out_hidden,   "labels": ["out_hid_time", "out_hid_duration", "node", "type"]}, "%s/violations_out_hid.csv" % (folder_name))
 
 map_algos_size = {}
 
@@ -167,9 +168,9 @@ for dirname, dirnames, filenames in os.walk('./events'):
 
                 map_algos_size[compute_node_count] += [algo]
 
-                violations_in = []
-                violations_out = []
-                violations_sched = []
+                _violations_det_per_node = {}
+                _violations_out_per_node = {}
+                _violations_smp_per_node = {}
 
                 for line in f.readlines():
                     try:
@@ -177,27 +178,74 @@ for dirname, dirnames, filenames in os.walk('./events'):
 
                         if float(data["time"]) > 3601:
                             continue
-                        # print(data)
-
 
                         if data["event"] == "trace_event" and data["value"] == "violation-det":
-                            violations_in += [(data["time"], data["duration"], data["origin"])]
-                            last_line = data
+                            current_violation_det = (float(data["time"]), float(data["duration"]), data["origin"], "det")
+                            if not _violations_det_per_node.has_key(data["origin"]):
+                                _violations_det_per_node[data["origin"]] = []
+                            _violations_det_per_node[data["origin"]] += [current_violation_det]
 
                         if data["event"] == "trace_event" and data["value"] == "violation-out":
-                            violations_out += [(data["time"], data["duration"], data["origin"])]
-                            last_line = data
+                            current_violation_out = (float(data["time"]), float(data["duration"]), data["origin"], "out")
+                            if not _violations_out_per_node.has_key(data["origin"]):
+                                _violations_out_per_node[data["origin"]] = []
+                            _violations_out_per_node[data["origin"]] += [current_violation_out]
 
-                        """As COUNT(violation) >> COUNT(violations_out) + COUNT(violation-det), the next block
-                        is in charge of detecting violation that have been resolved without action of the scheduler"""
-                        if data["event"] == "trace_event" and data["value"] == "violation" and last_line is not None:
-                            delta_time = (float(last_line["time"]) + float(last_line["duration"])) - (float(data["duration"]) + float(data["duration"]))
-                            if not (last_line["origin"] == data["origin"] and delta_time < 0.1):
-                                violations_sched += [(data["time"], data["duration"], data["origin"])]
+                        if data["event"] == "trace_event" and data["value"] == "violation":
+                            current_violation_smp = (float(data["time"]), float(data["duration"]), data["origin"], "smp")
+                            if not _violations_smp_per_node.has_key(data["origin"]):
+                                _violations_smp_per_node[data["origin"]] = []
+                            _violations_smp_per_node[data["origin"]] += [current_violation_smp]
+
                     except Exception as e:
+                        # print traceback.format_exc()
+                        pass
+                
+                f.seek(0)
+
+                nodes = set(_violations_smp_per_node.keys() + _violations_out_per_node.keys())
+
+                violations_smp_detected = []
+                violations_smp_hidden   = []
+                violations_out_detected = []
+                violations_out_hidden   = []
+
+                for node in nodes:
+                    try:
+
+                        current_violation_det = _violations_det_per_node[node] if _violations_det_per_node.has_key(node) else []
+                        current_violation_out = _violations_out_per_node[node] if _violations_out_per_node.has_key(node) else []
+                        current_violation_smp = _violations_smp_per_node[node] if _violations_smp_per_node.has_key(node) else []
+
+                        product = itertools.product(current_violation_smp, current_violation_det)
+                        product_filtered = [element for element in product if abs(element[0][0] + element[0][1] - element[1][0] - element[1][1]) < 0.01]
+
+                        violations_smp_per_node_detected = set([element[0] for element in product_filtered])
+                        violations_smp_per_node_hidden   = set([element    for element in current_violation_smp if element not in violations_smp_per_node_detected])
+
+                        if len(violations_smp_per_node_detected) + len(violations_smp_per_node_hidden) != len(current_violation_smp):
+                            print("%s + %s = %s" % (violations_smp_per_node_detected, violations_smp_per_node_hidden, current_violation_smp))
+
+                        product = itertools.product(current_violation_out, current_violation_det)
+                        product_filtered = [element for element in product if abs(element[0][0] + element[0][1] - element[1][0] - element[1][1]) < 0.01]
+
+                        violations_out_per_node_detected = set([element[0] for element in product_filtered])
+                        violations_out_per_node_hidden   = set([element    for element in current_violation_out if element not in violations_out_per_node_detected])
+                        if len(violations_out_per_node_detected) + len(violations_out_per_node_hidden) != len(current_violation_out):
+                            print("%s + %s = %s" % (violations_out_per_node_detected, violations_out_per_node_hidden, current_violation_out))
+
+                        
+
+                        violations_smp_detected += violations_smp_per_node_detected
+                        violations_smp_hidden   += violations_smp_per_node_hidden
+                        violations_out_detected += violations_out_per_node_detected
+                        violations_out_hidden   += violations_out_per_node_hidden
+                        
+                    except:
                         pass
 
-                export_csv_data(algo, compute_node_count, violations_in, violations_out, violations_sched)
+                export_csv_data(algo, compute_node_count, violations_smp_detected, violations_smp_hidden, violations_out_detected, violations_out_hidden)
+
 
 
 
@@ -247,6 +295,46 @@ for key in map_algos_size:
 
         script_folder_name = "clouds/scripts/%d-%s-%s" % (node_count, element[0], element[1])
         out_file_path = "clouds/results/%d-%s-%s.pdf" % (node_count, element[0], element[1])
+
+        execute_cmd(["/usr/bin/Rscript", "%s/compare.r" % (script_folder_name)])
+
+        execute_cmd(["mv", "Rplots.pdf", out_file_path])
+
+################################################################################
+# Prepare R scripts for one simulation
+################################################################################
+
+def export_clouds_single_data(algo, node_count):
+    print("%s with %s" % (algo, node_count))
+
+    folder_name = "clouds/scripts/%d-%s" % (node_count, algo)
+
+    execute_cmd(["mkdir", "-p", folder_name])
+
+    render_template("template/cloud_single_script.jinja2", {"algo": algo, "node_count": node_count},   "%s/compare.r" % (folder_name))
+
+    pass
+
+for key in map_algos_size:
+    algos = map_algos_size[key]
+    node_count = key
+
+    for algo in algos:
+        export_clouds_single_data(algo, node_count)
+
+################################################################################
+# Generate clouds figures
+################################################################################
+
+
+for key in map_algos_size:
+    algos = map_algos_size[key]
+    node_count = key
+
+    for algo in algos:
+
+        script_folder_name = "clouds/scripts/%d-%s" % (node_count, algo)
+        out_file_path = "clouds/results/%d-%s.pdf" % (node_count, algo)
 
         execute_cmd(["/usr/bin/Rscript", "%s/compare.r" % (script_folder_name)])
 
