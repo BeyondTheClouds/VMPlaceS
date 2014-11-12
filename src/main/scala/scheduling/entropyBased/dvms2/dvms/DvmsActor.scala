@@ -453,7 +453,7 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
           def main(args: Array[String]) {
             val startingPartitionId: UUID = currentPartition.get.id
             var continue: Boolean = true
-            while (continue) {
+            while (continue && !SimulatorManager.isEndOfInjection) {
 
               updateTimeout(partition)
               waitFor(0.5)
