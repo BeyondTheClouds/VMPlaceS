@@ -19,12 +19,12 @@ attach(algo1_matrix_data_out_hid_time)
 dev.new(width=8, height=6)
 
 g_range <- range(algo1_smp_det_duration, algo1_smp_hid_duration, algo1_out_det_duration, algo1_out_hid_duration)
-plot(    algo1_smp_det_time, algo1_smp_det_duration,  pch=15,  col=rgb(32 , 32 , 32 , 255,maxColorValue=255), ylim=g_range*1.2, 
+plot(    algo1_smp_det_time, algo1_smp_det_duration,  pch=7 ,  col=rgb(255, 128, 0  , 200,maxColorValue=255), ylim=g_range*1.2, 
     ,xlab="Time (s)", ylab="Duration of the violation (s)")
 #title(main="Duration of each violation")
-points(  algo1_smp_hid_time, algo1_smp_hid_duration,  pch=17,  col=rgb(64 , 64 , 64 , 255,maxColorValue=255))
-points(  algo1_out_det_time, algo1_out_det_duration,  pch=1 ,  col=rgb(96 , 96 , 96 , 255,maxColorValue=255))
-points(  algo1_out_hid_time, algo1_out_hid_duration,  pch=2 ,  col=rgb(128, 128, 128, 255,maxColorValue=255))
+points(  algo1_smp_hid_time, algo1_smp_hid_duration,  pch=0 ,  col=rgb(255, 128, 0  , 200,maxColorValue=255))
+points(  algo1_out_det_time, algo1_out_det_duration,  pch=13,  col=rgb(0  , 102, 204, 200,maxColorValue=255))
+points(  algo1_out_hid_time, algo1_out_hid_duration,  pch=1 ,  col=rgb(0  , 102, 204, 200,maxColorValue=255))
 
 legend("topleft", c(
         "{{algo | capitalize}} violation detected",
@@ -33,10 +33,10 @@ legend("topleft", c(
         "{{algo | capitalize}} violation out hidden"
     ), ncol=2,
    col=c(
-   		rgb(32 , 32 , 32 , 255,maxColorValue=255),
-   		rgb(64 , 64 , 64 , 255,maxColorValue=255),
-		  rgb(96 , 96 , 96 , 255,maxColorValue=255),
-      rgb(128, 128, 128, 255,maxColorValue=255)
-	), pch=c(15 , 17, 1, 2))
+   		rgb(255, 128, 0  , 200,maxColorValue=255),
+   		rgb(255, 128, 0  , 200,maxColorValue=255),
+		  rgb(0  , 102, 204, 200,maxColorValue=255),
+      rgb(0  , 102, 204, 200,maxColorValue=255)
+	), pch=c(7, 0, 13, 1))
 
 
