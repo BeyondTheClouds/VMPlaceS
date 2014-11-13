@@ -45,10 +45,10 @@ public class LocalController extends Process {
             Test.lcs.remove(this);
             Logger.debug("Start LC " + args[0] + ", " + args[1]);
             init(SimulatorManager.getXHostByName(args[0]), args[1]);
+            Test.lcs.put(this.host.getName(), this);
             join();
-            Test.lcs.add(this);
 //            procSendMyBeats();
-            procGMBeats();
+//            procGMBeats();
             procSendLCChargeToGM();
             while (!thisLCToBeStopped && !SimulatorManager.isEndOfInjection()) {
                 try {
@@ -280,40 +280,52 @@ public class LocalController extends Process {
         }
     }
 
-    /**
-     * Send LC beat to GM
-     */
-    void procGMBeats() {
-        try {
-            new Process(host.getSGHost(), host.getSGHost().getName() + "-gmBeats") {
-                public void main(String[] args) {
-                    SnoozeMsg m;
-                    String gm;
-                    while (!thisLCToBeStopped) {
-                        try {
-                            m = (SnoozeMsg) Task.receive(inbox + "-gmBeats", AUX.HeartbeatTimeout); // Please note that we do not have to wait AUX.HeartbeatTimeout since it is already done in Task.receive
-                            gm = (String) m.getOrigin();
-                            if (gmHostname.isEmpty()) {
-                                Logger.err("[LC.procGMBeats] No GM");
-                                continue;
-                            }
-                            if (!gmHostname.equals(gm))   {
-                                Logger.err("[LC.procGMBeats] Multiple GMs: " + gmHostname + ", " + gm);
-                                continue;  // Could be used for change of GM
-                            }
-                            gmTimestamp = Msg.getClock();
-                            Logger.info("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
+//    /**
+//     * Send LC beat to GM
+//     */
+//    void procGMBeats() {
+//        try {
+//            new Process(host.getSGHost(), host.getSGHost().getName() + "-gmBeats") {
+//                public void main(String[] args) {
+//                    SnoozeMsg m;
+//                    String gm;
+//                    while (!thisLCToBeStopped) {
+//                        try {
+//                            m = (SnoozeMsg) Task.receive(inbox + "-gmBeats", AUX.HeartbeatTimeout); // Please note that we do not have to wait AUX.HeartbeatTimeout since it is already done in Task.receive
+//                            gm = (String) m.getOrigin();
+//                            if (gmHostname.isEmpty()) {
+//                                Logger.err("[LC.procGMBeats] No GM");
+//                                continue;
+//                            }
+//                            if (!gmHostname.equals(gm))   {
+//                                Logger.err("[LC.procGMBeats] Multiple GMs: " + gmHostname + ", " + gm);
+//                                continue;  // Could be used for change of GM
+//                            }
+//                            gmTimestamp = Msg.getClock();
+//                            Logger.info("[LC.procGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
+//
+//                        } catch (HostFailureException e) {
+//                            thisLCToBeStopped = true;
+//                            break;
+//                        } catch (Exception e) { e.printStackTrace(); }
+//                    }
+//                }
+//            }.start();
+//        } catch (Exception e) { e.printStackTrace(); }
+//    }
 
-                        } catch (HostFailureException e) {
-                            thisLCToBeStopped = true;
-                            break;
-                        } catch (Exception e) { e.printStackTrace(); }
-                    }
-                }
-            }.start();
-        } catch (Exception e) { e.printStackTrace(); }
+    void handleGMBeats(SnoozeMsg m) {
+        String gm = (String) m.getOrigin();
+        if (gmHostname.isEmpty()) {
+            Logger.err("[LC.handleGMBeats] No GM");
+        }
+        if (!gmHostname.equals(gm)) {
+            Logger.err("[LC.handleGMBeats] Multiple GMs: " + gmHostname + ", " + gm);
+        } else {
+            gmTimestamp = Msg.getClock();
+            Logger.info("[LC.handleGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
+        }
     }
-
 
 //    /**
 //     * Send LC beat to GM

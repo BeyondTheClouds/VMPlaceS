@@ -44,7 +44,7 @@ public class GroupLeader extends Process {
 //        Logger.debug("[GL.main] GL started: " + host.getName());
         procSendMyBeats();
 //        procNewGM();
-        procGMInfo();
+//        procGMInfo();
         while (!SimulatorManager.isEndOfInjection()) {
             try {
                 if (!thisGLToBeTerminated) {
@@ -172,43 +172,50 @@ public class GroupLeader extends Process {
         return gm;
     }
 
-    void procGMInfo() {
-        try {
-            new Process(host, host.getName() + "-gmPeriodic") {
-                public void main(String[] args) throws HostFailureException {
-                    while (!thisGLToBeTerminated) {
-                        try {
-                            SnoozeMsg m = (SnoozeMsg)
-                                    Task.receive(inbox + "-gmPeriodic", AUX.HeartbeatTimeout);
-//                            Logger.info("[GL.procGMInfo] " + m);
+//    void procGMInfo() {
+//        try {
+//            new Process(host, host.getName() + "-gmPeriodic") {
+//                public void main(String[] args) throws HostFailureException {
+//                    while (!thisGLToBeTerminated) {
+//                        try {
+//                            SnoozeMsg m = (SnoozeMsg)
+//                                    Task.receive(inbox + "-gmPeriodic", AUX.HeartbeatTimeout);
+////                            Logger.info("[GL.procGMInfo] " + m);
+//
+//    if      (m instanceof RBeatGMMsg) gmBeats(m);
+//    else if (m instanceof GMSumMsg)   gmCharge(m);
+//    else {
+//        Logger.err("[GL.procGMInfo] Unknown message: " + m);
+//        continue;
+//    }
+//                            if(SnoozeProperties.shouldISleep())
+//                                sleep(AUX.DefaultComputeInterval);
+//                        }
+//                        catch (TimeoutException e) {
+//                            Logger.exc("[GL.procGMInfo] PROBLEM? Timeout Exception");
+//                        } catch (HostFailureException e) {
+//                            thisGLToBeTerminated = true;
+//                            break;
+//                        } catch (Exception e) {
+//                            Logger.exc("[GL.procGMInfo] Exception, " + host.getName() + ": " + e.getClass().getName());
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }.start();
+//        }
+//        catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
-                            if      (m instanceof RBeatGMMsg) gmBeats(m);
-                            else if (m instanceof GMSumMsg)   gmCharge(m);
-                            else {
-                                Logger.err("[GL.procGMInfo] Unknown message: " + m);
-                                continue;
-                            }
-                            if(SnoozeProperties.shouldISleep())
-                                sleep(AUX.DefaultComputeInterval);
-                        }
-                        catch (TimeoutException e) {
-                            Logger.exc("[GL.procGMInfo] PROBLEM? Timeout Exception");
-                        } catch (HostFailureException e) {
-                            thisGLToBeTerminated = true;
-                            break;
-                        } catch (Exception e) {
-                            Logger.exc("[GL.procGMInfo] Exception, " + host.getName() + ": " + e.getClass().getName());
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }.start();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
+    void handleGMInfo(SnoozeMsg m) {
+        if      (m instanceof RBeatGMMsg) gmBeats(m);
+        else if (m instanceof GMSumMsg)   gmCharge(m);
+        else {
+            Logger.err("[GL.handleGMInfo] Unknown message: " + m);
         }
     }
-
 //    void procNewGM() {
 //        try {
 //            new Process(host, host.getName() + "-newGM") {
@@ -259,9 +266,9 @@ public class GroupLeader extends Process {
                             BeatGLMsg m =
                                     new BeatGLMsg(Msg.getClock(), AUX.multicast+"-relayGLBeats", glHostname, null);
 //                                Send by network
-//                                m.send();
+                                m.send();
 //                            Call multicast
-                              Test.multicast.relayGLBeats(m);
+//                              Test.multicast.relayGLBeats(m);
                             Logger.info("[GL.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {

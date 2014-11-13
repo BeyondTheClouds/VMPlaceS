@@ -9,6 +9,7 @@ import scheduling.snooze.msg.TestFailGMMsg;
 import simulation.SimulatorManager;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
 
 /**
  * Created by sudholt on 20/07/2014.
@@ -21,8 +22,8 @@ public class Test extends Process {
 
     static Multicast multicast;
     static GroupLeader gl;
-    static ArrayList<GroupManager> gms = new ArrayList<>();
-    static ArrayList<LocalController> lcs = new ArrayList<>();
+    static Hashtable<String, GroupManager> gms = new Hashtable<>();
+    static Hashtable<String, LocalController> lcs = new Hashtable<>();
 
 
     static String gm = "";
@@ -139,12 +140,14 @@ public class Test extends Process {
             for (String lc : multicast.lcInfo.keySet()) if (multicast.lcInfo.get(lc).gmHost.equals(gm)) l++;
             String gmLeader = "";
             int gml = 0;
-            for (GroupManager gmo : gms)
-                if (gmo.host.getName().equals(gm)) {
+            for (String gmn : Test.gms.keySet()) {
+                GroupManager gmo = Test.gms.get(gmn);
+                if (gmn.equals(gm)) {
                     gmLeader = gmo.glHostname;
                     gml = gmo.lcInfo.size();
                     gmal += gml;
                 }
+            }
             Logger.tmp("    MUL.GM: " + gm + ", MUL.GM.#LCs: " + l + ", Test.GMLeader: " + gmLeader);
 //            Logger.tmp("                         GM.#LCs: " + gml + ", Test.GMLeader: " + gmLeader);
             i++;

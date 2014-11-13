@@ -51,8 +51,9 @@ public class GroupManager extends Process {
 
         Logger.info("[GM.main] GM started: " + host.getName());
         Test.gms.remove(this);
+        Test.gms.put(this.host.getName(), this);
 
-        procGLBeats();
+//        procGLBeats();
         newJoin();
         while (!SimulatorManager.isEndOfInjection()){
             try {
@@ -260,7 +261,6 @@ public class GroupManager extends Process {
                     newLCPool = new ThreadPool(this, RunNewLC.class.getName(), noLCWorkers);
                     Logger.info("[GM.glBeats] GM Join finished: " + m + ", LCPool: " + noLCWorkers);
                     joining = false;
-                    Test.gms.add(this);
                 }
             }
         }
@@ -296,41 +296,35 @@ public class GroupManager extends Process {
         }
     }
 
-    /**
-     * Sends beats to multicast group
-     */
-    void procGLBeats() {
-        try {
-            new Process(host, host.getName() + "-glBeats") {
-                public void main(String[] args) throws HostFailureException {
-                    while (!thisGMToBeStopped) {
-                        try {
-                            SnoozeMsg m = (SnoozeMsg)
-                                    Task.receive(inbox + "-glBeats", AUX.HeartbeatTimeout);
-                            glBeats(m);
-                            if(SnoozeProperties.shouldISleep())
-                                sleep(AUX.DefaultComputeInterval);
-                        } catch (TimeoutException e) {
-                            if (!joining) {
-                                glDead = true;
-                                glDead();
-                                Logger.exc("[GM.procGLBeats] Timeout: "
-                                        + glHostname + ": " + glTimestamp + ", " + Msg.getClock());
-                            }
-                        } catch (HostFailureException e) {
-                            thisGMToBeStopped = true;
-                            break;
-                        } catch (Exception e) {
-                            Logger.exc("[GM.procGLBeats] Exception, " + host.getName() + ": " + e.getClass().getName());
-//                            e.printStackTrace();
-                        }
-                    }
-                }
-            }.start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    /**
+//     * Sends beats to multicast group
+//     */
+//    void procGLBeats() {
+//        try {
+//            new Process(host, host.getName() + "-glBeats") {
+//                public void main(String[] args) throws HostFailureException {
+//                    while (!thisGMToBeStopped) {
+//                        try {
+////                            SnoozeMsg m = (SnoozeMsg)
+////                                    Task.receive(inbox + "-glBeats", AUX.HeartbeatTimeout);
+////                            glBeats(m);
+////                            glBeats(new SnoozeMsg());
+//                            if(SnoozeProperties.shouldISleep())
+//                                sleep(AUX.DefaultComputeInterval);
+//                        } catch (HostFailureException e) {
+//                            thisGMToBeStopped = true;
+//                            break;
+//                        } catch (Exception e) {
+//                            Logger.exc("[GM.procGLBeats] Exception, " + host.getName() + ": " + e.getClass().getName());
+////                            e.printStackTrace();
+//                        }
+//                    }
+//                }
+//            }.start();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     /**
      * Sends beats to multicast group
@@ -342,8 +336,8 @@ public class GroupManager extends Process {
                     while (!thisGMToBeStopped) {
                         try {
                             BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
-//                            m.send();
-                            Test.multicast.relayGMBeats(m);
+                            m.send();
+//                            Test.multicast.relayGMBeats(m);
                             Logger.info("[GM.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
