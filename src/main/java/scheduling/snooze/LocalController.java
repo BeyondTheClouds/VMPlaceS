@@ -7,7 +7,10 @@ package scheduling.snooze;
 import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.snooze.msg.*;
+import scheduling.snooze.msg.LCAssMsg;
+import scheduling.snooze.msg.LCChargeMsg;
+import scheduling.snooze.msg.NewLCMsg;
+import scheduling.snooze.msg.SnoozeMsg;
 import simulation.SimulatorManager;
 
 public class LocalController extends Process {
@@ -37,6 +40,8 @@ public class LocalController extends Process {
         int n=0;
 
         try {
+            // Let LCs wait for GM initialization
+            sleep(2000);
             Test.lcs.remove(this);
             Logger.debug("Start LC " + args[0] + ", " + args[1]);
             init(SimulatorManager.getXHostByName(args[0]), args[1]);

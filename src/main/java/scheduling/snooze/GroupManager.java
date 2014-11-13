@@ -256,9 +256,9 @@ public class GroupManager extends Process {
                     procSendMyBeats();
                     procSendMyCharge();
                     procScheduling();
-                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(),
-                                  SimulatorProperties.getNbOfHostingNodes()/(Math.max((SimulatorProperties.getNbOfServiceNodes()-1)*10, 1)));
-                    Logger.info("[GM.glBeats] GM Join finished: " + m);
+                    int noLCWorkers = SimulatorProperties.getNbOfHostingNodes()/(Math.max((SimulatorProperties.getNbOfServiceNodes()-1)*10, 1));
+                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(), noLCWorkers);
+                    Logger.info("[GM.glBeats] GM Join finished: " + m + ", LCPool: " + noLCWorkers);
                     joining = false;
                     Test.gms.add(this);
                 }
@@ -280,7 +280,7 @@ public class GroupManager extends Process {
         joining = true;
         try {
             // Register at Multicast
-            m = new NewGMMsg(this, AUX.multicast, null, null);
+            m = new NewGMMsg(this, AUX.multicast + "-newGM", null, null);
             m.send();
 
             // Trigger leader election
@@ -342,7 +342,8 @@ public class GroupManager extends Process {
                     while (!thisGMToBeStopped) {
                         try {
                             BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
-                            m.send();
+//                            m.send();
+                            Test.multicast.relayGMBeats(m);
                             Logger.info("[GM.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {

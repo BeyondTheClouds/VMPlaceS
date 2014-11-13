@@ -32,8 +32,11 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) {
-        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1));
-        newGMPool = new ThreadPool(this, RunNewGM.class.getName(), Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1));
+        int noLCWorker = Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1);
+        int noGMWorker = Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1);
+        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), noLCWorker);
+        newGMPool = new ThreadPool(this, RunNewGM.class.getName(), noGMWorker);
+        Logger.debug("noLCWorker: " + noLCWorker + ", noGMWorker: " + noGMWorker);
 
         int n = 1;
 
@@ -255,7 +258,10 @@ public class GroupLeader extends Process {
                         try {
                             BeatGLMsg m =
                                     new BeatGLMsg(Msg.getClock(), AUX.multicast+"-relayGLBeats", glHostname, null);
-                            m.send();
+//                                Send by network
+//                                m.send();
+//                            Call multicast
+                              Test.multicast.relayGLBeats(m);
                             Logger.info("[GL.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
