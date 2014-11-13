@@ -20,6 +20,7 @@ public class Multicast extends Process {
     private double glTimestamp;
     private boolean glDead = false;
     private double lastPromotionOrElection;
+    private boolean electingOrPromoting = false;
     private ThreadPool newLCPool;
     private ThreadPool newGMPool;
     Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>();  //@ Make private
@@ -310,10 +311,7 @@ public class Multicast extends Process {
     }
 
     public class RunNewGM implements Runnable {
-        public RunNewGM() {
-        }
-
-        ;
+        public RunNewGM() {};
 
         @Override
         public void run() {
@@ -332,7 +330,11 @@ public class Multicast extends Process {
                     Logger.info("[MUL(RunNewGM)] No promotion: " + m);
                     return;
                 }
-                boolean success = gmPromotion(gm);
+                boolean success = false;
+                if (!electingOrPromoting) {
+                    electingOrPromoting = true;
+                    success = gmPromotion(gm);
+                }
                 if (!success) Logger.err("[MUL(RunNewGM)] GM Promotion FAILED: " + gm);
                 else {
                     lastPromotionOrElection = Msg.getClock();
