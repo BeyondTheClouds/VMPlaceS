@@ -2,8 +2,6 @@ package scheduling.snooze;
 
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
-import org.simgrid.msg.Task;
-import scheduling.snooze.msg.SnoozeMsg;
 
 /**
  * Created by sudholt on 06/07/2014.
@@ -32,16 +30,6 @@ public class AUX {
 
     static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
     static final boolean GLElectionForEachNewGM = false;
-
-    static SnoozeMsg arecv(String mbox) {
-        if (Task.listen(mbox))
-            try {
-                return (SnoozeMsg) Task.receive(mbox);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        return null;
-    }
 
     static String glInbox(String glHost) { return glHost + "-glInbox"; }
     static String gmInbox(String gmHost) { return gmHost + "-gmInbox"; }
