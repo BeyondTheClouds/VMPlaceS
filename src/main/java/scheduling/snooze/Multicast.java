@@ -261,7 +261,7 @@ public class Multicast extends Process {
             for (String gm : gmInfo.keySet()) {
                 m = new RBeatGLMsg(glTimestamp, AUX.gmInbox(gm)+"-glBeats", glHostname, null);
 //                m.send();
-                GroupManager g = Test.gms.get(gm);
+                GroupManager g = Test.gmsCreated.get(gm);
                 g.glBeats(m);
                 Logger.info("[MUL.relayGLbeats] Beat relayed to GM: " + m);
             }
@@ -297,7 +297,7 @@ public class Multicast extends Process {
                     GMInfo gmi = gmInfo.get(gm);
                     m = new RBeatGMMsg(g, AUX.lcInbox(lc) + "-gmBeats", gm, null);
 //                    m.send();
-                    LocalController lco = Test.lcs.get(lc);
+                    LocalController lco = Test.lcsCreated.get(lc);
                     lco.handleGMBeats(m);
                     Logger.info("[MUL.relayGMBeats] To LC: " + lc + ", "+ lco + ", " + m);
                 }

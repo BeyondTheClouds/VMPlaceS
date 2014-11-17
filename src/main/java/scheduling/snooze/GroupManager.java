@@ -50,8 +50,8 @@ public class GroupManager extends Process {
         int n = 1;
 
         Logger.info("[GM.main] GM started: " + host.getName());
-        Test.gms.remove(this);
-        Test.gms.put(this.host.getName(), this);
+        Test.gmsCreated.remove(this);
+        Test.gmsCreated.put(this.host.getName(), this);
 
 //        procGLBeats();
         newJoin();
@@ -82,7 +82,7 @@ public class GroupManager extends Process {
         }
         thisGMToBeStopped=true;
         Logger.err("[GM.main] GM stopped: " + host.getName() + ", " + m);
-        Test.gms.remove(this);
+        Test.gmsCreated.remove(this);
     }
 
     void handle(SnoozeMsg m) throws HostFailureException {
@@ -261,6 +261,7 @@ public class GroupManager extends Process {
                     newLCPool = new ThreadPool(this, RunNewLC.class.getName(), noLCWorkers);
                     Logger.info("[GM.glBeats] GM Join finished: " + m + ", LCPool: " + noLCWorkers);
                     joining = false;
+                    Test.noGMJoins++;
                 }
             }
         }
@@ -449,7 +450,7 @@ public class GroupManager extends Process {
             SnoozeMsg m = new TermGMMsg(host.getName(), AUX.multicast, null, null);
             Comm c = m.isend(AUX.multicast);
             c.waitCompletion();
-            Test.gms.remove(this);
+            Test.gmsCreated.remove(this);
             Logger.info("[GM.stopThisGM] MUL notified: " + m);
             for (String lc : lcInfo.keySet()) {
                 m = new TermGMMsg(host.getName(), AUX.lcInbox(lc), null, null);

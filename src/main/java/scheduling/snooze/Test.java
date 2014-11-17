@@ -22,9 +22,13 @@ public class Test extends Process {
 
     static Multicast multicast;
     static GroupLeader gl;
-    static Hashtable<String, GroupManager> gms = new Hashtable<>();
-    static Hashtable<String, LocalController> lcs = new Hashtable<>();
+    static Hashtable<String, GroupManager> gmsCreated = new Hashtable<>();
+    static Hashtable<String, GroupManager> gmsJoined = new Hashtable<>();
+    static Hashtable<String, LocalController> lcsCreated = new Hashtable<>();
+    static Hashtable<String, LocalController> lcsJoined = new Hashtable<>();
 
+    static int noGMJoins = 0;
+    static int noLCJoins = 0;
 
     static String gm = "";
     static SnoozeMsg m = null;
@@ -134,14 +138,14 @@ public class Test extends Process {
 //        }
         int i = 0, al = 0, gmal = 0;
         Logger.tmp("\n\n[Test.dispInfo] #MUL.gmInfo: " + multicast.gmInfo.size() +
-                ", #MUL.lcInfo: " + multicast.lcInfo.size() + ", #Test.gms " + Test.gms.size());
+                ", #MUL.lcInfo: " + multicast.lcInfo.size() + ", #Test.gmsCreated " + Test.gmsCreated.size());
         for (String gm : multicast.gmInfo.keySet()) {
             int l = 0;
             for (String lc : multicast.lcInfo.keySet()) if (multicast.lcInfo.get(lc).gmHost.equals(gm)) l++;
             String gmLeader = "";
             int gml = 0;
-            for (String gmn : Test.gms.keySet()) {
-                GroupManager gmo = Test.gms.get(gmn);
+            for (String gmn : Test.gmsCreated.keySet()) {
+                GroupManager gmo = Test.gmsCreated.get(gmn);
                 if (gmn.equals(gm)) {
                     gmLeader = gmo.glHostname;
                     gml = gmo.lcInfo.size();
@@ -155,6 +159,7 @@ public class Test extends Process {
         }
         if (gl != null)
             Logger.tmp("    Test.GL: " + gl.host.getName()
-                    + ", Test.GL.#GM: " + gl.gmInfo.size() + ", MUL.GM.#LCs: " + al + ", GM.#LCs: " + gmal + "\n");
+                    + ", Test.GL.#GM: " + gl.gmInfo.size() + ", MUL.GM.#LCs: " + al + ", GM.#LCs: " + gmal);
+        Logger.tmp("    No. GM joins: " + noGMJoins + ", No. LC joins: " + noLCJoins + "\n");
     }
 }

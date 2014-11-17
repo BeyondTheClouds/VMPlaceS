@@ -42,10 +42,10 @@ public class LocalController extends Process {
         try {
             // Let LCs wait for GM initialization
             sleep(2000);
-            Test.lcs.remove(this);
+            Test.lcsCreated.remove(this);
             Logger.debug("Start LC " + args[0] + ", " + args[1]);
             init(SimulatorManager.getXHostByName(args[0]), args[1]);
-            Test.lcs.put(this.host.getName(), this);
+            Test.lcsCreated.put(this.host.getName(), this);
             join();
 //            procSendMyBeats();
 //            procGMBeats();
@@ -146,6 +146,7 @@ public class LocalController extends Process {
             }
         } while (!success && !SimulatorManager.isEndOfInjection());
         joining = false;
+        Test.noLCJoins++;
         Logger.info("[LC.join] Finished, GM: " + gmHostname + ", TS: " + gmTimestamp);
     }
 
