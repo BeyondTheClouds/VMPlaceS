@@ -12,7 +12,7 @@ import simulation.SimulatorManager;
 import java.util.*;
 
 /**
- * Created by sudholt on 25/05/2014.
+ * Created by sudholt on 25/0/2014.
  */
 public class GroupManager extends Process {
     private GroupManager thisGM;
@@ -142,7 +142,7 @@ public class GroupManager extends Process {
             glHostname = gl.getHost().getName();
             Logger.info("[GM(GMElec)] New leader created on: " + glHostname);
 
-            stopThisGM();
+            if (AUX.GLElectionStopGM) stopThisGM();
         } catch (HostFailureException e) {
             throw e;
         } catch (Exception e) {
@@ -170,7 +170,7 @@ public class GroupManager extends Process {
             LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), cs.getTimestamp());
 //            double oldBeat = lcInfo.get(lcHostname).timestamp;
             lcInfo.put(lcHostname, new LCInfo(newCharge, cs.getTimestamp()));
-            Logger.info("[GM(LCCharge)] Charge et beat updated: " + lcHostname + ", " + m);
+            Logger.info("[GM(LCCharge)] Charge et beat updated: " + lcHostname + ", " + cs.getProcCharge() + ", " + m);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -254,7 +254,7 @@ public class GroupManager extends Process {
                 ms.send();
 
                 if (joining) {
-                    procSendMyBeats();
+//                    procSendMyBeats();
                     procSendMyCharge();
                     procScheduling();
                     int noLCWorkers = SimulatorProperties.getNbOfHostingNodes()/(Math.max((SimulatorProperties.getNbOfServiceNodes()-1)*10, 1));
@@ -306,10 +306,10 @@ public class GroupManager extends Process {
 //                public void main(String[] args) throws HostFailureException {
 //                    while (!thisGMToBeStopped) {
 //                        try {
-////                            SnoozeMsg m = (SnoozeMsg)
-////                                    Task.receive(inbox + "-glBeats", AUX.HeartbeatTimeout);
-////                            glBeats(m);
-////                            glBeats(new SnoozeMsg());
+//                            SnoozeMsg m = (SnoozeMsg)
+//                                    Task.receive(inbox + "-glBeats", AUX.HeartbeatTimeout);
+//                            glBeats(m);
+//                            glBeats(new SnoozeMsg());
 //                            if(SnoozeProperties.shouldISleep())
 //                                sleep(AUX.DefaultComputeInterval);
 //                        } catch (HostFailureException e) {
@@ -361,6 +361,9 @@ public class GroupManager extends Process {
                     while (!thisGMToBeStopped) {
                         try {
                             summaryInfoToGL();
+                            BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
+                            m.send();
+                            Logger.info("[GM.procSendMyCharge] " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisGMToBeStopped = true;
@@ -373,31 +376,6 @@ public class GroupManager extends Process {
             e.printStackTrace();
         }
     }
-
-//    static public boolean isOverloaded(Host host) {
-//
-//        int cpuConsumption = 0;
-//
-//        for (XVM vm : host.xhost.getRunnings()) {
-//            cpuConsumption += vm.getCPUDemand();
-//        }
-//
-////            LoggingActor.write(new CurrentLoadIs(Msg.getClock(), ref.getId()+"", cpuConsumption));
-//
-//        if (cpuConsumption > this.xhost.getCPUCapacity()) {
-//            if (!violation_detected) {
-//                // Monitor is considering that the node is overloaded
-//                Msg.info(ref.getName() + " monitoring service: node is overloaded");
-//                Trace.hostPushState(xhost.getName(), "PM", "violation-det");
-//                violation_detected = true;
-//            }
-//
-//            // Replace CpuViolationDetected() by a string
-//            send(ref, "overloadingDetected");
-//        } else if (cpuConsumption <= this.xhost.getCPUCapacity()) {
-//            Trace.hostPushState(Host.currentHost().getName(), "PM", "normal");
-//        }
-//    }
 
     /**
      * Sends beats to multicast group
@@ -469,13 +447,13 @@ public class GroupManager extends Process {
      * Sends GM charge summary info to GL
      */
     void summaryInfoToGL() {
-        if (lcInfo.isEmpty() || glHostname.isEmpty()) return;
+        if (lcInfo.isEmpty() && glHostname.isEmpty()) return;
         updateChargeSummary();
-        GMSumMsg.GMSum c = new GMSumMsg.GMSum(procSum, memSum);
+        GMSumMsg.GMSum c = new GMSumMsg.GMSum(procSum, memSum, lcInfo.size(), Msg.getClock());
         if (!glHostname.isEmpty()) {
             GMSumMsg m = new GMSumMsg(c, AUX.glInbox(glHostname)+"-gmPeriodic", host.getName(), null);
             m.send();
-//        Logger.info("[GM.summaryInfoToGL] " + m);
+        Logger.info("[GM.summaryInfoToGL] " + m+ ", " + Msg.getClock());
         }
     }
 
@@ -493,18 +471,20 @@ public class GroupManager extends Process {
         int proc = 0;
         int mem = 0;
         int s = lcInfo.size();
-        for (String lcHostname : lcInfo.keySet()) {
-            LCInfo lci = lcInfo.get(lcHostname);
-            if (lci == null) {
-                proc += lci.charge.procCharge;
-                mem += lci.charge.memUsed;
+        if (s>0) {
+            for (String lcHostname : lcInfo.keySet()) {
+                LCInfo lci = lcInfo.get(lcHostname);
+                if (lci != null) {
+                    proc += lci.charge.procCharge;
+                    mem += lci.charge.memUsed;
+                }
             }
+            proc /= s;
+            mem /= s;
         }
-        proc /= s;
-        mem /= s;
         procSum = proc;
         memSum = mem;
-//        Logger.info("[GM.updateChargeSummary] " + proc + ", " + mem);
+        Logger.info("[GM.updateChargeSummary] " + proc + ", " + mem + ", " + Msg.getClock());
     }
 
 

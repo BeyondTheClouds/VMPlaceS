@@ -284,7 +284,7 @@ public class Multicast extends Process {
         String gm = g.host.getName();
         RBeatGMMsg m = new RBeatGMMsg(g, AUX.glInbox(glHostname)+"-gmPeriodic", gm, null);
 //        m.send();
-        Test.gl.handleGMInfo(m);
+//        Test.gl.handleGMInfo(m);
         Logger.info("[MUL.relayGMBeats] " + m);
 
         // Send to LCs
@@ -432,12 +432,12 @@ public class Multicast extends Process {
                             relayGMBeats(((GroupManager) m.getMessage()), ts);
                             if(SnoozeProperties.shouldISleep())
                                 sleep(AUX.DefaultComputeInterval);
-                        } catch (TimeoutException e) {
-                            glDead = true;
+//                        } catch (TimeoutException e) {
+//                            glDead = true;
                         } catch (HostFailureException e) {
-                            Logger.err("[MUL.main] HostFailure Exc. should never happen!: " + host.getName());
+                            Logger.err("[MUL.procRelayGMBeats] HostFailure Exc. should never happen!: " + host.getName());
                         } catch (Exception e) {
-                            Logger.exc("[MUL.procNewLC] Exception");
+                            Logger.exc("[MUL.procRelayGMBeats] Exception");
                             e.printStackTrace();
                         }
                     }
