@@ -165,7 +165,8 @@ public class LocalController extends Process {
             // Wait for GL beat
             int i = 0;
             do {
-                m = (SnoozeMsg) Task.receive(inbox, 5*AUX.MessageReceptionTimeout);
+//                m = (SnoozeMsg) Task.receive(inbox, 5*AUX.MessageReceptionTimeout);
+                m = (SnoozeMsg) Task.receive(inbox, AUX.HeartbeatTimeout);
                 i++;
                 Logger.info("[LC.getGL] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
