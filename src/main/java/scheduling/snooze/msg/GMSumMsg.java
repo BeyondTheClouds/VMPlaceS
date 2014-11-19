@@ -11,9 +11,11 @@ public class GMSumMsg extends SnoozeMsg {
     public static class GMSum {
         private double procCharge;
         private int memUsed;
+        private int noLCs;
+        private double ts;
 
-        public GMSum(double p, int m) {
-            this.setProcCharge(p); this.setMemUsed(m);
+        public GMSum(double p, int m, int noLCs, double ts) {
+            this.setProcCharge(p); this.setMemUsed(m); this.setNoLCs(noLCs); this.ts = ts;
         }
 
         public double getProcCharge() {
@@ -31,5 +33,13 @@ public class GMSumMsg extends SnoozeMsg {
         public void setMemUsed(int memUsed) {
             this.memUsed = memUsed;
         }
+
+        public int getNoLCs() { return noLCs; }
+
+        public void setNoLCs(int noLCs) { this.noLCs = noLCs; }
+
+        public double getTs() { return ts; }
+
+        public void setTs(double ts) { this.ts = ts; }
     }
 }
