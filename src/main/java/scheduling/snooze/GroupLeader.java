@@ -1,6 +1,5 @@
 package scheduling.snooze;
 
-import configuration.SimulatorProperties;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
@@ -32,11 +31,9 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) {
-        int noLCWorker = Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1);
-        int noGMWorker = Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1);
-        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), noLCWorker);
-        newGMPool = new ThreadPool(this, RunNewGM.class.getName(), noGMWorker);
-        Logger.debug("noLCWorker: " + noLCWorker + ", noGMWorker: " + noGMWorker);
+        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), AUX.lcPoolSize);
+        newGMPool = new ThreadPool(this, RunNewGM.class.getName(), AUX.gmPoolSize);
+        Logger.debug("noLCWorker: " + AUX.lcPoolSize + ", noGMWorker: " + AUX.gmPoolSize);
 
         int n = 1;
 

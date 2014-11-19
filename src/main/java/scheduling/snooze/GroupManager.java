@@ -1,6 +1,5 @@
 package scheduling.snooze;
 
-import configuration.SimulatorProperties;
 import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
@@ -256,10 +255,9 @@ public class GroupManager extends Process {
                 if (joining) {
 //                    procSendMyBeats();
                     procSendMyCharge();
-                    procScheduling();
-                    int noLCWorkers = SimulatorProperties.getNbOfHostingNodes()/(Math.max((SimulatorProperties.getNbOfServiceNodes()-1)*10, 1));
-                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(), noLCWorkers);
-                    Logger.info("[GM.glBeats] GM Join finished: " + m + ", LCPool: " + noLCWorkers);
+//                    procScheduling();
+                    newLCPool = new ThreadPool(this, RunNewLC.class.getName(), AUX.lcPoolSize);
+                    Logger.info("[GM.glBeats] GM Join finished: " + m + ", LCPool: " + AUX.lcPoolSize);
                     joining = false;
                     Test.noGMJoins++;
                 }

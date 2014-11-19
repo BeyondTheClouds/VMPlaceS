@@ -1,5 +1,6 @@
 package scheduling.snooze;
 
+import configuration.SimulatorProperties;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 
@@ -22,6 +23,8 @@ public class AUX {
     static final long ReceiveTimeout = SnoozeProperties.getHeartBeatTimeout();
     static final double MessageReceptionTimeout = 0.2;
 
+    static final int lcPoolSize = Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1);
+    static final int gmPoolSize = Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1);
     static final long PoolingTimeout = SnoozeProperties.getHeartBeatTimeout(); // Timeout for worker tasks
 
     // constants for variants of Snooze alg.

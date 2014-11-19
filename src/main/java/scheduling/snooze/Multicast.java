@@ -1,6 +1,5 @@
 package scheduling.snooze;
 
-import configuration.SimulatorProperties;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.snooze.msg.*;
@@ -41,11 +40,9 @@ public class Multicast extends Process {
 
         Test.multicast = this;
 
-        int noLCWorkers = Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1);
-        int noGMWorkers = Math.max(SimulatorProperties.getNbOfServiceNodes()/10, 1);
-        newLCPool = new ThreadPool(this, RunNewLC.class.getName(), noLCWorkers);
-        newLCPool = new ThreadPool(this, RunNewGM.class.getName(), noGMWorkers);
-        Logger.debug("[MUL.main] noLCWorkers: " + noLCWorkers);
+        newLCPool = new ThreadPool(this, RunNewLC.class.getName(), AUX.lcPoolSize);
+        newLCPool = new ThreadPool(this, RunNewGM.class.getName(), AUX.gmPoolSize);
+        Logger.debug("[MUL.main] noLCWorkers: " + AUX.lcPoolSize);
 
         procRelayGLBeats();
         procRelayGMBeats();
