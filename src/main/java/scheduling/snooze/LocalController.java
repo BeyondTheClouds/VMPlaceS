@@ -41,7 +41,7 @@ public class LocalController extends Process {
 
         try {
             // Let LCs wait for GM initialization
-//            sleep(2000);
+//            sleep(3000);
             Test.lcsCreated.remove(this);
             Logger.debug("Start LC " + args[0] + ", " + args[1]);
             init(SimulatorManager.getXHostByName(args[0]), args[1]);

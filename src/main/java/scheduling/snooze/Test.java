@@ -42,7 +42,7 @@ public class Test extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
-        procAddLCs();
+//        procAddLCs();
 //        procAddGMs();
 //        procFailGLs();
 //        procFailGMs();
