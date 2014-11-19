@@ -6,6 +6,7 @@ import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 
 
@@ -138,6 +139,7 @@ public class GroupLeader extends Process {
         }
     }
 
+    HashMap<String, Integer> assignedLCs = new HashMap<String, Integer>();
     /**
      * Beats to multicast group
      */
@@ -152,9 +154,10 @@ public class GroupLeader extends Process {
                 for (String s : gmInfo.keySet()) {
                     cs = gmInfo.get(s).summary;
                     curCharge = cs.procCharge;
-                    noLCs = cs.noLCs;
+                    if (!assignedLCs.containsKey(s)) assignedLCs.put(s, Integer.valueOf(gmInfo.get(s).summary.noLCs));
+                    noLCs = assignedLCs.get(s);
                     Logger.debug("[GL.lcAssignment(BESTFIT)] GM: " + s + ", min/charge: " + minCharge+"/"+curCharge
-                            + ", min/noLCs: " + prevNoLCs+"/"+noLCs);
+                            + ", min/noLCs/assLCs: " + prevNoLCs+"/"+noLCs+"/"+assignedLCs.get(s));
                     if (minCharge > curCharge) {
                         minCharge = curCharge;
                         prevNoLCs = noLCs;
@@ -164,6 +167,7 @@ public class GroupLeader extends Process {
                         if (noLCs < prevNoLCs) { gm = s; prevNoLCs = noLCs; }
                     }
                 }
+                assignedLCs.put(gm, Integer.valueOf(assignedLCs.get(gm).intValue() + 1));
                 Logger.debug("[GL.lcAssignment(BESTFIT)] GM selected: " + gm + ", #GMs: " + gmInfo.size());
                 break;
             case ROUNDROBIN:
@@ -213,51 +217,6 @@ public class GroupLeader extends Process {
             e.printStackTrace();
         }
     }
-
-//    void handleGMInfo(SnoozeMsg m) {
-//        if      (m instanceof RBeatGMMsg) gmBeats(m);
-//        else if (m instanceof GMSumMsg)   gmCharge(m);
-//        else {
-//            Logger.err("[GL.handleGMInfo] Unknown message: " + m);
-//        }
-//    }
-
-//    void procNewGM() {
-//        try {
-//            new Process(host, host.getName() + "-newGM") {
-//                public void main(String[] args) throws HostFailureException {
-//                    while (!thisGLToBeTerminated) {
-//                        try {
-//                            NewGMMsg m = (NewGMMsg)
-//                                    Task.receive(inbox + "-newGM", AUX.HeartbeatTimeout);
-////                            if (!m.getClass().getSimpleName().equals("NewGMMsg")) {
-////                                Logger.err("[GL.procNewGM] Unknown message: " + m);
-////                                continue;
-////                            }
-////                            Logger.info("[GL.procNewGM] " + m);
-//                            String gmHostname = ((GroupManager) m.getMessage()).host.getName();
-//                            if (gmInfo.containsKey(gmHostname))
-//                                Logger.err("[GL.procNewGM] GM " + gmHostname + " exists already");
-//                            // Add GM
-//                            GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, Msg.getClock()));
-//                            gmInfo.put(gmHostname, gi);
-//                            // Acknowledge integration
-//                            Logger.info("[GL.procNewGM] GM added: " + gmHostname + ", " + m);
-//                        } catch (HostFailureException e) {
-//                            thisGLToBeTerminated = true;
-//                            break;
-//                        } catch (Exception e) {
-//                            Logger.exc("[GL.procNewGM] Exception, " + host.getName() + ": " + e.getClass().getName());
-//                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//            }.start();
-//        }
-//        catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
 
     /**
      * Sends beats to multicast group
