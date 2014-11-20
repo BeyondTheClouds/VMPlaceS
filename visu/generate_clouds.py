@@ -244,6 +244,18 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     except:
                         pass
 
+                violation_total_time = 0
+                for violation in violations_smp_detected:
+                    violation_total_time += violation[1]
+                for violation in violations_smp_hidden:
+                    violation_total_time += violation[1]
+                for violation in violations_out_detected:
+                    violation_total_time += violation[1]
+                for violation in violations_out_hidden:
+                    violation_total_time += violation[1]
+
+                print("%s@%d => %d" % (algo, compute_node_count, violation_total_time))
+
                 export_csv_data(algo, compute_node_count, violations_smp_detected, violations_smp_hidden, violations_out_detected, violations_out_hidden)
 
 
