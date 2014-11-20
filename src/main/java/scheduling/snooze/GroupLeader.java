@@ -21,7 +21,7 @@ public class GroupLeader extends Process {
     private ThreadPool lcAssPool;
     private ThreadPool newGMPool;
 
-    static enum AssignmentAlg { BESTFIT, ROUNDROBIN };
+    public static enum AssignmentAlg { BESTFIT, ROUNDROBIN };
     private int roundRobin = 0;
 
     public GroupLeader(Host host, String name) {

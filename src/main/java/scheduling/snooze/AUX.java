@@ -30,8 +30,8 @@ public class AUX {
     // constants for variants of Snooze alg.
     static final boolean GLElectionForEachNewGM = false;
     static final boolean GLElectionStopGM = true;
-//    static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.BESTFIT;
-    static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
+    public static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.BESTFIT;
+//    public static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
 
     static String glInbox(String glHost) { return glHost + "-glInbox"; }
     static String gmInbox(String gmHost) { return gmHost + "-gmInbox"; }
