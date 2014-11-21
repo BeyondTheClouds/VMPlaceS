@@ -161,7 +161,8 @@ public class GroupManager extends Process {
         public void run() {
             NewLCMsg m;
             try {
-                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.PoolingTimeout);
+                m = (NewLCMsg) Task.receive(inbox + "-newLC");
+//                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.PoolingTimeout);
                 Logger.debug("[GM.RunNewLC] " + m);
                 String lc = (String) m.getMessage();
                 double   ts  = Msg.getClock();

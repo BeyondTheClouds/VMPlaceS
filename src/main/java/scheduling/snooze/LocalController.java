@@ -4,6 +4,7 @@ package scheduling.snooze;
  * Created by sudholt on 25/05/2014.
  */
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
@@ -53,7 +54,8 @@ public class LocalController extends Process {
             while (!thisLCToBeStopped && !SimulatorManager.isEndOfInjection()) {
                 try {
 //                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
+                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, SimulatorProperties.getDuration());
+//                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
                     handle(m);
                     gmDead();
                     if(SnoozeProperties.shouldISleep())

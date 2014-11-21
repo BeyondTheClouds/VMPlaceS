@@ -239,7 +239,8 @@ public class GroupLeader extends Process {
         public void run() {
             try {
                 NewGMMsg m = (NewGMMsg)
-                        Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
+                        Task.receive(inbox + "-newGM");
+//                        Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
                 String gmHostname = ((GroupManager) m.getMessage()).host.getName();
                 if (gmInfo.containsKey(gmHostname))
                     Logger.err("[GL.RunNewGM] GM " + gmHostname + " exists already");
@@ -264,7 +265,8 @@ public class GroupLeader extends Process {
             LCAssMsg m = null;
             try {
                 Logger.info("[GL.RunLCAss] Wait for tasks: " + GroupLeader.this.inbox + "-lcAssign");
-                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.PoolingTimeout);
+                m = (LCAssMsg) Task.receive(inbox + "-lcAssign");
+//                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.PoolingTimeout);
                 Logger.info("[GL.RunLCAss] Task received: " + m);
                 String gm = lcAssignment((String) m.getMessage());
                 m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);

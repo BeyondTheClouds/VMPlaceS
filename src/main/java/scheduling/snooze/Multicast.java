@@ -312,7 +312,8 @@ public class Multicast extends Process {
         public void run() {
             try {
                 SnoozeMsg m;
-                m = (SnoozeMsg) Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
+                m = (SnoozeMsg) Task.receive(inbox + "-newGM");
+//                m = (SnoozeMsg) Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
                 Logger.info("[MUL.RunNewGM] " + m);
                 String gm = ((GroupManager) m.getMessage()).host.getName();
                 gmInfo.put(gm, new GMInfo(AUX.gmInbox(gm), Msg.getClock(), true));
@@ -352,7 +353,8 @@ public class Multicast extends Process {
         public void run() {
             NewLCMsg m;
             try {
-                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.PoolingTimeout);
+                m = (NewLCMsg) Task.receive(inbox + "-newLC");
+//                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.PoolingTimeout);
                 Logger.info("[MUL.RunNewLC] " + m);
                 if (m.getMessage() == null) {
                     // Add LC

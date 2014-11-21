@@ -25,7 +25,7 @@ public class AUX {
 
     static final int lcPoolSize = Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1);
     static final int gmPoolSize = Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1);
-    static final long PoolingTimeout = SnoozeProperties.getHeartBeatTimeout(); // Timeout for worker tasks
+//    static final long PoolingTimeout = SimulatorProperties.getDuration(); // Timeout for worker tasks
 
     // constants for variants of Snooze alg.
     static final boolean GLElectionForEachNewGM = false;
