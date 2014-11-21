@@ -48,7 +48,7 @@ public class Injector extends Process {
         double currentTime = 0 ;
         double lambdaPerVM=1.0/injectionPeriod ; // Nb Evt per VM (average)
 
-        Random randExpDis2=new Random(SimulatorProperties.getSeed());
+        Random randGaussian=new Random(SimulatorProperties.getSeed());
 
         double mean = SimulatorProperties.getMeanLoad();
         double sigma = SimulatorProperties.getStandardDeviationLoad();
@@ -78,7 +78,7 @@ public class Injector extends Process {
             int cpuConsumptionSlot = maxCPUDemand/nbOfCPUDemandSlots;
 
             /* Gaussian law for the getCPUDemand assignment */
-            gLoad = Math.max((randExpDis2.nextGaussian()*sigma)+mean, 0);
+            gLoad = Math.max((randGaussian.nextGaussian()*sigma)+mean, 0);
             int slot= (int) Math.round(Math.min(100,gLoad)*nbOfCPUDemandSlots/100);
 
             vmCPUDemand = slot*cpuConsumptionSlot*(int)tempVM.getCoreNumber();
@@ -133,6 +133,9 @@ public class Injector extends Process {
             currentTime += exponentialDis(randExpDis, lambda);
         }
         Msg.info("Number of events:"+faultQueue.size());
+        for (InjectorEvent evt: faultQueue){
+            Msg.info(evt.toString());
+        }
 
         return faultQueue;
     }
@@ -159,9 +162,10 @@ public class Injector extends Process {
             FaultEvent evt = iterator.previous();
             if(evt.getState() == true){
                 if (evt.getTime()  >= currentTime) {
-                    if (evt.getHost()== tmp)
+                    if (evt.getHost()== tmp) {
                         iterator.remove();
                         return true;
+                    }
                 }
                 else
                     break;
