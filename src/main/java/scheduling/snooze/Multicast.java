@@ -146,14 +146,13 @@ public class Multicast extends Process {
 
         // Remove dead GMs and associated LCs
         for (String gm: deadGMs) {
-            Logger.err("[MUL.gmDead] GM removed: " + gm + ", " + gmInfo.get(gm).timestamp);
+            Logger.imp("[MUL.gmDead] GM removed: " + gm + ", " + gmInfo.get(gm).timestamp);
             gmInfo.remove(gm);
 //            leaderElection();
-            Test.dispInfo();
         }
         for (String lc: orphanLCs) {
             lcInfo.remove(lc);
-            Logger.err("[MUL.gmDead] LC: " + lc);
+            Logger.imp("[MUL.gmDead] LC removed: " + lc);
         }
     }
 
@@ -256,7 +255,11 @@ public class Multicast extends Process {
                 m = new RBeatGLMsg(glTimestamp, AUX.gmInbox(gm)+"-glBeats", glHostname, null);
 //                m.send();
                 GroupManager g = Test.gmsCreated.get(gm);
-                g.glBeats(m);
+                try {
+                    g.glBeats(m);
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                }
                 Logger.info("[MUL.relayGLbeats] Beat relayed to GM: " + m);
             }
             for (String lc : lcInfo.keySet()) {
@@ -295,7 +298,11 @@ public class Multicast extends Process {
                     m = new RBeatGMMsg(g, AUX.lcInbox(lc) + "-gmBeats", gm, null);
 //                    m.send();
                     LocalController lco = Test.lcsCreated.get(lc);
-                    lco.handleGMBeats(m);
+                    try {
+                        lco.handleGMBeats(m);
+                    } catch (NullPointerException e) {
+                        e.printStackTrace();
+                    }
                     i++;
                     Logger.info("[MUL.relayGMBeats] To LC: " + lc + ", "+ lco + ", " + m);
                 }

@@ -98,6 +98,8 @@ public class GroupLeader extends Process {
     void handleTermGM(SnoozeMsg m) {
         String gm = (String) m.getMessage();
         gmInfo.remove(gm);
+        Test.gmsCreated.remove(gm);
+        Test.gmsJoined.remove(gm);
         Logger.debug("[GL(TermGM)] GM removed: " + gm);
     }
 
@@ -127,6 +129,8 @@ public class GroupLeader extends Process {
         for (String gm: deadGMs) {
             Logger.imp("[GL.gmDead] GM dead, removed: " + gm + ": " + gmInfo.get(gm).timestamp);
             gmInfo.remove(gm);
+            Test.gmsCreated.remove(gm);
+            Test.gmsJoined.remove(gm);
         }
     }
 

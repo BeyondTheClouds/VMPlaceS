@@ -149,6 +149,8 @@ public class LocalController extends Process {
         } while (!success && !SimulatorManager.isEndOfInjection());
         joining = false;
         Test.noLCJoins++;
+        Test.lcsJoined.remove(this.host.getName());
+        Test.lcsJoined.put(this.host.getName(), this);
         Logger.imp("[LC.join] Finished, GM: " + gmHostname + ", TS: " + gmTimestamp);
     }
 
