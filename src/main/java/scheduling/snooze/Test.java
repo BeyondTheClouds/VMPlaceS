@@ -102,7 +102,7 @@ public class Test extends Process {
                     }
                     m = new TestFailGLMsg(name, AUX.glInbox(multicast.glHostname), null, null);
                     m.send();
-                    Logger.tmp("[Test.failGLs] GL failure: " + Test.gl.getHost().getName());
+                    Logger.imp("[Test.failGLs] GL failure: " + Test.gl.getHost().getName());
                     sleep(1537);
 //                    break;
                 }
@@ -123,7 +123,7 @@ public class Test extends Process {
                     gm = new ArrayList<String>(multicast.gmInfo.keySet()).get(0);
                     m = new TestFailGMMsg(name, AUX.gmInbox(gm), null, null);
                     m.send();
-                    Logger.tmp("[Test.failGMs] Term. GM: " + gm + ", #GMs: " + multicast.gmInfo.size());
+                    Logger.imp("[Test.failGMs] Term. GM: " + gm + ", #GMs: " + multicast.gmInfo.size());
                     sleep(1777);
 //                    break;
                 }
@@ -137,9 +137,9 @@ public class Test extends Process {
 //            return;
 //        }
         int i = 0, al = 0, gmal = 0;
-        Logger.tmp("\n\n[Test.dispInfo] #MUL.gmInfo: " + multicast.gmInfo.size() +
+        Logger.imp("\n\n[Test.dispInfo] #MUL.gmInfo: " + multicast.gmInfo.size() +
                 ", #MUL.lcInfo: " + multicast.lcInfo.size() + ", #Test.gmsCreated " + Test.gmsCreated.size());
-        Logger.tmp("    ----");
+        Logger.imp("    ----");
         for (String gm : multicast.gmInfo.keySet()) {
             int l = 0;
             for (String lc : multicast.lcInfo.keySet()) if (multicast.lcInfo.get(lc).gmHost.equals(gm)) l++;
@@ -153,15 +153,15 @@ public class Test extends Process {
                     gmal += gml;
                 }
             }
-            Logger.tmp("    MUL.GM: " + gm + ", MUL.GM.#LCs: " + l + ", Test.GMLeader: " + gmLeader);
-//            Logger.tmp("                         GM.#LCs: " + gml + ", Test.GMLeader: " + gmLeader);
+            Logger.imp("    MUL.GM: " + gm + ", MUL.GM.#LCs: " + l + ", Test.GMLeader: " + gmLeader);
+//            Logger.imp("                         GM.#LCs: " + gml + ", Test.GMLeader: " + gmLeader);
             i++;
             al += l;
         }
-        Logger.tmp("    ----");
+        Logger.imp("    ----");
         if (gl != null)
-            Logger.tmp("    Test.GL: " + gl.host.getName()
+            Logger.imp("    Test.GL: " + gl.host.getName()
                     + ", Test.GL.#GM: " + gl.gmInfo.size() + ", MUL.GM.#LCs: " + al + ", GM.#LCs: " + gmal);
-        Logger.tmp("    No. GM joins: " + noGMJoins + ", No. LC joins: " + noLCJoins + "\n");
+        Logger.imp("    No. GM joins: " + noGMJoins + ", No. LC joins: " + noLCJoins + "\n");
     }
 }

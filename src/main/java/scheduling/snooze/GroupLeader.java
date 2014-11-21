@@ -75,7 +75,7 @@ public class GroupLeader extends Process {
     }
 
     void handle(SnoozeMsg m) {
-        Logger.info("[GL.handle] GLIn: " + m);
+//        Logger.debug("[GL.handle] GLIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "TermGMMsg": handleTermGM(m); break;
@@ -101,15 +101,6 @@ public class GroupLeader extends Process {
         Logger.debug("[GL(TermGM)] GM removed: " + gm);
     }
 
-//    void gmBeats(SnoozeMsg m) {
-//        String gm = m.getOrigin();
-//        double ts = Msg.getClock();
-//        if (gmInfo.containsKey(gm)) {
-//            gmInfo.put(gm, new GMInfo(ts, gmInfo.get(gm).summary));
-//            Logger.info("[GL.gmBeats] TS updated: " + gm + ": " + ts);
-//        }
-//    }
-
     void gmCharge(SnoozeMsg m) {
         try {
             String gm = m.getOrigin();
@@ -134,7 +125,7 @@ public class GroupLeader extends Process {
             }
         }
         for (String gm: deadGMs) {
-            Logger.info("[GL.gmDead] GM dead, removed: " + gm + ": " + gmInfo.get(gm).timestamp);
+            Logger.imp("[GL.gmDead] GM dead, removed: " + gm + ": " + gmInfo.get(gm).timestamp);
             gmInfo.remove(gm);
         }
     }
@@ -191,7 +182,6 @@ public class GroupLeader extends Process {
                                     Task.receive(inbox + "-gmPeriodic", AUX.HeartbeatTimeout);
                             Logger.info("[GL.procGMInfo] " + m);
 
-//                            if      (m instanceof RBeatGMMsg) gmBeats(m); else
                             if (m instanceof GMSumMsg)   gmCharge(m);
                             else {
                                 Logger.err("[GL.procGMInfo] Unknown message: " + m);
@@ -230,10 +220,7 @@ public class GroupLeader extends Process {
                         try {
                             BeatGLMsg m =
                                     new BeatGLMsg(Msg.getClock(), AUX.multicast+"-relayGLBeats", glHostname, null);
-//                                Send by network
-                                m.send();
-//                            Call multicast
-//                              Test.multicast.relayGLBeats(m);
+                            m.send();
                             Logger.info("[GL.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
@@ -253,11 +240,6 @@ public class GroupLeader extends Process {
             try {
                 NewGMMsg m = (NewGMMsg)
                         Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
-//                            if (!m.getClass().getSimpleName().equals("NewGMMsg")) {
-//                                Logger.err("[GL.procNewGM] Unknown message: " + m);
-//                                continue;
-//                            }
-//                            Logger.info("[GL.procNewGM] " + m);
                 String gmHostname = ((GroupManager) m.getMessage()).host.getName();
                 if (gmInfo.containsKey(gmHostname))
                     Logger.err("[GL.RunNewGM] GM " + gmHostname + " exists already");
@@ -265,7 +247,7 @@ public class GroupLeader extends Process {
                 GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, 0, Msg.getClock()));
                 gmInfo.put(gmHostname, gi);
                 // Acknowledge integration
-                Logger.info("[GL.RunNewGM] GM added: " + gmHostname + ", " + m);
+                Logger.imp("[GL.RunNewGM] GM added: " + gmHostname + ", " + m);
             } catch (HostFailureException e) {
                 thisGLToBeTerminated = true;
             } catch (Exception e) {
@@ -287,7 +269,7 @@ public class GroupLeader extends Process {
                 String gm = lcAssignment((String) m.getMessage());
                 m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
                 m.send();
-                Logger.info("[GL.RunLCAss] GM assigned: " + m);
+                Logger.imp("[GL.RunLCAss] GM assigned: " + m);
             } catch (TimeoutException e) {
                 Logger.exc("[GL.RunLCAss] PROBLEM? Timeout Exception");
             } catch (HostFailureException e) {
