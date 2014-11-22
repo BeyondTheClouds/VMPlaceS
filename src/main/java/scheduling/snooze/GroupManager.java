@@ -9,6 +9,7 @@ import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by sudholt on 25/0/2014.
@@ -23,7 +24,7 @@ public class GroupManager extends Process {
     private boolean thisGMToBeStopped = false;
     String glHostname = "";   //@ Make private
     private double glTimestamp;
-    Hashtable<String, LCInfo> lcInfo = new Hashtable<String, LCInfo>();  //@ Make private
+    ConcurrentHashMap<String, LCInfo> lcInfo = new ConcurrentHashMap<>();  //@ Make private
     // one mailbox per LC: lcHostname+"beat"
     private double procSum;
     private int memSum;
@@ -57,7 +58,7 @@ public class GroupManager extends Process {
         while (!SimulatorManager.isEndOfInjection()){
             try {
                 if (!thisGMToBeStopped) {
-                    m = (SnoozeMsg) Task.receive(inbox, AUX.DeadTimeout);
+                    m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
                     handle(m);
                     glDead();
                     deadLCs();
@@ -68,7 +69,7 @@ public class GroupManager extends Process {
                 thisGMToBeStopped = true;
                 break;
             } catch (TimeoutException e) {
-                Logger.exc("[GM.main] TimeoutException");
+                // Logger.exc("[GM.main] TimeoutException");
                 glDead();
                 deadLCs();
             } catch (Exception e) {
@@ -163,7 +164,7 @@ public class GroupManager extends Process {
         public void run() {
             NewLCMsg m;
             try {
-                m = (NewLCMsg) Task.receive(inbox + "-newLC");
+                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.durationToEnd());
                 Logger.debug("[GM.RunNewLC] " + m);
                 String lc = (String) m.getMessage();
                 double   ts  = Msg.getClock();

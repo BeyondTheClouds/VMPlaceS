@@ -48,9 +48,9 @@ public class LocalController extends Process {
             Test.lcsCreated.put(this.host.getName(), this);
             join();
             procSendLCChargeToGM();
-            while (!thisLCToBeStopped && !SimulatorManager.isEndOfInjection()) {
+            while (!stopThisLC()) {
                 try {
-                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.DeadTimeout);
+                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
                     gmDead();
                     handle(m);
                     if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
@@ -74,6 +74,8 @@ public class LocalController extends Process {
         }
         gmHostname = "";
     }
+
+    boolean stopThisLC() { return thisLCToBeStopped || SimulatorManager.isEndOfInjection(); }
 
     void handle(SnoozeMsg m) throws HostFailureException {
 //        Logger.debug("[LC.handle] LCIn: " + m);
@@ -136,14 +138,16 @@ public class LocalController extends Process {
                 e.printStackTrace();
                 success = false;
             }
-        } while (!success && !SimulatorManager.isEndOfInjection());
-        joining = false;
-        Test.noLCJoins++;
+        } while (!success && !stopThisLC());
+        if (!stopThisLC()) {
+            joining = false;
+            Test.noLCJoins++;
 //        Test.lcsJoined.remove(this.host.getName());
-        Test.removeJoinedLC(this.host.getName(), gmHostname, "[LC.join]");  // Should be superfluous
+            Test.removeJoinedLC(this.host.getName(), gmHostname, "[LC.join]");  // Should be superfluous
 //        Test.lcsJoined.put(this.host.getName(), this);
-        Test.putJoinedLC(this.host.getName(), this, gmHostname, "[LC.join]");
-        Logger.imp("[LC.join] Finished, GM: " + gmHostname + ", TS: " + gmTimestamp);
+            Test.putJoinedLC(this.host.getName(), this, gmHostname, "[LC.join]");
+            Logger.imp("[LC.join] Finished, GM: " + gmHostname + ", TS: " + gmTimestamp);
+        }
     }
 
     /**
@@ -161,13 +165,13 @@ public class LocalController extends Process {
             // Wait for GL beat
             int i = 0;
             do {
-//                m = (SnoozeMsg) Task.receive(inbox, 5*AUX.MessageReceptionTimeout);
-                m = (SnoozeMsg) Task.receive(inbox, AUX.HeartbeatTimeout);
+                m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
+//                m = (SnoozeMsg) Task.receive(inbox, AUX.HeartbeatTimeout);
                 i++;
                 Logger.info("[LC.getGL] Round " + i + ": " + m);
                 gl = (String) m.getOrigin();
                 success = m.getClass().getSimpleName().equals("RBeatGLMsg") && !m.getOrigin().isEmpty();
-            } while (!success && !SimulatorManager.isEndOfInjection());
+            } while (!success && !stopThisLC());
             return gl;
 //            Logger.info("[LC.getGL] 1 Got GL: " + m);
         } catch (TimeoutException e) {
@@ -299,7 +303,7 @@ public class LocalController extends Process {
             final XHost h = host;
             new Process(host.getSGHost(), host.getSGHost().getName() + "-lcCharge") {
                 public void main(String[] args) {
-                    while (!thisLCToBeStopped) {
+                    while (!stopThisLC()) {
                         try {
                             LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand(), Msg.getClock());
                             LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);

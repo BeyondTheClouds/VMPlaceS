@@ -20,7 +20,7 @@ public class AUX {
     static final long HeartbeatInterval = SnoozeProperties.getHeartBeatPeriodicity();
     static final long HeartbeatTimeout = SnoozeProperties.getHeartBeatTimeout();
 
-    static final double DeadTimeout = 0.2;
+    static final double DeadTimeout = 600;
 //    static final long DeadTimeout = SnoozeProperties.getHeartBeatPeriodicity()/3;
     static final double MessageReceptionTimeout = 0.2;
 
@@ -41,4 +41,6 @@ public class AUX {
     static double timeDiff(double oldTime) {
         return Msg.getClock()-oldTime;
     }
+
+    static double durationToEnd() { return SimulatorProperties.getDuration() - Msg.getClock() + 0.01; }
 }

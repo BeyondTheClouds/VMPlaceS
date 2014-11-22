@@ -4,6 +4,7 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
 import scheduling.snooze.msg.SnoozeMsg;
+import simulation.SimulatorManager;
 
 /**
  * Created by sudholt on 22/06/2014.
@@ -21,9 +22,9 @@ public class EntryPoint extends Process {
     }
 
     public void main(String args[]) {
-        while (true) {
+        while (!SimulatorManager.isEndOfInjection()) {
             try {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(AUX.epInbox);
+                SnoozeMsg m = (SnoozeMsg) Task.receive(AUX.epInbox, AUX.durationToEnd());
 //                Logger.info("[EP.main] " + m);
                 handle(m);
             } catch (Exception e) {
@@ -35,8 +36,6 @@ public class EntryPoint extends Process {
     void handle(SnoozeMsg m) {
         String cs = m.getClass().getSimpleName();
         switch (cs) {
-//            case "NewGMMsg" : handleNewGM(m); break;
-//            case "NewLCMsg" : handleNewLC(m); break;
             case "RBeatMsg" : handleRBeatGL(m); break;
             case "SnoozeMsg":
                 Logger.err("[EP(SnoozeMsg)] Unknown message" + m);
@@ -56,24 +55,4 @@ public class EntryPoint extends Process {
         }
         glTimestamp = (double) m.getMessage();
     }
-
-//    void handleNewGM(SnoozeMsg m) {
-//        if (!glHostname.equals(""))
-//            new NewGMMsg((String) m.getMessage(), AUX.glInbox(glHostname), m.getOrigin(), m.getReplyBox()).send();
-//        else {
-//            // Send failure message back
-//            new NewGMMsg((String) m.getMessage(), m.getReplyBox(), name, AUX.epInbox).send();
-//            Logger.err("[EP.handle] New GM without GroupLeader");
-//        }
-//    }
-//
-//    void handleNewLC(SnoozeMsg m) { // Join/rejoin LC
-//        if (!glHostname.equals("")) {
-//            new NewLCMsg((String) m.getMessage(), AUX.glInbox(glHostname), m.getOrigin(), m.getReplyBox()).send();
-//        } else {
-//            // Send failure message back
-//            new NewLCMsg((String) m.getMessage(), m.getReplyBox(), name, AUX.epInbox).send();
-//            Logger.err("[EP.handle] New LC without GroupLeader");
-//        }
-//    }
 }

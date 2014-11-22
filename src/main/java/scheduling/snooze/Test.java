@@ -9,7 +9,7 @@ import scheduling.snooze.msg.TestFailGMMsg;
 import simulation.SimulatorManager;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by sudholt on 20/07/2014.
@@ -22,10 +22,10 @@ public class Test extends Process {
 
     static Multicast multicast;
     static GroupLeader gl;
-    static Hashtable<String, GroupManager> gmsCreated = new Hashtable<>();
-    static Hashtable<String, GroupManager> gmsJoined = new Hashtable<>();
-    static Hashtable<String, LocalController> lcsCreated = new Hashtable<>();
-    static Hashtable<String, LCJoined> lcsJoined = new Hashtable<>();
+    static ConcurrentHashMap<String, GroupManager> gmsCreated = new ConcurrentHashMap<>();
+    static ConcurrentHashMap<String, GroupManager> gmsJoined = new ConcurrentHashMap<>();
+    static ConcurrentHashMap<String, LocalController> lcsCreated = new ConcurrentHashMap<>();
+    static ConcurrentHashMap<String, LCJoined> lcsJoined = new ConcurrentHashMap<>();
 
     static int noGMJoins = 0;
     static int noLCJoins = 0;
