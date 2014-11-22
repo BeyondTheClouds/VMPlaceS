@@ -46,29 +46,23 @@ public class GroupLeader extends Process {
         while (!SimulatorManager.isEndOfInjection()) {
             try {
                 if (!thisGLToBeTerminated) {
-                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
-                    handle(m);
+                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.DeadTimeout);
                     gmDead();
+                    handle(m);
                 } else {
                     Logger.err("[GL.main] TBTerminated: " + host.getName());
                     break;
                 }
-                if(SnoozeProperties.shouldISleep())
-                    sleep(AUX.DefaultComputeInterval);
+                if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
                 thisGLToBeTerminated = true;
                 break;
+            } catch (TimeoutException e) {
+                gmDead();
             } catch (Exception e) {
                 String cause = e.getClass().getName();
-                if (cause.equals("org.simgrid.msg.TimeoutException")) {
-                    if (n % 10 == 0)
-                        Logger.err("[GL.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
-                    n++;
-                } else {
-                    Logger.err("[GL.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
-                    e.printStackTrace();
-                }
-                gmDead();
+                Logger.err("[GL.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                e.printStackTrace();
             }
         }
         thisGLToBeTerminated=true;

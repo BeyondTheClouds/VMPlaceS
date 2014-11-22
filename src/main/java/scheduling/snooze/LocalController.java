@@ -4,7 +4,6 @@ package scheduling.snooze;
  * Created by sudholt on 25/05/2014.
  */
 
-import configuration.SimulatorProperties;
 import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
@@ -48,34 +47,24 @@ public class LocalController extends Process {
             init(SimulatorManager.getXHostByName(args[0]), args[1]);
             Test.lcsCreated.put(this.host.getName(), this);
             join();
-//            procSendMyBeats();
-//            procGMBeats();
             procSendLCChargeToGM();
             while (!thisLCToBeStopped && !SimulatorManager.isEndOfInjection()) {
                 try {
-//                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox);
-                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, SimulatorProperties.getDuration());
-//                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
-                    handle(m);
+                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.DeadTimeout);
                     gmDead();
-                    if(SnoozeProperties.shouldISleep())
-                        sleep(AUX.DefaultComputeInterval);
+                    handle(m);
+                    if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
                 } catch (HostFailureException e) {
                     thisLCToBeStopped = true;
                     Logger.err("[LC.main] HostFailureException");
                     break;
+                } catch (TimeoutException e) {
+                    gmDead();
                 } catch (Exception e) {
                     String cause = e.getClass().getName();
-                    if (cause.equals("org.simgrid.msg.TimeoutException")) {
-                        if (n % 10 == 0)
-                            Logger.err("[LC.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
-                        n++;
-                    } else {
-                        Logger.err("[LC.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
-                        e.printStackTrace();
-                    }
+                    Logger.err("[LC.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                    e.printStackTrace();
                     Logger.err("[LC.main] PROBLEM? Exception, " + host.getName() + ": " + e.getClass().getName());
-                    gmDead();
                 }
             }
             thisLCToBeStopped = true;
@@ -312,7 +301,7 @@ public class LocalController extends Process {
                             LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand(), Msg.getClock());
                             LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
                             m.send();
-//                            Logger.debug("[LC.startLCChargeToGM] Charge sent: " + m);
+                            Logger.info("[LC.startLCChargeToGM] Charge sent: " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
                             thisLCToBeStopped = true;

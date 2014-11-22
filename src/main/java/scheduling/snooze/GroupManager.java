@@ -53,31 +53,26 @@ public class GroupManager extends Process {
         Test.gmsJoined.remove(this);
         Test.gmsCreated.put(this.host.getName(), this);
 
-//        procGLBeats();
         newJoin();
         while (!SimulatorManager.isEndOfInjection()){
             try {
                 if (!thisGMToBeStopped) {
-                    m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
+                    m = (SnoozeMsg) Task.receive(inbox, AUX.DeadTimeout);
                     handle(m);
+                    glDead();
                     deadLCs();
-                    if(SnoozeProperties.shouldISleep())
-                        sleep(AUX.DefaultComputeInterval);
+                    if(SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
                 } else break;
             } catch (HostFailureException e) {
                 thisGMToBeStopped = true;
                 break;
+            } catch (TimeoutException e) {
+                glDead();
+                deadLCs();
             } catch (Exception e) {
                 String cause = e.getClass().getName();
-                if (cause.equals("org.simgrid.msg.TimeoutException")) {
-                    if (n % 10 == 0)
-                        Logger.err("[GM.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
-                    n++;
-                } else {
-                    Logger.err("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
-                    e.printStackTrace();
-                }
-                deadLCs();
+                Logger.err("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                e.printStackTrace();
             }
         }
         thisGMToBeStopped=true;
@@ -150,7 +145,8 @@ public class GroupManager extends Process {
             LCChargeMsg.LCCharge cs = (LCChargeMsg.LCCharge) m.getMessage();
             LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), cs.getTimestamp());
             lcInfo.put(lcHostname, new LCInfo(newCharge, cs.getTimestamp()));
-            Logger.info("[GM(LCCharge)] Charge et beat updated: " + lcHostname + ", " + cs.getProcCharge() + ", " + m);
+            Logger.info("[GM(LCCharge)] Charge/beat updated: " + lcHostname
+                    + ", " + lcInfo.get(lcHostname).timestamp + ", " + cs.getProcCharge() + ", " + m);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -164,7 +160,6 @@ public class GroupManager extends Process {
             NewLCMsg m;
             try {
                 m = (NewLCMsg) Task.receive(inbox + "-newLC");
-//                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.PoolingTimeout);
                 Logger.debug("[GM.RunNewLC] " + m);
                 String lc = (String) m.getMessage();
                 double   ts  = Msg.getClock();
@@ -186,32 +181,17 @@ public class GroupManager extends Process {
         }
     }
 
-
-//    void handleNewLC(SnoozeMsg m) {
-//        String lc = (String) m.getMessage();
-//        double   ts  = Msg.getClock();
-//        // Init LC charge and heartbeat
-//        LCInfo    lci = new LCInfo(new LCCharge(0, 0, ts), ts);
-//        lcInfo.put(lc, lci);
-//        Logger.info("[GM(NewLCMsg)] LC stored: " + m);
-//
-//        // Send acknowledgment
-//        m = new NewLCMsg(host.getName(), m.getReplyBox(), null, null);
-//        m.send();
-//    }
-
     /**
      * Identify and handle dead LCs
      */
     void deadLCs() {
         if (lcInfo.isEmpty() || joining) return;
         // Identify dead LCs
-        int no = lcInfo.size();
         HashSet<String> deadLCs = new HashSet<String>();
         for (String lcHostname: lcInfo.keySet()) {
             if (AUX.timeDiff(lcInfo.get(lcHostname).timestamp) > AUX.HeartbeatTimeout) {
                 deadLCs.add(lcHostname);
-                Logger.err("[GM.deadLCs] Identified: " + lcHostname);
+                Logger.err("[GM.deadLCs] Identified: " + lcHostname + ", " + lcInfo.get(lcHostname).timestamp);
             }
         }
         // Remove dead LCs
@@ -276,59 +256,6 @@ public class GroupManager extends Process {
             e.printStackTrace();
         }
     }
-
-//    /**
-//     * Sends beats to multicast group
-//     */
-//    void procGLBeats() {
-//        try {
-//            new Process(host, host.getName() + "-glBeats") {
-//                public void main(String[] args) throws HostFailureException {
-//                    while (!thisGMToBeStopped) {
-//                        try {
-//                            SnoozeMsg m = (SnoozeMsg)
-//                                    Task.receive(inbox + "-glBeats", AUX.HeartbeatTimeout);
-//                            glBeats(m);
-//                            glBeats(new SnoozeMsg());
-//                            if(SnoozeProperties.shouldISleep())
-//                                sleep(AUX.DefaultComputeInterval);
-//                        } catch (HostFailureException e) {
-//                            thisGMToBeStopped = true;
-//                            break;
-//                        } catch (Exception e) {
-//                            Logger.exc("[GM.procGLBeats] Exception, " + host.getName() + ": " + e.getClass().getName());
-////                            e.printStackTrace();
-//                        }
-//                    }
-//                }
-//            }.start();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
-
-//    /**
-//     * Sends beats to multicast group
-//     */
-//    void procSendMyBeats() {
-//        try {
-//            new Process(host, host.getName() + "-relayGMBeats") {
-//                public void main(String[] args) throws HostFailureException {
-//                    while (!thisGMToBeStopped) {
-//                        try {
-//                            BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
-//                            m.send();
-//                            Logger.info("[GM.procSendMyBeats] " + m);
-//                            sleep(AUX.HeartbeatInterval*1000);
-//                        } catch (HostFailureException e) {
-//                            thisGMToBeStopped = true;
-//                            break;
-//                        } catch (Exception e) { e.printStackTrace(); }
-//                    }
-//                }
-//            }.start();
-//        } catch (Exception e) {e.printStackTrace(); }
-//    }
 
     /**
      * Sends GM charge summary info to GL

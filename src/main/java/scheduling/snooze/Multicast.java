@@ -48,26 +48,21 @@ public class Multicast extends Process {
         procRelayGMBeats();
         while (!SimulatorManager.isEndOfInjection()) {
             try {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
-                handle(m);
+                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.DeadTimeout);
                 glDead();
                 gmDead();
+                handle(m);
                 if(SnoozeProperties.shouldISleep())
                     sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
-                Logger.err("[MUL.main] HostFailure Exception should never happen!: " + host.getName());
-            } catch (Exception e) {
-                String cause = e.getClass().getName();
-                if (cause.equals("org.simgrid.msg.TimeoutException")) {
-                    if (n % 10 == 0)
-                        Logger.err("[MUL.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
-                    n++;
-                } else {
-                    Logger.err("[MUL.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
-                    e.printStackTrace();
-                }
+                Logger.err("[MUL.main] HostFailure: " + host.getName());
+            } catch (TimeoutException e) {
                 glDead();
                 gmDead();
+            } catch (Exception e) {
+                String cause = e.getClass().getName();
+                Logger.err("[MUL.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                e.printStackTrace();
             }
         }
     }
@@ -108,9 +103,9 @@ public class Multicast extends Process {
         String gm = (String) m.getMessage();
 //        Logger.debug("[MUL(TermGM)] GM, gmInfo: " + gm + ", " + gmInfo.get(gm));
         gmInfo.remove(gm);
-        for (String lc: lcInfo.keySet()) {
-            if (lcInfo.get(lc).equals(gm)) orphanLCs.add(lc);
-        }
+//        for (String lc: lcInfo.keySet()) {
+//            if (lcInfo.get(lc).equals(gm)) orphanLCs.add(lc);
+//        }
     }
 
     /**
@@ -131,7 +126,7 @@ public class Multicast extends Process {
 
         for (String gm: gmInfo.keySet()) {
             GMInfo gi = gmInfo.get(gm);
-            if (gi.timestamp == 0 || AUX.timeDiff(gmInfo.get(gm).timestamp) <= AUX.HeartbeatTimeout
+            if (gi == null || AUX.timeDiff(gmInfo.get(gm).timestamp) <= AUX.HeartbeatTimeout
                     || gi.joining) {
 //                Logger.err("[MUL.gmDead] GM: " + gm + " TS: " + gi.timestamp);
                 continue;
@@ -258,7 +253,8 @@ public class Multicast extends Process {
                 try {
                     g.glBeats(m);
                 } catch (NullPointerException e) {
-                    e.printStackTrace();
+                    Logger.exc("[MUL.relayGLBeats] NullPointer, GM: " + gm);
+                    gmInfo.remove(gm);
                 }
                 Logger.info("[MUL.relayGLbeats] Beat relayed to GM: " + m);
             }
@@ -284,7 +280,7 @@ public class Multicast extends Process {
         RBeatGMMsg m = new RBeatGMMsg(g, AUX.glInbox(glHostname)+"-gmPeriodic", gm, null);
 //        m.send();
 //        Test.gl.handleGMInfo(m);
-        Logger.info("[MUL.relayGMBeats] " + m);
+        Logger.imp("[MUL.relayGMBeats] " + m);
 
         // Send to LCs
         int i = 0;
@@ -296,12 +292,12 @@ public class Multicast extends Process {
                 if (gm.equals(gmLc)) {
                     GMInfo gmi = gmInfo.get(gm);
                     m = new RBeatGMMsg(g, AUX.lcInbox(lc) + "-gmBeats", gm, null);
-//                    m.send();
                     LocalController lco = Test.lcsCreated.get(lc);
                     try {
                         lco.handleGMBeats(m);
                     } catch (NullPointerException e) {
-                        e.printStackTrace();
+                        Logger.exc("[MUL.relayGMBeats] NullPointer, LC: " + lc);
+                        lcInfo.remove(lc);
                     }
                     i++;
                     Logger.info("[MUL.relayGMBeats] To LC: " + lc + ", "+ lco + ", " + m);
@@ -402,8 +398,6 @@ public class Multicast extends Process {
                             relayGLBeats(m);
                             if(SnoozeProperties.shouldISleep())
                                 sleep(AUX.DefaultComputeInterval);
-                        } catch (TimeoutException e) {
-                            glDead = true;
                         } catch (HostFailureException e) {
                             Logger.err("[MUL.main] HostFailure Exc. should never happen!: " + host.getName());
                             break;
