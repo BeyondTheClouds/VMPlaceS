@@ -64,14 +64,16 @@ public class GroupManager extends Process {
                     if(SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
                 } else break;
             } catch (HostFailureException e) {
+                Logger.exc("[GM.main] HostFailureException");
                 thisGMToBeStopped = true;
                 break;
             } catch (TimeoutException e) {
+                Logger.exc("[GM.main] TimeoutException");
                 glDead();
                 deadLCs();
             } catch (Exception e) {
                 String cause = e.getClass().getName();
-                Logger.err("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                Logger.exc("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
                 e.printStackTrace();
             }
         }
@@ -140,12 +142,14 @@ public class GroupManager extends Process {
 
     void handleLCCharge(SnoozeMsg m) {
         try {
+            Logger.info("[GM.handleLCCharge] Charge update: " + m);
             String lcHostname = (String) m.getOrigin();
-            if (lcHostname.equals("") || !lcInfo.containsKey(lcHostname)) return;
+            if (lcHostname.equals("")) return;
+            if (!lcInfo.containsKey(lcHostname)) Logger.err("[GM.handleLCCharge] Unknown LC: " + lcHostname);
             LCChargeMsg.LCCharge cs = (LCChargeMsg.LCCharge) m.getMessage();
             LCCharge newCharge = new LCCharge(cs.getProcCharge(), cs.getMemUsed(), cs.getTimestamp());
             lcInfo.put(lcHostname, new LCInfo(newCharge, cs.getTimestamp()));
-            Logger.info("[GM(LCCharge)] Charge/beat updated: " + lcHostname
+            Logger.info("[GM.handleLCCharge] Charge/beat updated: " + lcHostname
                     + ", " + lcInfo.get(lcHostname).timestamp + ", " + cs.getProcCharge() + ", " + m);
         } catch (Exception e) {
             e.printStackTrace();
@@ -174,6 +178,7 @@ public class GroupManager extends Process {
             } catch (TimeoutException e) {
                 Logger.exc("[GM.RunNewLC] PROBLEM? Timeout Exception");
             } catch (HostFailureException e) {
+                Logger.exc("[GM.RunNewLC] HostFailureException");
                 return;
             } catch (Exception e) {
                 Logger.exc("[GM.RunNewLC] Exception");
@@ -185,20 +190,26 @@ public class GroupManager extends Process {
      * Identify and handle dead LCs
      */
     void deadLCs() {
-        if (lcInfo.isEmpty() || joining) return;
-        // Identify dead LCs
-        HashSet<String> deadLCs = new HashSet<String>();
-        for (String lcHostname: lcInfo.keySet()) {
-            if (AUX.timeDiff(lcInfo.get(lcHostname).timestamp) > AUX.HeartbeatTimeout) {
-                deadLCs.add(lcHostname);
-                Logger.err("[GM.deadLCs] Identified: " + lcHostname + ", " + lcInfo.get(lcHostname).timestamp);
+        try {
+            if (lcInfo.isEmpty() || joining) return;
+            // Identify dead LCs
+            HashSet<String> deadLCs = new HashSet<String>();
+            for (String lcHostname : lcInfo.keySet()) {
+                if (AUX.timeDiff(lcInfo.get(lcHostname).timestamp) > AUX.HeartbeatTimeout) {
+                    deadLCs.add(lcHostname);
+                    Logger.err("[GM.deadLCs] Identified: " + lcHostname + ", " + lcInfo.get(lcHostname).timestamp);
+                }
             }
-        }
-        // Remove dead LCs
-        lcInfo.keySet().removeAll(deadLCs);
-        for (String l: deadLCs) {
-            Test.lcsCreated.remove(l);
-            Test.lcsJoined.remove(l);
+            // Remove dead LCs
+            lcInfo.keySet().removeAll(deadLCs);
+            for (String l : deadLCs) {
+                Test.lcsCreated.remove(l);
+//            Test.lcsJoined.remove(l);
+                Test.removeJoinedLC(l, this.host.getName(), "[GM.deadLCs]");
+            }
+        } catch (Exception e) {
+            Logger.exc("[GM.deadLCs] Exception");
+            e.printStackTrace();
         }
     }
 
@@ -220,7 +231,7 @@ public class GroupManager extends Process {
                     Logger.imp("[GM.glBeats] GM Join finished: " + m + ", LCPool: " + AUX.lcPoolSize);
                     joining = false;
                     Test.noGMJoins++;
-                    Test.gmsJoined.remove(this);
+                    Test.gmsJoined.remove(this); // Should be superfluous
                     Test.gmsJoined.put(this.host.getName(), this);
                 }
             }
@@ -272,6 +283,7 @@ public class GroupManager extends Process {
                             Logger.info("[GM.procSendMyCharge] " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
+                            Logger.exc("[GM.main] HostFailureException");
                             thisGMToBeStopped = true;
                             break;
                         } catch (Exception e) { e.printStackTrace(); }
@@ -315,6 +327,7 @@ public class GroupManager extends Process {
                                 scheduling = false;
                             }
                         } catch (HostFailureException e) {
+                            Logger.exc("[GM.main] HostFailureException");
                             thisGMToBeStopped = true;
                             break;
                         } catch (Exception e) { e.printStackTrace(); }

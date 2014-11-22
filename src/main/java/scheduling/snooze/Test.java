@@ -25,7 +25,7 @@ public class Test extends Process {
     static Hashtable<String, GroupManager> gmsCreated = new Hashtable<>();
     static Hashtable<String, GroupManager> gmsJoined = new Hashtable<>();
     static Hashtable<String, LocalController> lcsCreated = new Hashtable<>();
-    static Hashtable<String, LocalController> lcsJoined = new Hashtable<>();
+    static Hashtable<String, LCJoined> lcsJoined = new Hashtable<>();
 
     static int noGMJoins = 0;
     static int noLCJoins = 0;
@@ -49,8 +49,7 @@ public class Test extends Process {
 //        procFailGMs();
             while (!testsToBeTerminated && !SimulatorManager.isEndOfInjection()) {
                 dispInfo();
-//            sleep(1000*SnoozeProperties.getInfoPeriodicity());
-                sleep(1000);
+                sleep(1000*SnoozeProperties.getInfoPeriodicity());
             }
         } catch (HostFailureException e) {
             testsToBeTerminated = true;
@@ -167,7 +166,7 @@ public class Test extends Process {
                 if (multicast.lcInfo.get(lc).gmHost.equals(gm)) {
                     mulLCs++;
                     if (Test.lcsCreated.containsKey(lc)) testLCsCreated++;
-                    if (Test.lcsJoined.containsKey(lc)) testLCsJoined++;
+                    if (Test.lcsJoined.containsKey(lc)) testLCsJoined += Test.getNoGMsJoinedLC(lc);
                 }
             }
             String gmLeader = "";
@@ -194,5 +193,46 @@ public class Test extends Process {
         Logger.imp("    No. GM joins: " + noGMJoins + ", No. LC joins: " + noLCJoins + "\n");
     }
 
+    static class LCJoined {
+        LocalController lco;
+        ArrayList<String> gms;
+    }
 
+    static void removeJoinedLC(String lc, String gm, String m) {
+        if (lcsJoined.containsKey(lc)) {
+            LCJoined tlj = lcsJoined.get(lc);
+            if (tlj.gms.contains(gm)) {
+                tlj.gms.remove(gm);
+                Logger.debug(m + " removeJoinedLC: LC: " + lc + ", GM: " + gm);
+                if (tlj.gms.size() == 0) {
+                    lcsJoined.remove(lc);
+                    Logger.debug(m + ", removeJoinedLC: Last GM removed LC: " + lc + ", GM: " + gm);
+                }
+            }
+        }
+        else Logger.debug(m + ", removeJoinedLC: No LC: " + lc + ", GM: " + gm);
+    }
+
+    static void putJoinedLC(String lc, LocalController lco, String gm, String m) {
+        if (lcsJoined.containsKey(lc)) {
+            LCJoined tlj = lcsJoined.get(lc);
+            if (!tlj.gms.contains(gm)) {
+                tlj.gms.add(gm);
+                Logger.debug(m + " putJoinedLC: GM added LC: " + lc + ", GM: " + gm + ", LCO: " + lco);
+            } else Logger.err(m + " putJoinedLC: Double LC: " + lc + ", GM: " + gm + ", LCO: " + lco);
+        } else {
+            LCJoined tlj = new LCJoined();
+            tlj.lco = lco;
+            ArrayList<String> al = new ArrayList<>();
+            al.add(gm);
+            tlj.gms = al;
+            lcsJoined.put(lc, tlj);
+            Logger.debug(m + " putJoinedLC: New LC: " + lc + ", GM: " + gm + ", LCO: " + lco);
+        }
+    }
+
+    static int getNoGMsJoinedLC(String lc) {
+        if (!lcsJoined.containsKey(lc)) return 0;
+        else return lcsJoined.get(lc).gms.size();
+    }
 }

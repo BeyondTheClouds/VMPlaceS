@@ -56,7 +56,7 @@ public class LocalController extends Process {
                     if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
                 } catch (HostFailureException e) {
                     thisLCToBeStopped = true;
-                    Logger.err("[LC.main] HostFailureException");
+                    Logger.exc("[LC.main] HostFailureException");
                     break;
                 } catch (TimeoutException e) {
                     gmDead();
@@ -69,6 +69,7 @@ public class LocalController extends Process {
             }
             thisLCToBeStopped = true;
         } catch (HostFailureException e) {
+            Logger.exc("[LC.main] HostFailureException");
             thisLCToBeStopped = true;
         }
         gmHostname = "";
@@ -138,8 +139,10 @@ public class LocalController extends Process {
         } while (!success && !SimulatorManager.isEndOfInjection());
         joining = false;
         Test.noLCJoins++;
-        Test.lcsJoined.remove(this.host.getName());
-        Test.lcsJoined.put(this.host.getName(), this);
+//        Test.lcsJoined.remove(this.host.getName());
+        Test.removeJoinedLC(this.host.getName(), gmHostname, "[LC.join]");  // Should be superfluous
+//        Test.lcsJoined.put(this.host.getName(), this);
+        Test.putJoinedLC(this.host.getName(), this, gmHostname, "[LC.join]");
         Logger.imp("[LC.join] Finished, GM: " + gmHostname + ", TS: " + gmTimestamp);
     }
 
@@ -301,9 +304,10 @@ public class LocalController extends Process {
                             LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand(), Msg.getClock());
                             LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
                             m.send();
-                            Logger.info("[LC.startLCChargeToGM] Charge sent: " + m);
+                            Logger.info("[LC.procSendLCChargeToGM] Charge sent: " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
+                            Logger.exc("[LC.procSendLCChargeToGM] HostFailureException");
                             thisLCToBeStopped = true;
                             break;
                         } catch (Exception e) { e.printStackTrace(); }

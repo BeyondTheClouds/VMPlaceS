@@ -55,6 +55,7 @@ public class GroupLeader extends Process {
                 }
                 if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
+                Logger.exc("[GL.main] HostFailureException");
                 thisGLToBeTerminated = true;
                 break;
             } catch (TimeoutException e) {

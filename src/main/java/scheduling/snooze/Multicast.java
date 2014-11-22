@@ -55,7 +55,7 @@ public class Multicast extends Process {
                 if(SnoozeProperties.shouldISleep())
                     sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
-                Logger.err("[MUL.main] HostFailure: " + host.getName());
+                Logger.exc("[MUL.main] HostFailureException");
             } catch (TimeoutException e) {
                 glDead();
                 gmDead();
