@@ -13,6 +13,10 @@ import trace.Trace;
 import scheduling.entropyBased.entropy2.EntropyProperties;
 import simulation.*;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 
@@ -116,7 +120,8 @@ public class Injector extends Process {
 
         while(currentTime < duration){
             // select a host
-            tempHost = xhosts[randHostPicker.nextInt(nbOfHosts)];
+            int index = randHostPicker.nextInt(nbOfHosts);
+            tempHost = xhosts[index];
 
             if(!ifStillOffUpdate(tempHost, faultQueue, currentTime)) {
 
@@ -132,10 +137,24 @@ public class Injector extends Process {
             }
             currentTime += exponentialDis(randExpDis, lambda);
         }
+
         Msg.info("Number of events:"+faultQueue.size());
         for (InjectorEvent evt: faultQueue){
             Msg.info(evt.toString());
         }
+
+        // Sort the list for the merge:
+        Collections.sort(faultQueue, new Comparator<FaultEvent>() {
+            @Override
+            public int compare(FaultEvent o1, FaultEvent o2) {
+                 if (o1.getTime() > o2.getTime())
+                     return 1 ;
+                 else if (o1.getTime() == o2.getTime())
+                      return 0 ;
+                 else // o1.getTime() < o2.getTime()
+                    return -1;
+            }
+        });
 
         return faultQueue;
     }
@@ -197,7 +216,28 @@ public class Injector extends Process {
             queue.addLast(crashEvt);
             crashEvt = faultQueue.pollFirst();
         }
+
+        writeEventQueue(queue);
+
         return queue;
+    }
+
+    private static void writeEventQueue(LinkedList<InjectorEvent> queue) {
+
+        try {
+            File file = new File("logs/events-queue.txt");
+            file.getParentFile().mkdirs();
+            BufferedWriter bw = new BufferedWriter(new FileWriter(file));
+            for (InjectorEvent evt: queue){
+                bw.write(evt.toString());
+                bw.write("\n");
+                bw.flush();
+            }
+
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /* Args : nbPMs nbVMs eventFile */

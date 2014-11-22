@@ -413,7 +413,6 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                             System.err.println("You are trying to migrate from/to a non existing node");
                         }
 
-                        double timeStartingMigration = Msg.getClock();
                         if (destHost != null) {
                             if (!sourceHost.isOff() && !destHost.isOff()) {
                                 incMig();
@@ -430,6 +429,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
                                     if (!destHost.isViable()) {
                                         Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
+                                        // If Trace.hostGetState(destHost.getName(), "PM").equals("normal")
                                         Trace.hostSetState(destHost.getName(), "PM", "violation-out");
                                     }
                                     if (sourceHost.isViable()) {
