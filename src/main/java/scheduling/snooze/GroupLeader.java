@@ -7,7 +7,7 @@ import simulation.SimulatorManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -15,7 +15,7 @@ import java.util.Hashtable;
  */
 public class GroupLeader extends Process {
     Host host; //@ Make private
-    Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>(); //@ Make private
+    ConcurrentHashMap<String, GMInfo> gmInfo = new ConcurrentHashMap<>(); //@ Make private
     private String inbox;
     private boolean thisGLToBeTerminated = false;
     private ThreadPool lcAssPool;
@@ -46,7 +46,7 @@ public class GroupLeader extends Process {
         while (!SimulatorManager.isEndOfInjection()) {
             try {
                 if (!thisGLToBeTerminated) {
-                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.DeadTimeout);
+                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
                     gmDead();
                     handle(m);
                 } else {
@@ -55,6 +55,7 @@ public class GroupLeader extends Process {
                 }
                 if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
+                Logger.exc("[GL.main] HostFailureException");
                 thisGLToBeTerminated = true;
                 break;
             } catch (TimeoutException e) {
@@ -177,7 +178,7 @@ public class GroupLeader extends Process {
                     while (!thisGLToBeTerminated) {
                         try {
                             SnoozeMsg m = (SnoozeMsg)
-                                    Task.receive(inbox + "-gmPeriodic", AUX.HeartbeatTimeout);
+                                    Task.receive(inbox + "-gmPeriodic", AUX.durationToEnd());
                             Logger.info("[GL.procGMInfo] " + m);
 
                             if (m instanceof GMSumMsg)   gmCharge(m);
@@ -237,7 +238,7 @@ public class GroupLeader extends Process {
         public void run() {
             try {
                 NewGMMsg m = (NewGMMsg)
-                        Task.receive(inbox + "-newGM");
+                        Task.receive(inbox + "-newGM", AUX.durationToEnd());
 //                        Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
                 String gmHostname = ((GroupManager) m.getMessage()).host.getName();
                 if (gmInfo.containsKey(gmHostname))
@@ -263,7 +264,7 @@ public class GroupLeader extends Process {
             LCAssMsg m = null;
             try {
                 Logger.info("[GL.RunLCAss] Wait for tasks: " + GroupLeader.this.inbox + "-lcAssign");
-                m = (LCAssMsg) Task.receive(inbox + "-lcAssign");
+                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.durationToEnd());
 //                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.PoolingTimeout);
                 Logger.info("[GL.RunLCAss] Task received: " + m);
                 String gm = lcAssignment((String) m.getMessage());

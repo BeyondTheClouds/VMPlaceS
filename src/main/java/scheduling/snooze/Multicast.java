@@ -6,7 +6,7 @@ import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
 
 import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by sudholt on 13/07/2014.
@@ -22,8 +22,8 @@ public class Multicast extends Process {
     private boolean electingOrPromoting = false;
     private ThreadPool newLCPool;
     private ThreadPool newGMPool;
-    Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>();  //@ Make private
-    Hashtable<String, LCInfo> lcInfo = new Hashtable<String, LCInfo>();  //@ Make private
+    ConcurrentHashMap<String, GMInfo> gmInfo = new ConcurrentHashMap<>();  //@ Make private
+    ConcurrentHashMap<String, LCInfo> lcInfo = new ConcurrentHashMap<>();  //@ Make private
 
     public Multicast(Host host, String name) {
         super(host, name);
@@ -48,14 +48,14 @@ public class Multicast extends Process {
         procRelayGMBeats();
         while (!SimulatorManager.isEndOfInjection()) {
             try {
-                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.DeadTimeout);
+                SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
                 glDead();
                 gmDead();
                 handle(m);
                 if(SnoozeProperties.shouldISleep())
                     sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
-                Logger.err("[MUL.main] HostFailure: " + host.getName());
+                Logger.exc("[MUL.main] HostFailureException");
             } catch (TimeoutException e) {
                 glDead();
                 gmDead();
@@ -249,8 +249,8 @@ public class Multicast extends Process {
             for (String gm : gmInfo.keySet()) {
                 m = new RBeatGLMsg(glTimestamp, AUX.gmInbox(gm)+"-glBeats", glHostname, null);
 //                m.send();
-                GroupManager g = Test.gmsCreated.get(gm);
                 try {
+                    GroupManager g = Test.gmsCreated.get(gm);
                     g.glBeats(m);
                 } catch (NullPointerException e) {
                     Logger.exc("[MUL.relayGLBeats] NullPointer, GM: " + gm);
@@ -292,8 +292,9 @@ public class Multicast extends Process {
                 if (gm.equals(gmLc)) {
                     GMInfo gmi = gmInfo.get(gm);
                     m = new RBeatGMMsg(g, AUX.lcInbox(lc) + "-gmBeats", gm, null);
-                    LocalController lco = Test.lcsCreated.get(lc);
+                    LocalController lco = null;
                     try {
+                        lco = Test.lcsCreated.get(lc);
                         lco.handleGMBeats(m);
                     } catch (NullPointerException e) {
                         Logger.exc("[MUL.relayGMBeats] NullPointer, LC: " + lc);
@@ -315,7 +316,7 @@ public class Multicast extends Process {
         public void run() {
             try {
                 SnoozeMsg m;
-                m = (SnoozeMsg) Task.receive(inbox + "-newGM");
+                m = (SnoozeMsg) Task.receive(inbox + "-newGM", AUX.durationToEnd());
 //                m = (SnoozeMsg) Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
                 Logger.info("[MUL.RunNewGM] " + m);
                 String gm = ((GroupManager) m.getMessage()).host.getName();
@@ -356,7 +357,7 @@ public class Multicast extends Process {
         public void run() {
             NewLCMsg m;
             try {
-                m = (NewLCMsg) Task.receive(inbox + "-newLC");
+                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.durationToEnd());
 //                m = (NewLCMsg) Task.receive(inbox + "-newLC", AUX.PoolingTimeout);
                 Logger.info("[MUL.RunNewLC] " + m);
                 if (m.getMessage() == null) {
@@ -393,7 +394,7 @@ public class Multicast extends Process {
                     while (!SimulatorManager.isEndOfInjection()) {
                         try {
                             // Get incoming message from GL
-                            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGLBeats", AUX.HeartbeatTimeout);
+                            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGLBeats", AUX.durationToEnd());
                             Logger.info("[MUL.procRelayGLBeats] " + m);
                             relayGLBeats(m);
                             if(SnoozeProperties.shouldISleep())
@@ -420,7 +421,7 @@ public class Multicast extends Process {
                 public void main(String[] args) {
                     while (!SimulatorManager.isEndOfInjection()) {
                         try {
-                            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGMBeats", AUX.HeartbeatTimeout);
+                            SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGMBeats", AUX.durationToEnd());
                             Logger.info("[MUL.procRelayGMBeats] " + m);
                             String gm = m.getOrigin();
                             double ts = (double) Msg.getClock();
