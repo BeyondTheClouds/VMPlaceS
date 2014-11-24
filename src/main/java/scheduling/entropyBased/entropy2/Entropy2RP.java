@@ -169,21 +169,21 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                 }
             });
 
-			try {
-				File file = new File("logs/entropy/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
-				file.getParentFile().mkdirs();
-				PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-			   //pw.write(reconfigurationPlan.toString());
+
+            try {
+                File file = new File("logs/entropy/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
+                file.getParentFile().mkdirs();
+                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+                //pw.write(reconfigurationPlan.toString());
                 for (Action a : sortedActions) {
                     pw.write(a.toString()+"\n");
                 }
-				pw.flush();
-				pw.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-
-			// Apply the reconfiguration plan.
+                pw.flush();
+                pw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            // Apply the reconfiguration plan.
 			try {
 				applyReconfigurationPlanLogically(sortedActions);
 			} catch (InterruptedException e) {
@@ -229,9 +229,17 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
         // If you reach that line, it means that either the execution of the plan has been completely launched or the
         // plan has been aborted. In both cases, we should wait for the completion of on-going migrations
+
+        // Add a watch dog to determine infinite loop
+        int watchDog = 0;
+
         while(this.ongoingMigration()){
             try {
                 org.simgrid.msg.Process.currentProcess().waitFor(1);
+                watchDog ++;
+                if (watchDog%100==0){
+                  Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
+                }
             } catch (HostFailureException e) {
                 e.printStackTrace();
             }
