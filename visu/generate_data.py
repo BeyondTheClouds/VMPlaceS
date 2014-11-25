@@ -229,8 +229,13 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 map_reconfigure_noreconf_count[nodes_vms_tuple] = reconfigure_noreconf_count
                 map_reconfigure_failure_count[nodes_vms_tuple]  = reconfigure_failure_count
                 map_reconfigure_success_count[nodes_vms_tuple]  = reconfigure_success_count
-                map_migration_count[nodes_vms_tuple] = migration_count 
-                map_success_psize[nodes_vms_tuple] = success_psize / reconfigure_success_count        
+                map_migration_count[nodes_vms_tuple] = migration_count
+                try:
+                    map_success_psize[nodes_vms_tuple] = success_psize / reconfigure_success_count        
+                except:
+                    map_success_psize[nodes_vms_tuple] = 0
+                    pass        
+                
 
                 map_avg_psize[nodes_vms_tuple] = avg_psize
                 map_migration_avg_duration[nodes_vms_tuple] = avg_migration_duration

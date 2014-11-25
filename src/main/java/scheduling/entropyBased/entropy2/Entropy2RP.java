@@ -320,7 +320,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             reconfigurationTime = ((long) (endReconfigurationTime - startReconfigurationTime) * 1000);
             Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
             enRes.setDuration(enRes.getDuration() + reconfigurationTime);
-            Msg.info("Number of nodes used: " + SimulatorManager.getNbOfUsedHosts());
+            Msg.info("Number of nodes used: " + hostsToCheck.size());
             if (isReconfigurationPlanAborted())
                 enRes.setRes(-2);
             else

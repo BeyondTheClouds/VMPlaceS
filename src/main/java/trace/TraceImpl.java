@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
-import scheduling.entropyBased.dvms2.dvms.LoggingActor;
-import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
+import scheduling.entropyBased.dvms2.dvms.dvms2.LoggingActor;
+import scheduling.entropyBased.dvms2.dvms.dvms2.LoggingProtocol;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;

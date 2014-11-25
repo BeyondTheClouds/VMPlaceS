@@ -1,4 +1,4 @@
-package org.discovery.dvms.dvms
+package scheduling.entropyBased.dvms2.dvms.dvms2
 
 /* ============================================================
  * Discovery Project - DVMS
@@ -19,57 +19,47 @@ package org.discovery.dvms.dvms
  * limitations under the License.
  * ============================================================ */
 
-import java.util.{Random, UUID}
 
-import org.discovery.dvms.dvms.DvmsProtocol._
-import org.discovery.dvms.dvms.DvmsModel._
-import org.discovery.dvms.dvms.DvmsModel.DvmsPartititionState._
-import org.simgrid.msg.{HostFailureException, Host, Msg}
-import org.discovery.dvms.entropy.EntropyActor
+import org.simgrid.msg.{Process, Msg}
+import org.discovery.dvms.entropy.EntropyMessage
 import scheduling.entropyBased.dvms2.{DVMSProcess, SGNodeRef, SGActor}
-import configuration.{XVM, XHost}
+import configuration.XVM
 import simulation.SimulatorManager
-import trace.Trace
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
-import scheduling.entropyBased.dvms2.dvms.LoggingActor
-import scheduling.entropyBased.dvms2.dvms.LoggingProtocol._
 import scheduling.entropyBased.dvms2.overlay.SimpleOverlay
-import scheduling.entropyBased.entropy2.Entropy2RP
-import entropy.configuration.Configuration
-import java.util
-import org.discovery.DiscoveryModel.model.ReconfigurationModel
-import scala.collection.mutable
 import scala.collection.JavaConversions._
+import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsModel._
+import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsProtocol._
+import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsModel.DvmsPartititionState._
+import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
+import scheduling.entropyBased.dvms2.dvms.timeout.TimeoutProtocol.{EnableTimeoutSnoozing, DisableTimeoutSnoozing, WorkOnThisPartition}
 
 object DvmsActor {
-  val partitionUpdateTimeout: Double = 3.5
+  val partitionUpdateTimeout: Double = 4.5
 }
 
-class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends SGActor(applicationRef) {
+class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess, entropyActorRef: SGNodeRef, snoozerActorRef: SGNodeRef) extends SGActor(applicationRef) {
 
   /* Local states of a DVMS agent */
 
-//  def firstOut: Option[SGNodeRef] = {
-//    val filter: List[String] = currentPartition match {
-//      case Some(p) => p.nodes.map(n => n.getName)
-//      case None => Nil
-//    }
-//    SimpleOverlay.giveSomeNeighbour(filter)
-//  }
-
-  var firstOut: Option[SGNodeRef] = None
+  def firstOut: Option[SGNodeRef] = {
+    val filter: List[String] = currentPartition match {
+      case Some(p) =>
+        val nodes: List[SGNodeRef] = p.nodes
+        nodes.map(n => n.getName)
+      case None => Nil
+    }
+    SimpleOverlay.giveSomeNeighbour(filter)
+  }
 
   var currentPartition: Option[DvmsPartition] = None
   var lastPartitionUpdateDate: Option[Double] = None
   var lockedForFusion: Boolean = false
-  val entropyActor = new EntropyActor(applicationRef)
 
   def isPerformingMigrations: Boolean = {
     val vms: java.util.Collection[XVM] = SimulatorManager.getXHostByName(applicationRef.getName).getRunnings
     ! vms.toList.forall(vm => !vm.isMigrating)
   }
-
-  implicit def selfSender: SGNodeRef = self
 
   /* Methods and functions related to logs */
 
@@ -96,13 +86,13 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
 
   def updatePartitionOnAllNodes(partition: DvmsPartition) {
     currentPartition = Some(partition)
-    updateLastUpdateTime()
+    snoozeTimeout()
     partition.nodes.filterNot(member => member.getId == self().getId).foreach(member => {
-      send(member, SetCurrentPartition(partition))
+      ask(member, SetCurrentPartition(partition))
     })
   }
 
-  def dissolvePartition(id: UUID, reason: String) {
+  def dissolvePartition(id: String, reason: String) {
     currentPartition match {
       case Some(partition) if(partition.id == id) =>
         logInfo(s"$applicationRef: I dissolve the partition $currentPartition, because <$reason>")
@@ -111,7 +101,6 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
         lastPartitionUpdateDate = None
         currentPartition = None
 
-//        LoggingActor.write(IsFree(Msg.getClock, s"${applicationRef.getId}"))
       case _ =>
     }
   }
@@ -123,13 +112,14 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
       currentPartition.get.leader,
       currentPartition.get.initiator,
       currentPartition.get.nodes ::: partition.nodes,
-      Growing(), UUID.randomUUID(), 0))
+      Growing()))
 
     lastPartitionUpdateDate = Some(Msg.getClock)
 
-    currentPartition.get.nodes.foreach(node => {
+    val nodes: List[SGNodeRef] = currentPartition.get.nodes
+    nodes.filterNot(member => member.getId == self().getId).foreach(node => {
       logInfo(s"(a) $applicationRef: sending a new version of the partition ${SetCurrentPartition(currentPartition.get)} to $node")
-      send(node, SetCurrentPartition(currentPartition.get))
+      ask(node, SetCurrentPartition(currentPartition.get))
     })
 
     val computationResult = computeEntropy()
@@ -137,18 +127,19 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
       case solution: ReconfigurationSolution => {
         logInfo(s"(1) the partition $currentPartition is enough to reconfigure")
 
-        applySolution(solution)
+//        applySolution(solution)
 
 
         logInfo(s"(a) I decide to dissolve $currentPartition")
-        currentPartition.get.nodes.foreach(node => {
+        val nodes: List[SGNodeRef] =currentPartition.get.nodes
+        nodes.foreach(node => {
           send(node, DissolvePartition(currentPartition.get.id, "violation resolved"))
         })
       }
       case ReconfigurationlNoSolution() => {
-
+        val nodes: List[SGNodeRef] = currentPartition.get.nodes
         logInfo(s"(1a) the partition $currentPartition is not enough to reconfigure," +
-          s" I try to find another node for the partition, deadlock? ${currentPartition.get.nodes.contains(firstOut)}")
+          s" I try to find another node for the partition, deadlock? ${nodes.contains(firstOut)}")
 
         firstOut match {
           case Some(existingNode) =>
@@ -182,12 +173,12 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
     currentPartition match {
       case Some(partition) if (partition.id == remotePartition.id) && (partition.version < remotePartition.version) =>
         currentPartition = Some(remotePartition)
-        updateLastUpdateTime()
+        snoozeTimeout()
         true
 
       case None =>
         currentPartition = Some(remotePartition)
-        updateLastUpdateTime()
+        snoozeTimeout()
         true
 
       case _ =>
@@ -234,42 +225,46 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
         remotePartition.version + 1
       )
 
-//      LoggingActor.write(IsBooked(Msg.getClock, s"${applicationRef.getId}"))
 
       logInfo(s"$applicationRef: I am becoming the new leader of $newPartition")
 
       updatePartitionOnAllNodes(newPartition)
 
       // ask entropy if the new partition is enough to resolve the overload
-      val computationResult = computeEntropy()
+      val planApplicationProcess = new Process(parentProcess.getHost, parentProcess.getHost.getName + "-plan-application", new Array[String](0)) {
+        def main(args: Array[String]) {
+          val computationResult = computeEntropy()
 
-      computationResult match {
-        case solution: ReconfigurationSolution => {
-          logInfo("(A) Partition was enough to reconfigure ")
+          computationResult match {
+            case solution: ReconfigurationSolution => {
+              logInfo("(A) Partition was enough to reconfigure ")
 
-          changeCurrentPartitionState(Finishing())
+              changeCurrentPartitionState(Finishing())
 
-          updatePartitionOnAllNodes(currentPartition.get)
+              updatePartitionOnAllNodes(currentPartition.get)
 
-          // Applying the reconfiguration plan
-          applySolution(solution)
+              // it was enough: the partition is no more useful
+              val nodes: List[SGNodeRef] =currentPartition.get.nodes
+              nodes.foreach(node => {
+                send(node, DissolvePartition(currentPartition.get.id, "reconfigurationPlan applied"))
+              })
+            }
+            case ReconfigurationlNoSolution() => {
 
-          // it was enough: the partition is no more useful
-          currentPartition.get.nodes.foreach(node => {
-            send(node, DissolvePartition(currentPartition.get.id, "reconfigurationPlan applied"))
-          })
-        }
-        case ReconfigurationlNoSolution() => {
-
-          firstOut match {
-            case Some(existingNode) =>
-              logInfo(s"(A) Partition was not enough to reconfigure, forwarding to $existingNode")
-              send(existingNode, TransmissionOfAnISP(currentPartition.get))
-            case None =>
-              logInfo(s"(A) $applicationRef : ${currentPartition.get} was not forwarded to nobody")
+              firstOut match {
+                case Some(existingNode) =>
+                  logInfo(s"(A) Partition was not enough to reconfigure, forwarding to $existingNode")
+                  changeCurrentPartitionState(Growing())
+                  ask(existingNode, TransmissionOfAnISP(currentPartition.get))
+                case None =>
+                  logInfo(s"(A) $applicationRef : ${currentPartition.get} was not forwarded to nobody")
+              }
+            }
           }
         }
       }
+      planApplicationProcess.start()
+
     } else {
       logWarning(s"$applicationRef: $remotePartition is no more valid (source: ${remotePartition.initiator})")
     }
@@ -281,12 +276,13 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
       case Some(nextNode) =>
         currentPartition match {
           case Some(p) =>
+            val nodes: List[SGNodeRef] = p.nodes
             (p.state, remotePartition.state) match {
               case (_, Growing()) =>
                 if (remotePartition.initiator.getId == self().getId) {
                   changeCurrentPartitionState(Blocked())
                 } else {
-                  forward(nextNode, sender, msg)
+                  forward(nextNode, sender, TransmissionOfAnISP(remotePartition))
                 }
 
               case (Blocked(), Blocked()) =>
@@ -296,7 +292,7 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
                   mergeWithThisPartition(remotePartition)
                 }
               case _ =>
-                forward(nextNode, sender, msg)
+                forward(nextNode, sender, TransmissionOfAnISP(remotePartition))
             }
         }
       case _ =>
@@ -306,7 +302,7 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
 
   /* Methods and functions related to fault tolerance */
 
-  def updateLastUpdateTime() {
+  def snoozeTimeout() {
     lastPartitionUpdateDate = Some(Msg.getClock)
   }
 
@@ -316,7 +312,14 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
         val duration: Double = (Msg.getClock - d)
         if (duration > DvmsActor.partitionUpdateTimeout) {
           logInfo(s"$applicationRef: timeout of $duration at partition $currentPartition has been reached: I dissolve everything")
-          p.nodes.filterNot(ref => ref.getId == applicationRef.getId).foreach(n => {
+          p.state match {
+            case Growing() =>
+              println("timeout while partition is growing()!")
+            case _ =>
+
+          }
+          val nodes: List[SGNodeRef] = p.nodes
+          nodes.filterNot(ref => ref.getId == applicationRef.getId).foreach(n => {
             send(n, DissolvePartition(p.id, "timeout"))
           })
           dissolvePartition(p.id, "timeout")
@@ -329,186 +332,11 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
   /* Methods and functions related to reconfiguration plans and migrations */
 
   def computeEntropy(): ReconfigurationResult = {
-
-    def updateTimeout(partition: DvmsPartition) {
-      partition.nodes.filterNot(n => n.getId == applicationRef.getId).foreach(node => {
-        send(node, "updateLastPartitionUpdate")
-      })
-      updateLastUpdateTime()
-    }
-
-    val threadName = s"${applicationRef.getName}-${new Random().nextInt(10000)}"
-
-    val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-timeout", new Array[String](0)) {
-      def main(args: Array[String]) {
-        val startingPartitionId: UUID = currentPartition.get.id
-        var continue: Boolean = true
-        while (continue) {
-
-          updateTimeout(currentPartition.get)
-          waitFor(1.5)
-
-          continue = currentPartition match {
-            case Some(partition) if(partition.id == startingPartitionId) => true
-            case _ => false
-          }
-        }
-      }
-    }
-
-    val hostsToCheck: util.LinkedList[XHost] = new util.LinkedList[XHost]
-    import scala.collection.JavaConversions._
-    for (node <- currentPartition.get.nodes) {
-      hostsToCheck.add(SimulatorManager.getXHostByName(node.getName))
-    }
-
-    val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
-    timeoutProcess.start()
-    val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
-    timeoutProcess.kill()
-    entropyRes.getRes match {
-      case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
-      case _ => ReconfigurationlNoSolution()
-    }
-  }
-
-  def applyMigration(m: MakeMigration) {
-
-    println( """/!\ WARNING /!\: Dans DvmsActor, les migrations sont synchrones!""");
-    println(s"trying to migrate ${m.vmName} from ${m.from} to ${m.to}");
-
-    val args: Array[String] = new Array[String](3)
-    args(0) = m.vmName
-    args(1) = m.from
-    args(2) = m.to
-
-
-    var destHost: XHost = null
-    var sourceHost: XHost = null
-    try {
-      sourceHost = SimulatorManager.getXHostByName(args(1))
-      destHost = SimulatorManager.getXHostByName(args(2))
-    }
-    catch {
-      case e: Exception => {
-        e.printStackTrace
-        System.err.println("You are trying to migrate from/to a non existing node")
-      }
-    }
-    if (destHost != null) {
-
-//      LoggingActor.write(StartingMigration(Msg.getClock, s"${applicationRef.getId}", m.vmName, m.from, m.to))
-
-      val timeBeforeMigration = Msg.getClock
-      sourceHost.migrate(args(0), destHost)
-      val timeAfterMigration = Msg.getClock
-
-//      LoggingActor.write(FinishingMigration(Msg.getClock, s"${applicationRef.getId}", m.vmName, m.from, m.to, timeAfterMigration - timeBeforeMigration))
-
-      Msg.info("End of migration of VM " + args(0) + " from " + args(1) + " to " + args(2))
-      //              CentralizedResolver.decMig
-      if (!destHost.isViable) {
-        Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName + "\n")
-        Trace.hostSetState(destHost.getName, "PM", "violation-out")
-      }
-      if (sourceHost.isViable) {
-        Msg.info("SOLVED VIOLATION ON " + sourceHost.getName + "\n")
-        Trace.hostSetState(sourceHost.getName, "PM", "normal")
-      }
-    }
-  }
-
-  def applySolution(solution: ReconfigurationSolution) {
-    def updateTimeout(partition: DvmsPartition) {
-      partition.nodes.filterNot(n => n.getId == applicationRef.getId).foreach(node => {
-        send(node, "updateLastPartitionUpdate")
-      })
-      updateLastUpdateTime()
-    }
-
-    println(s"Applying reconfigurationPlan: $solution")
-
-    import scala.collection.JavaConversions._
-
-    val currentPartitionCopy: Option[DvmsPartition] = currentPartition
-    currentPartitionCopy match {
-      case Some(partition) =>
-
-        var migrationDone: Int = 0
-        var migrationCount: Int = 0
-
-        solution.actions.keySet().foreach(key => {
-          solution.actions.get(key).foreach(action => {
-            action match {
-              case m@MakeMigration(from, to, vmName) =>
-                println(s"$partition => $m")
-                migrationCount += 1
-            }
-          })
-        })
-
-        val threadName = s"${applicationRef.getName}-${new Random().nextInt(10000)}"
-
-        val timeoutProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-timeout", new Array[String](0)) {
-          def main(args: Array[String]) {
-            val startingPartitionId: UUID = currentPartition.get.id
-            var continue: Boolean = true
-            while (continue && !SimulatorManager.isEndOfInjection) {
-
-              updateTimeout(partition)
-              waitFor(0.5)
-
-              continue = currentPartition match {
-                case Some(partition) if(partition.id == startingPartitionId) => true
-                case _ => false
-              }
-            }
-          }
-        }
-
-        solution.actions.keySet().foreach(key => {
-          solution.actions.get(key).foreach(action => {
-            action match {
-              case m@MakeMigration(from, to, vmName) =>
-                val migrationProcess = new org.simgrid.msg.Process(applicationRef.getName, s"$threadName-migration", new Array[String](0)) {
-                  def main(args: Array[String]): Unit = {
-                    applyMigration(m)
-                    migrationDone += 1
-                  }
-                }
-                migrationProcess.start()
-              case _ =>
-            }
-          })
-        })
-
-        timeoutProcess.start()
-
-        while(migrationDone < migrationCount) {
-          try {
-//            wait(1000)
-              parentProcess.waitFor(1)
-//            org.simgrid.msg.Process.currentProcess.waitFor(1)
-          }
-          catch {
-            case e: HostFailureException => {
-              e.printStackTrace
-            }
-          }
-        }
-
-//        timeoutProcess.kill()
-
-        logInfo(s"$applicationRef: reconfiguration plan $solution has been applied, dissolving partition $partition")
-
-        dissolvePartition(partition.id, "Reconfiguration plan has been applied")
-        partition.nodes.filterNot(ref => ref.getId == applicationRef.getId).foreach(n => {
-          send(n, DissolvePartition(partition.id, "Reconfiguration plan has been applied"))
-        })
-
-      case None =>
-        logInfo("cannot apply reconfigurationSolution: current partition is undefined")
-    }
+    send(snoozerActorRef, WorkOnThisPartition(currentPartition.get))
+    send(snoozerActorRef, EnableTimeoutSnoozing())
+    val result = ask(entropyActorRef, ComputeAndApplyPlan(currentPartition.get.nodes)).asInstanceOf[ReconfigurationResult]
+    send(snoozerActorRef, DisableTimeoutSnoozing())
+    return result
   }
 
 
@@ -520,9 +348,8 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
       logInfo(s"send $sender that partition is still valid ${isThisPartitionStillValid(partition)}")
       send(returnCanal, isThisPartitionStillValid(partition))
 
-    case "updateLastPartitionUpdate" =>
-      updateLastUpdateTime()
-//      send(returnCanal, true)
+    case SnoozeTimeout() =>
+      snoozeTimeout()
 
     case "checkTimeout" =>
       checkTimeout()
@@ -535,11 +362,11 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
 
     case DissolvePartition(id, reason) =>
       dissolvePartition(id, reason)
-//      send(returnCanal, true)
 
-    case SetCurrentPartition(partition: DvmsPartition) =>
-      val done = updateThePartitionWith(partition)
-//      send(returnCanal, done)
+    case msg@SetCurrentPartition(partition: DvmsPartition) =>
+      logInfo(s"received an ISP update: $msg @$currentPartition and @$firstOut")
+      updateThePartitionWith(partition)
+      send(returnCanal, true)
 
     case msg@TransmissionOfAnISP(remotePartition) =>
       logInfo(s"received an ISP: $msg @$currentPartition and @$firstOut")
@@ -550,6 +377,8 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
         case None =>
           receivedAnIspWhenFree(sender, remotePartition, msg)
       }
+
+      send(returnCanal, true)
 
     case "overloadingDetected" =>
       currentPartition match {
@@ -562,8 +391,6 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
             List(applicationRef),
             Growing()
           ))
-
-//          LoggingActor.write(IsBooked(Msg.getClock, s"${applicationRef.getId}"))
 
           lastPartitionUpdateDate = Some(Msg.getClock)
 
@@ -580,10 +407,12 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess) extends S
         // The node is already in a partition => nothing should be done!
       }
 
-    case ThisIsYourNeighbor(node) =>
-      firstOut = Some(node)
 
-    case msg => forward(applicationRef, sender, msg)
+    case entropyMessage: EntropyMessage =>
+      forward(entropyActorRef, sender, entropyMessage)
+
+    case msg =>
+      println(s"unknown message: $msg")
   }
 }
 

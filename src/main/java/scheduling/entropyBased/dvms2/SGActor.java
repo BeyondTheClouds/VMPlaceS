@@ -2,7 +2,7 @@ package scheduling.entropyBased.dvms2;
 
 import org.simgrid.msg.*;
 
-public class SGActor {
+public abstract class SGActor {
 
 
     public SGNodeRef ref = null;
@@ -15,14 +15,7 @@ public class SGActor {
         return ref;
     }
 
-    public static int MSG_COUNT = 0;
-
     public void send(SGNodeRef node, Object message){
-
-        if(message != "checkTimeout" && message != "overloadingDetected") {
-            MSG_COUNT++;
-            System.out.println("MSG_COUNT["+ Msg.getClock()+"]: "+MSG_COUNT+" -> "+message+"@"+node);
-        }
 
         MsgForSG msg = new MsgForSG(message,
                 node+"", ref.getName() ,null);
@@ -51,5 +44,7 @@ public class SGActor {
         }
         return null;
     }
+
+    public abstract void receive(Object message, SGNodeRef sender, SGNodeRef returnCanal);
 }	
 

@@ -1,39 +1,32 @@
 package scheduling.entropyBased.dvms2;
 
 import dvms.log.Logger;
+import org.discovery.dvms.entropy.EntropyActor;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsActor;
 import simulation.SimulatorManager;
 
 import java.net.UnknownHostException;
 
-//Represents a server running on a worker node
-//Currently, this server can only process on request at a time -> less concurrent access to the node object
-public class DVMSProcess extends Process {
+/**
+ * Created by jonathan on 24/11/14.
+ */
+public class EntropyProcess extends Process {
 
-    private SGActor dvms;
-
-    Long id;
-    String name;
+    private SGActor entropyActor;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Constructor
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public DVMSProcess(Host host, String name, String hostname, int port, SGNodeRef entropyActorRef, SGNodeRef snoozerActorRef) throws UnknownHostException  {
-        super(host, String.format("%s", hostname, port));
+    public EntropyProcess(Host host, String name, String hostname, int port) throws UnknownHostException {
+        super(host, String.format("%s-entropy", hostname, port));
 
-        this.name = String.format("%s", hostname, port);
-        this.id = nameToId(hostname);
-
-        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
-//        this.dvms = new LocalityBasedScheduler(new SGNodeRef(String.format("%s", hostname, port), id), this);
+        this.entropyActor = new EntropyActor(new SGNodeRef(String.format("%s-entropy", hostname, port), id));
     }
 
     public SGNodeRef self() {
-
-        return this.dvms.self();
+        return this.entropyActor.self();
     }
 
     public static Long nameToId(String name) {
@@ -67,7 +60,7 @@ public class DVMSProcess extends Process {
                 MsgForSG req=(MsgForSG) Task.receive(mBox);
                 Long reqId = nameToId(req.getSender().getHost().getName());
 
-                dvms.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
+                entropyActor.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
             } catch (Exception e) {
                 Logger.log(e);
             }
@@ -76,4 +69,3 @@ public class DVMSProcess extends Process {
         Msg.info("End of server");
     }
 }
-

@@ -444,13 +444,13 @@ public class SimulatorManager {
 
 
             if(previouslyViable && (!tmpHost.isViable())) {
-//                  Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
+                  Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
                     tmpHost.incViolation();
                     Trace.hostSetState(tmpHost.getName(), "PM", "violation");
 
             } else {//(!previouslyViable)
                 if (tmpHost.isViable()) {
-//                        Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
+                        Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
                         Trace.hostSetState (tmpHost.getName(), "PM", "normal");
                 }
             }
