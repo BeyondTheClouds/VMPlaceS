@@ -15,8 +15,8 @@ public class Logger {
         if (SnoozeProperties.getInfoLevel() <= 4) Msg.info("EXCSNOO: " + s);
     }
 
-    public static void tmp(String s) {
-        if (SnoozeProperties.getInfoLevel() <= 3) Msg.info("TMPSNOO: " + s);
+    public static void imp(String s) {
+        if (SnoozeProperties.getInfoLevel() <= 3) Msg.info("IMPSNOO: " + s);
     }
 
     public static void info(String s) {

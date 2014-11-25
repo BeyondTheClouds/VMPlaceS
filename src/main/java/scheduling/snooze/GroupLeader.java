@@ -7,7 +7,7 @@ import simulation.SimulatorManager;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Hashtable;
+import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
@@ -15,13 +15,13 @@ import java.util.Hashtable;
  */
 public class GroupLeader extends Process {
     Host host; //@ Make private
-    Hashtable<String, GMInfo> gmInfo = new Hashtable<String, GMInfo>(); //@ Make private
+    ConcurrentHashMap<String, GMInfo> gmInfo = new ConcurrentHashMap<>(); //@ Make private
     private String inbox;
     private boolean thisGLToBeTerminated = false;
     private ThreadPool lcAssPool;
     private ThreadPool newGMPool;
 
-    static enum AssignmentAlg { BESTFIT, ROUNDROBIN };
+    public static enum AssignmentAlg { BESTFIT, ROUNDROBIN };
     private int roundRobin = 0;
 
     public GroupLeader(Host host, String name) {
@@ -46,36 +46,31 @@ public class GroupLeader extends Process {
         while (!SimulatorManager.isEndOfInjection()) {
             try {
                 if (!thisGLToBeTerminated) {
-                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.ReceiveTimeout);
-                    handle(m);
+                    SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
                     gmDead();
+                    handle(m);
                 } else {
                     Logger.err("[GL.main] TBTerminated: " + host.getName());
                     break;
                 }
-                if(SnoozeProperties.shouldISleep())
-                    sleep(AUX.DefaultComputeInterval);
+                if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
+                Logger.exc("[GL.main] HostFailureException");
                 thisGLToBeTerminated = true;
                 break;
+            } catch (TimeoutException e) {
+                gmDead();
             } catch (Exception e) {
                 String cause = e.getClass().getName();
-                if (cause.equals("org.simgrid.msg.TimeoutException")) {
-                    if (n % 10 == 0)
-                        Logger.err("[GL.main] PROBLEM? 10 Timeout exceptions: " + host.getName() + ": " + cause);
-                    n++;
-                } else {
-                    Logger.err("[GL.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
-                    e.printStackTrace();
-                }
-                gmDead();
+                Logger.err("[GL.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+                e.printStackTrace();
             }
         }
         thisGLToBeTerminated=true;
     }
 
     void handle(SnoozeMsg m) {
-        Logger.info("[GL.handle] GLIn: " + m);
+//        Logger.debug("[GL.handle] GLIn: " + m);
         String cs = m.getClass().getSimpleName();
         switch (cs) {
             case "TermGMMsg": handleTermGM(m); break;
@@ -98,17 +93,10 @@ public class GroupLeader extends Process {
     void handleTermGM(SnoozeMsg m) {
         String gm = (String) m.getMessage();
         gmInfo.remove(gm);
+        Test.gmsCreated.remove(gm);
+        Test.gmsJoined.remove(gm);
         Logger.debug("[GL(TermGM)] GM removed: " + gm);
     }
-
-//    void gmBeats(SnoozeMsg m) {
-//        String gm = m.getOrigin();
-//        double ts = Msg.getClock();
-//        if (gmInfo.containsKey(gm)) {
-//            gmInfo.put(gm, new GMInfo(ts, gmInfo.get(gm).summary));
-//            Logger.info("[GL.gmBeats] TS updated: " + gm + ": " + ts);
-//        }
-//    }
 
     void gmCharge(SnoozeMsg m) {
         try {
@@ -134,8 +122,10 @@ public class GroupLeader extends Process {
             }
         }
         for (String gm: deadGMs) {
-            Logger.info("[GL.gmDead] GM dead, removed: " + gm + ": " + gmInfo.get(gm).timestamp);
+            Logger.imp("[GL.gmDead] GM dead, removed: " + gm + ": " + gmInfo.get(gm).timestamp);
             gmInfo.remove(gm);
+            Test.gmsCreated.remove(gm);
+            Test.gmsJoined.remove(gm);
         }
     }
 
@@ -188,10 +178,9 @@ public class GroupLeader extends Process {
                     while (!thisGLToBeTerminated) {
                         try {
                             SnoozeMsg m = (SnoozeMsg)
-                                    Task.receive(inbox + "-gmPeriodic", AUX.HeartbeatTimeout);
+                                    Task.receive(inbox + "-gmPeriodic", AUX.durationToEnd());
                             Logger.info("[GL.procGMInfo] " + m);
 
-//                            if      (m instanceof RBeatGMMsg) gmBeats(m); else
                             if (m instanceof GMSumMsg)   gmCharge(m);
                             else {
                                 Logger.err("[GL.procGMInfo] Unknown message: " + m);
@@ -230,10 +219,7 @@ public class GroupLeader extends Process {
                         try {
                             BeatGLMsg m =
                                     new BeatGLMsg(Msg.getClock(), AUX.multicast+"-relayGLBeats", glHostname, null);
-//                                Send by network
-                                m.send();
-//                            Call multicast
-//                              Test.multicast.relayGLBeats(m);
+                            m.send();
                             Logger.info("[GL.procSendMyBeats] " + m);
                             sleep(AUX.HeartbeatInterval*1000);
                         } catch (HostFailureException e) {
@@ -252,12 +238,8 @@ public class GroupLeader extends Process {
         public void run() {
             try {
                 NewGMMsg m = (NewGMMsg)
-                        Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
-//                            if (!m.getClass().getSimpleName().equals("NewGMMsg")) {
-//                                Logger.err("[GL.procNewGM] Unknown message: " + m);
-//                                continue;
-//                            }
-//                            Logger.info("[GL.procNewGM] " + m);
+                        Task.receive(inbox + "-newGM", AUX.durationToEnd());
+//                        Task.receive(inbox + "-newGM", AUX.PoolingTimeout);
                 String gmHostname = ((GroupManager) m.getMessage()).host.getName();
                 if (gmInfo.containsKey(gmHostname))
                     Logger.err("[GL.RunNewGM] GM " + gmHostname + " exists already");
@@ -265,7 +247,7 @@ public class GroupLeader extends Process {
                 GMInfo gi = new GMInfo(Msg.getClock(), new GMSum(0, 0, 0, Msg.getClock()));
                 gmInfo.put(gmHostname, gi);
                 // Acknowledge integration
-                Logger.info("[GL.RunNewGM] GM added: " + gmHostname + ", " + m);
+                Logger.imp("[GL.RunNewGM] GM added: " + gmHostname + ", " + m);
             } catch (HostFailureException e) {
                 thisGLToBeTerminated = true;
             } catch (Exception e) {
@@ -282,12 +264,13 @@ public class GroupLeader extends Process {
             LCAssMsg m = null;
             try {
                 Logger.info("[GL.RunLCAss] Wait for tasks: " + GroupLeader.this.inbox + "-lcAssign");
-                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.PoolingTimeout);
+                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.durationToEnd());
+//                m = (LCAssMsg) Task.receive(inbox + "-lcAssign", AUX.PoolingTimeout);
                 Logger.info("[GL.RunLCAss] Task received: " + m);
                 String gm = lcAssignment((String) m.getMessage());
                 m = new LCAssMsg(gm, m.getReplyBox(), host.getName(), null);
                 m.send();
-                Logger.info("[GL.RunLCAss] GM assigned: " + m);
+                Logger.imp("[GL.RunLCAss] GM assigned: " + m);
             } catch (TimeoutException e) {
                 Logger.exc("[GL.RunLCAss] PROBLEM? Timeout Exception");
             } catch (HostFailureException e) {

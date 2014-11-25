@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Date;
 
+import scheduling.snooze.AUX;
 import trace.Trace;
 
 
@@ -108,7 +109,9 @@ public class Main {
         SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
         SimulatorManager.writeCurrentConfiguration();
 
-        Trace.simulationDeclare(SimulatorProperties.getAlgo(), SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs());
+        String algorithmName = SimulatorProperties.getAlgo();
+        if (algorithmName.equals("hierarchical")) algorithmName += AUX.assignmentAlg;
+        Trace.simulationDeclare(algorithmName, SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs());
 
         /* Prepare TRACE variables */
         System.out.println("Prepare TRACE module" + new Date().toString());

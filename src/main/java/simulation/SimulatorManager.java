@@ -448,11 +448,14 @@ public class SimulatorManager {
                     tmpHost.incViolation();
                     Trace.hostSetState(tmpHost.getName(), "PM", "violation");
 
-            } else {//(!previouslyViable)
+            } else {
+                //(previouslyViable || !previouslyViable) && tmpHost.IsViable
                 if (tmpHost.isViable()) {
                         Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
                         Trace.hostSetState (tmpHost.getName(), "PM", "normal");
                 }
+                // !previouslyViable && !tmpHost.IsViable
+                //  do nothing the host is already in violation-out.
             }
 
 

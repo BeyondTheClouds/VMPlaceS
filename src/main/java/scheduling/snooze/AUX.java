@@ -20,18 +20,19 @@ public class AUX {
     static final long HeartbeatInterval = SnoozeProperties.getHeartBeatPeriodicity();
     static final long HeartbeatTimeout = SnoozeProperties.getHeartBeatTimeout();
 
-    static final long ReceiveTimeout = SnoozeProperties.getHeartBeatTimeout();
+    static final double DeadTimeout = 600;
+//    static final long DeadTimeout = SnoozeProperties.getHeartBeatPeriodicity()/3;
     static final double MessageReceptionTimeout = 0.2;
 
     static final int lcPoolSize = Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1);
     static final int gmPoolSize = Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1);
-    static final long PoolingTimeout = SnoozeProperties.getHeartBeatTimeout(); // Timeout for worker tasks
+//    static final long PoolingTimeout = SimulatorProperties.getDuration(); // Timeout for worker tasks
 
     // constants for variants of Snooze alg.
     static final boolean GLElectionForEachNewGM = false;
     static final boolean GLElectionStopGM = true;
-//    static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.BESTFIT;
-    static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
+    public static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.BESTFIT;
+//    public static final GroupLeader.AssignmentAlg assignmentAlg = GroupLeader.AssignmentAlg.ROUNDROBIN;
 
     static String glInbox(String glHost) { return glHost + "-glInbox"; }
     static String gmInbox(String gmHost) { return gmHost + "-gmInbox"; }
@@ -40,4 +41,6 @@ public class AUX {
     static double timeDiff(double oldTime) {
         return Msg.getClock()-oldTime;
     }
+
+    static double durationToEnd() { return SimulatorProperties.getDuration() - Msg.getClock() + 0.01; }
 }

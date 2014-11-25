@@ -43,7 +43,7 @@ public class Daemon extends Process {
         // Creation of the task
         //   The load is a dummy computation of the speed of VM * 100
         // TODO please confirm whether getHost().getSpeed() returns the speed of one core or the speed of the sum of each core
-        currentTask = new Task(this.getHost().getName()+"-daemon-0", this.getHost().getSpeed()*100, 0);
+        currentTask = new Task(this.getHost().getName()+"-daemon-0", this.getHost().getSpeed()*100.0, 0);
     }
     public void main(String[] args) throws MsgException {
         int i = 1;
@@ -56,7 +56,8 @@ public class Daemon extends Process {
             } catch (TaskCancelledException e) {
                 suspend(); // Suspend the process
             }
-            currentTask = new Task(this.getHost().getName()+"-daemon-"+(i++), this.getHost().getSpeed()*100, 0);
+            currentTask = new Task(this.getHost().getName()+"-daemon-"+(i++), this.getHost().getSpeed()*100.0, 0);
+            // TODO test whether the CPU consumption is higher when putting larger tasks (i.e. 1000000000000.0 for instance).
         }
     }
 
