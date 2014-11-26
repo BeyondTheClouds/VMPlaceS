@@ -4,6 +4,7 @@ import dvms.log.Logger;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsActor;
+import scheduling.entropyBased.dvms2.dvms.dvms3.LocalityBasedScheduler;
 import simulation.SimulatorManager;
 
 import java.net.UnknownHostException;
@@ -27,8 +28,8 @@ public class DVMSProcess extends Process {
         this.name = String.format("%s", hostname, port);
         this.id = nameToId(hostname);
 
-        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
-//        this.dvms = new LocalityBasedScheduler(new SGNodeRef(String.format("%s", hostname, port), id), this);
+//        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
+        this.dvms = new LocalityBasedScheduler(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
     }
 
     public SGNodeRef self() {

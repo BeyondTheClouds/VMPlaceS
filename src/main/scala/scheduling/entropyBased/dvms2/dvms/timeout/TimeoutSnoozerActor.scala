@@ -30,7 +30,7 @@ import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsProtocol.SnoozeTimeout
 class TimeoutSnoozerActor(applicationRef: SGNodeRef, host: Host) extends SGActor(applicationRef) {
 
   var enableSnoozing = false
-  var currentPartition: Option[DvmsPartition] = None
+  var currentPartition: Option[List[SGNodeRef]] = None
 
   var continue = false
   var core: Option[Process] = None
@@ -43,7 +43,7 @@ class TimeoutSnoozerActor(applicationRef: SGNodeRef, host: Host) extends SGActor
           println(s"looping with $enableSnoozing and $currentPartition")
           if (enableSnoozing) {
             currentPartition match {
-              case Some(p) => p.nodes.foreach(n => send(n, SnoozeTimeout()))
+              case Some(p) => p.foreach(n => send(n, SnoozeTimeout()))
               case _ =>
             }
           }
@@ -77,7 +77,7 @@ class TimeoutSnoozerActor(applicationRef: SGNodeRef, host: Host) extends SGActor
       }
       send(returnCanal, true)
 
-    case WorkOnThisPartition(p: DvmsPartition) =>
+    case WorkOnThisPartition(p: List[SGNodeRef]) =>
       currentPartition = Some(p)
       core match {
         case None =>

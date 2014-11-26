@@ -19,7 +19,7 @@ package scheduling.entropyBased.dvms2.dvms.timeout
  * limitations under the License.
  * ============================================================ */
 
-import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsModel._
+import scheduling.entropyBased.dvms2.SGNodeRef
 
 
 object TimeoutProtocol {
@@ -27,5 +27,5 @@ object TimeoutProtocol {
   case class EnableTimeoutSnoozing()
   case class DisableTimeoutSnoozing()
 
-  case class WorkOnThisPartition(p: DvmsPartition)
+  case class WorkOnThisPartition(p: List[SGNodeRef])
 }

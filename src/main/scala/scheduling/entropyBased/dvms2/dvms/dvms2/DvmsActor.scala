@@ -332,7 +332,7 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess, entropyAc
   /* Methods and functions related to reconfiguration plans and migrations */
 
   def computeEntropy(): ReconfigurationResult = {
-    send(snoozerActorRef, WorkOnThisPartition(currentPartition.get))
+    send(snoozerActorRef, WorkOnThisPartition(currentPartition.get.nodes))
     send(snoozerActorRef, EnableTimeoutSnoozing())
     val result = ask(entropyActorRef, ComputeAndApplyPlan(currentPartition.get.nodes)).asInstanceOf[ReconfigurationResult]
     send(snoozerActorRef, DisableTimeoutSnoozing())
