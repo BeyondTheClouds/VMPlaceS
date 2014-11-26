@@ -28,8 +28,8 @@ public class DVMSProcess extends Process {
         this.name = String.format("%s", hostname, port);
         this.id = nameToId(hostname);
 
-//        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
-        this.dvms = new LocalityBasedScheduler(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
+        this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
+//        this.dvms = new LocalityBasedScheduler(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
     }
 
     public SGNodeRef self() {
