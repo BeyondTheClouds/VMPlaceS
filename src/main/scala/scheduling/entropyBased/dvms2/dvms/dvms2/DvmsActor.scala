@@ -22,7 +22,7 @@ package scheduling.entropyBased.dvms2.dvms.dvms2
 
 import org.simgrid.msg.{Process, Msg}
 import org.discovery.dvms.entropy.EntropyMessage
-import scheduling.entropyBased.dvms2.{DVMSProcess, SGNodeRef, SGActor}
+import scheduling.entropyBased.dvms2.{DvmsProperties, DVMSProcess, SGNodeRef, SGActor}
 import configuration.XVM
 import simulation.SimulatorManager
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._
@@ -332,6 +332,11 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess, entropyAc
   /* Methods and functions related to reconfiguration plans and migrations */
 
   def computeEntropy(): ReconfigurationResult = {
+
+    if(currentPartition.get.nodes.size < DvmsProperties.getMinimumPartitionSize) {
+      return ReconfigurationlNoSolution()
+    }
+
     send(snoozerActorRef, WorkOnThisPartition(currentPartition.get.nodes))
     send(snoozerActorRef, EnableTimeoutSnoozing())
     val result = ask(entropyActorRef, ComputeAndApplyPlan(currentPartition.get.nodes)).asInstanceOf[ReconfigurationResult]

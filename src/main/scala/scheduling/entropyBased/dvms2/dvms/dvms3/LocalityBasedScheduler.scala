@@ -19,7 +19,7 @@ package scheduling.entropyBased.dvms2.dvms.dvms3
 * limitations under the License.
 * ============================================================ */
 
-import scheduling.entropyBased.dvms2.{DVMSProcess, SGActor, SGNodeRef}
+import scheduling.entropyBased.dvms2.{DvmsProperties, DVMSProcess, SGActor, SGNodeRef}
 import org.simgrid.msg.{Host, Msg}
 import scheduling.entropyBased.dvms2.dvms.dvms2.LoggingProtocol
 import LoggingProtocol._
@@ -77,9 +77,9 @@ class LocalityBasedScheduler(currentNode: SGNodeRef, parentProcess: DVMSProcess,
     def enoughResources(): ReconfigurationResult = {
       val nodes = currentPartition.get.nodes.map(n => n.bind(x => x).get)
 
-//      if(nodes.size < 5) {
-//        return ReconfigurationlNoSolution()
-//      }
+      if(nodes.size < DvmsProperties.getMinimumPartitionSize) {
+        return ReconfigurationlNoSolution()
+      }
 
       send(snoozerActorRef, WorkOnThisPartition(nodes))
       send(snoozerActorRef, EnableTimeoutSnoozing())
