@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Vmplaces : VM injector to evaluate placement algorithms by simulation. ">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Vmplaces</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/BeyondTheClouds/VMPlaceS">View on GitHub</a>
+
+          <h1 id="project_title">Vmplaces</h1>
+          <h2 id="project_tagline">VM injector to evaluate placement algorithms by simulation. </h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/BeyondTheClouds/VMPlaceS/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/BeyondTheClouds/VMPlaceS/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="vm-load-injector-java" class="anchor" href="#vm-load-injector-java" aria-hidden="true"><span class="octicon octicon-link"></span></a>VM load Injector (JAVA)</h1>
+
+<ul>
+<li>Contact: <a href="mailto:Adrien.Lebre@inria.fr">Adrien.Lebre@inria.fr</a>
+</li>
+<li>JAVA</li>
+<li><a href="https://github.com/BeyondTheClouds/SimgridInjector">https://github.com/BeyondTheClouds/SimgridInjector</a></li>
+</ul>
+
+<h2>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span class="octicon octicon-link"></span></a>Overview</h2>
+
+<p>A dedicated framework to evaluate and compare VM placement  algorithms.
+At coarse-grained, the framework is composed of two major components: the injector and the VM placement algorithm.
+The injector is the generic part of the framework (i.e. the one you can directly use) while the VM placement algorithm is the part you want to study (or compare with available algorithms).
+Currently, the SimgridInjector is released with three algorithms:</p>
+
+<ul>
+<li>Entropy [VEE09], a centralized approach using a constraint programming approach to solve the placement/reconfiguration VM problem</li>
+<li>Snooze [CCGRID12], a hierarchical approach where each manager of a group invokes Entropy to solve the placement/reconfiguration VM problem. <em>Note that in the CCGRID'12 paper, Snooze is using a specific heuristic to solve the placement/reconfiguration VM problem. As the sake of simplicity, we have simply reused the entropy scheduling code.</em>
+</li>
+<li>DVMS [SCALE12], a distributed approach that dynamically partitions the system and invokes Entropy on each partition.</li>
+</ul>
+
+<h2>
+<a id="description-of-the-injector" class="anchor" href="#description-of-the-injector" aria-hidden="true"><span class="octicon octicon-link"></span></a>Description of the Injector</h2>
+
+<p>The injector executes different kind of events:</p>
+
+<ul>
+<li>Load events:  every t seconds, the injector selects one VM and changes its CPU load according to a
+Gaussian distribution. t is a random variable that follows an exponential distribution
+with rate parameter lambda declared in the simulator.properties file. The Gaussian distribution is defined by a mean as (i.e mu)
+well as a standard deviation (i.e. sigma) that are given at the beginning of each simulation.
+The parameters of the simulation are defined in the ''simulator.properties'' file available in the ''config'' directory.
+By default, the duration of each experiment is set to 3600 seconds. The parameters are lambda=Nb_VMs/300 and mu=70, sigma=30.
+Concretely, the load of each VM starts from 0% and varies on average every 5 minutes in steps of 10 (with a significant part between 40% and 100% of CPU
+usage). For more information, please give a look at the injector packages and the corresponding Injector (mainly the generateLoadQueue method),
+the InjectorEvent interface and the LoadEvent class</li>
+<li>Fault events: Similarly to the load events, the injector turn off/on physical hosts following an exponential distribution with a rate parameter lambda
+declared in the simulator.properties file. This enables to simulate node crashes.</li>
+</ul>
+
+<p>To modify the injector parameters, please edit config/simulator.properties</p>
+
+<p>At the beginning, the simulation create n VMs, each of which is based on one of predefined VM classes. A VM class is a
+template of the specification of a VM and its workload. It is described as
+nb_cpu:ramsize:net_bw:mig_speed:mem_speed. VMs are launched on PMs in a round-robin manner, i.e., each PM has almost the same number of VMs.
+According to the investigated algorithm, VMs are relocated through the different PMs during the whole execution of the simulation.</p>
+
+<p>The ultimate objective of the Simgrid Injector VM framework is to deliver a building block that will enable to compare fairly different VM placement algorithms.</p>
+
+<h2>
+<a id="installing-and-running-the-simulator" class="anchor" href="#installing-and-running-the-simulator" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installing and Running the simulator</h2>
+
+<p>Please follow steps described in the <a href="https://github.com/BeyondTheClouds/VMPlaceS">README</a> of <a href="https://github.com/BeyondTheClouds/VMPlaceS">https://github.com/BeyondTheClouds/VMPlaceS</a>.</p>
+
+<h2>
+<a id="topology-of-the-simulated-infrastructure" class="anchor" href="#topology-of-the-simulated-infrastructure" aria-hidden="true"><span class="octicon octicon-link"></span></a>Topology of the simulated infrastructure</h2>
+
+<p>Please note that the Simulator injector is currently released with a default platform xml file (see config/cluster_platform.xml) allowing to run a simulation up to 5K hosts in a one-site cluster scenario.
+That means that nodes are homogeneous. They have the same capabilities in terms of nb of cores, cpu/ram capacitity and network bandwidth.
+You can if you want change the network topology as well as the network capability of each node by modifying  the platform file or by using your own one (for more information, please refer to the SimGrid
+documentation, section Platform description)
+WARNING: please keep in mind that due to the fact the capability in terms of cores number/cpu/ramsize is defined in the simulator.properties files, nodes will stay homogeneous.</p>
+
+<p>The injector runs on node((nb_node)+1) and the node0 is reserved to run specific services.
+For instance, if you have configured the simulation in order to simulate the centralized approach with 10 nodes. Node 0 will run the event injector, Node[1-10] will host the VMs and the scheduler will  be launched on node 11.
+This is important as the crash injector only consider nodes between 0 (inclusive) and nb_nodes. In other words, the injector node can never crash.</p>
+
+<h2>
+<a id="implementevaluate-a-new-algorithm" class="anchor" href="#implementevaluate-a-new-algorithm" aria-hidden="true"><span class="octicon octicon-link"></span></a>Implement/evaluate a new algorithm</h2>
+
+<p>TODO - Describe the process to add a new scheduler into the injector</p>
+
+<h2>
+<a id="contributors" class="anchor" href="#contributors" aria-hidden="true"><span class="octicon octicon-link"></span></a>Contributors</h2>
+
+<ul>
+<li>Adrien Lebre - <a href="mailto:adrien.lebre@inria.fr">adrien.lebre@inria.fr</a> - France - Project founder, principal maintainer</li>
+<li>Jonathan Pastor - <a href="mailto:jonathan.pastor@inria.fr">jonathan.pastor@inria.fr</a> - France - Implementation of the distributed resolver (based on the DVMS proposal)</li>
+<li>Flavien Quesnel - xxxx - France - Contributor (simulator properties, bug fixes, distributed resolver)</li>
+<li>José Simao - <a href="mailto:jsimao@cc.isel.ipl.pt">jsimao@cc.isel.ipl.pt</a> - Portugal - First beta tester - few bug fixes</li>
+<li>Mario Sudhol - <a href="mailto:mario.sudholt@inria.fr">mario.sudholt@inria.fr</a> - Implementation of the hierarchical resolver (based on the Snooze proposal)</li>
+</ul>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Vmplaces maintained by <a href="https://github.com/BeyondTheClouds">BeyondTheClouds</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
