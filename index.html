@@ -4,11 +4,11 @@
   <head>
     <meta charset='utf-8'>
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
-    <meta name="description" content="VmPlaceS : VM injector to evaluate placement algorithms by simulation. ">
+    <meta name="description" content="VMPlaceS : A dedicated framework to evaluate and compare VM placement algorithms">
 
     <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>VmPlaceS</title>
+    <title>VMPlaceS</title>
   </head>
 
   <body>
@@ -18,8 +18,8 @@
         <header class="inner">
           <a id="forkme_banner" href="https://github.com/BeyondTheClouds/VMPlaceS">View on GitHub</a>
 
-          <h1 id="project_title">VmPlaceS</h1>
-          <h2 id="project_tagline">VM injector to evaluate placement algorithms by simulation. </h2>
+          <h1 id="project_title">VMPlaceS</h1>
+          <h2 id="project_tagline">A dedicated framework to evaluate and compare VM placement algorithms</h2>
 
             <section id="downloads">
               <a class="zip_download_link" href="https://github.com/BeyondTheClouds/VMPlaceS/zipball/master">Download this project as a .zip file</a>
@@ -38,7 +38,7 @@
 <li>Contact: <a href="mailto:Adrien.Lebre@inria.fr">Adrien.Lebre@inria.fr</a>
 </li>
 <li>JAVA</li>
-<li><a href="https://github.com/BeyondTheClouds/SimgridInjector">https://github.com/BeyondTheClouds/SimgridInjector</a></li>
+<li><a href="https://github.com/BeyondTheClouds/VMPlaceS">https://github.com/BeyondTheClouds/VMPlaceS</a></li>
 </ul>
 
 <h2>
@@ -47,7 +47,7 @@
 <p>A dedicated framework to evaluate and compare VM placement  algorithms.
 At coarse-grained, the framework is composed of two major components: the injector and the VM placement algorithm.
 The injector is the generic part of the framework (i.e. the one you can directly use) while the VM placement algorithm is the part you want to study (or compare with available algorithms).
-Currently, the SimgridInjector is released with three algorithms:</p>
+Currently, the VMPlaceS is released with three algorithms:</p>
 
 <ul>
 <li>Entropy [VEE09], a centralized approach using a constraint programming approach to solve the placement/reconfiguration VM problem</li>
@@ -82,7 +82,7 @@ template of the specification of a VM and its workload. It is described as
 nb_cpu:ramsize:net_bw:mig_speed:mem_speed. VMs are launched on PMs in a round-robin manner, i.e., each PM has almost the same number of VMs.
 According to the investigated algorithm, VMs are relocated through the different PMs during the whole execution of the simulation.</p>
 
-<p>The ultimate objective of the Simgrid Injector VM framework is to deliver a building block that will enable to compare fairly different VM placement algorithms.</p>
+<p>The ultimate objective of the VMPlaceS framework is to deliver a building block that will enable to compare fairly different VM placement algorithms.</p>
 
 <h2>
 <a id="installing-and-running-the-simulator" class="anchor" href="#installing-and-running-the-simulator" aria-hidden="true"><span class="octicon octicon-link"></span></a>Installing and Running the simulator</h2>
@@ -123,7 +123,7 @@ This is important as the crash injector only consider nodes between 0 (inclusive
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
-        <p class="copyright">VmPlaceS maintained by <a href="https://github.com/BeyondTheClouds">BeyondTheClouds</a></p>
+        <p class="copyright">VMPlaceS maintained by <a href="https://github.com/BeyondTheClouds">BeyondTheClouds</a></p>
         <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
       </footer>
     </div>
