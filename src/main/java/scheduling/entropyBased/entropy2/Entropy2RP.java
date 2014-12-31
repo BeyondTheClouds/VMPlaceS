@@ -234,6 +234,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         int watchDog = 0;
 
         while(this.ongoingMigration()){
+        //while(this.ongoingMigration() && !SimulatorManager.isEndOfInjection()){
             try {
                 org.simgrid.msg.Process.currentProcess().waitFor(1);
                 watchDog ++;
