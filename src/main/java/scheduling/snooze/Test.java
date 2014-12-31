@@ -157,7 +157,8 @@ public class Test extends Process {
 
     void dispInfo() {
         int i = 0, al = 0, gmal = 0;
-        Logger.imp("\n\n[Test.dispInfo] #MUL.gmInfo: " + multicast.gmInfo.size() +
+        Logger.imp("\n\n[Test.dispInfo] MUL.GL: " + multicast.glHostname +
+                ", #MUL.gmInfo: " + multicast.gmInfo.size() +
                 ", #MUL.lcInfo: " + multicast.lcInfo.size() + ", #Test.gmsCreated " + Test.gmsCreated.size());
         Logger.imp("    ----");
         for (String gm : multicast.gmInfo.keySet()) {
