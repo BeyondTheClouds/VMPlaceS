@@ -1,6 +1,5 @@
 package scheduling.entropyBased.dvms2;
 
-import dvms.log.Logger;
 import org.discovery.dvms.entropy.EntropyActor;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
@@ -62,7 +61,7 @@ public class EntropyProcess extends Process {
 
                 entropyActor.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
             } catch (Exception e) {
-                Logger.log(e);
+               e.printStackTrace();
             }
         }
 

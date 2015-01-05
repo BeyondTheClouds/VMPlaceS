@@ -1,6 +1,5 @@
 package scheduling.entropyBased.dvms2;
 
-import dvms.log.Logger;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.entropyBased.dvms2.dvms.timeout.TimeoutSnoozerActor;
@@ -62,7 +61,7 @@ public class TimeoutSnoozerProcess extends Process {
 
                 timeoutSnoozerActor.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
             } catch (Exception e) {
-                Logger.log(e);
+                e.printStackTrace();
             }
         }
 
