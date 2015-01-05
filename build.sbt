@@ -1,6 +1,7 @@
+import sbtassembly.Plugin.AssemblyKeys
 import AssemblyKeys._
 
-name := "SimgridInjector"
+name := "VMPlaceS"
 
 version := "0.5"
 
