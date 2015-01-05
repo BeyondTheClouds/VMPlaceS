@@ -34,7 +34,7 @@ import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.*;
-import org.discovery.dvms.dvms.DvmsModel.*;
+import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsModel.*;
 import java.util.*;
 
 public class EntropyService {

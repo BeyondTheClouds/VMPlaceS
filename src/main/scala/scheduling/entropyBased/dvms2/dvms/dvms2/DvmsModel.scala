@@ -1,4 +1,4 @@
-package org.discovery.dvms.dvms
+package scheduling.entropyBased.dvms2.dvms.dvms2
 
 /* ============================================================
  * Discovery Project - DVMS
@@ -21,16 +21,24 @@ package org.discovery.dvms.dvms
 
 import java.util.UUID
 import scheduling.entropyBased.dvms2.SGNodeRef
+import scala.util.Random
+import configuration.SimulatorProperties
 
 object DvmsModel {
 
 
    object DvmsPartition {
-      def apply(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState): DvmsPartition =
-         DvmsPartition(leader, initiator, nodes, state, UUID.randomUUID(), 0)
+
+     val random = new Random(SimulatorProperties.getSeed)
+
+      def apply(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState): DvmsPartition = {
+        val uuid = random.alphanumeric.take(16).foldLeft("")((a, b) => a+b)
+        DvmsPartition(leader, initiator, nodes, state, uuid, 0)
+      }
+
    }
 
-   case class DvmsPartition(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState, id: UUID, version: Int)
+   case class DvmsPartition(leader: SGNodeRef, initiator: SGNodeRef, nodes: List[SGNodeRef], state: DvmsPartititionState, id: String, version: Int)
 
 
    object DvmsPartititionState {
@@ -54,6 +62,13 @@ object DvmsModel {
             case _ => false
          }
       }
+
+     case class ComputingAndApplying() extends DvmsPartititionState {
+       def isEqualTo(a: DvmsPartititionState): Boolean = a match {
+         case ComputingAndApplying() => true
+         case _ => false
+       }
+     }
 
       case class Finishing() extends DvmsPartititionState {
          def isEqualTo(a: DvmsPartititionState): Boolean = a match {

@@ -1,49 +1,32 @@
 package scheduling.entropyBased.dvms2;
 
-import java.net.UnknownHostException;
-
-import org.discovery.dvms.dvms.DvmsActor;
-import org.discovery.dvms.dvms.DvmsProtocol;
-import org.simgrid.msg.Host;
-import org.simgrid.msg.Msg;
-import org.simgrid.msg.MsgException;
+import dvms.log.Logger;
+import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import org.simgrid.msg.Task;
-
+import scheduling.entropyBased.dvms2.dvms.timeout.TimeoutSnoozerActor;
 import simulation.SimulatorManager;
 
 import java.net.UnknownHostException;
 
-//Represents a server running on a worker node
-//Currently, this server can only process on request at a time -> less concurrent access to the node object
-public class DVMSProcess extends Process {
+/**
+ * Created by jonathan on 24/11/14.
+ */
+public class TimeoutSnoozerProcess extends Process {
 
-    private SGActor dvms;
-
-    Long id;
-    String name;
+    private SGActor timeoutSnoozerActor;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Constructor
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    public DVMSProcess(Host host, String name, String hostname, int port, SGNodeRef entropyActorRef, SGNodeRef snoozerActorRef) throws UnknownHostException  {
-        super(host, String.format("%s", hostname, port));
+    public TimeoutSnoozerProcess(Host host, String name, String hostname, int port) throws UnknownHostException {
+        super(host, String.format("%s-timeoutsnoozer", hostname, port));
 
-        this.name = String.format("%s", hostname, port);
-        this.id = nameToId(hostname);
-
-
-        if(DvmsProperties.isLocalityBasedScheduler()) {
-            this.dvms = new LocalityBasedScheduler(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
-        } else {
-            this.dvms = new DvmsActor(new SGNodeRef(String.format("%s", hostname, port), id), this, entropyActorRef, snoozerActorRef);
-        }
+        this.timeoutSnoozerActor = new TimeoutSnoozerActor(new SGNodeRef(String.format("%s-timeoutsnoozer", hostname, port), id),  host);
     }
 
     public SGNodeRef self() {
-
-        return this.dvms.self();
+        return this.timeoutSnoozerActor.self();
     }
 
     public static Long nameToId(String name) {
@@ -77,13 +60,12 @@ public class DVMSProcess extends Process {
                 MsgForSG req=(MsgForSG) Task.receive(mBox);
                 Long reqId = nameToId(req.getSender().getHost().getName());
 
-                dvms.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
+                timeoutSnoozerActor.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
             } catch (Exception e) {
-                e.printStackTrace();
+                Logger.log(e);
             }
         }
 
         Msg.info("End of server");
     }
 }
-

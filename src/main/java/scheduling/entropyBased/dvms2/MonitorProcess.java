@@ -2,12 +2,11 @@ package scheduling.entropyBased.dvms2;
 
 import configuration.XHost;
 import configuration.XVM;
-import org.simgrid.msg.*;
+import org.simgrid.msg.Host;
+import org.simgrid.msg.Msg;
 import org.simgrid.msg.Process;
-import trace.Trace;
-import scheduling.entropyBased.dvms2.dvms.LoggingActor;
 import simulation.SimulatorManager;
-import scheduling.entropyBased.dvms2.dvms.LoggingProtocol.*;
+import trace.Trace;
 
 public class MonitorProcess extends Process {
 
@@ -58,6 +57,10 @@ public class MonitorProcess extends Process {
             else if(cpuConsumption <= this.xhost.getCPUCapacity()) {
                 Trace.hostPushState(Host.currentHost().getName(), "PM", "normal");
             }
+
+        }
+
+        public void receive(Object message, SGNodeRef sender, SGNodeRef returnCanal) {
 
         }
     }

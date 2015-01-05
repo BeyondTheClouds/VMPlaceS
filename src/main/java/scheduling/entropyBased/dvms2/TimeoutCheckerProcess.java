@@ -7,23 +7,23 @@ import simulation.SimulatorManager;
 
 import java.util.concurrent.TimeoutException;
 
-public class TimeoutProcess extends Process {
+public class TimeoutCheckerProcess extends Process {
 
-    public TimeoutActor timeoutActor;
+    public TimeoutCheckerActor timeoutActor;
 
-    public TimeoutProcess(XHost xhost, String name, int port, SGNodeRef ref, DVMSProcess process) {
+    public TimeoutCheckerProcess(XHost xhost, String name, int port, SGNodeRef ref, DVMSProcess process) {
         super(xhost.getSGHost(), String.format("%s-checkout-checker", name, port));
 
-        this.timeoutActor = new TimeoutActor(ref, xhost, process);
+        this.timeoutActor = new TimeoutCheckerActor(ref, xhost, process);
     }
 
-    public class TimeoutActor extends SGActor {
+    public class TimeoutCheckerActor extends SGActor {
 
         SGNodeRef ref;
         DVMSProcess process;
         XHost xhost;
 
-        public TimeoutActor(SGNodeRef ref, XHost xhost, DVMSProcess process) {
+        public TimeoutCheckerActor(SGNodeRef ref, XHost xhost, DVMSProcess process) {
             super(ref);
 
             this.ref = ref;
@@ -33,11 +33,11 @@ public class TimeoutProcess extends Process {
 
         public void doCheckTimeout() throws HostFailureException {
 
-
-            // Send a "checkTimeout" string instead of CheckTimeout()
             send(ref, "checkTimeout");
             waitFor(1);
+        }
 
+        public void receive(Object message, SGNodeRef sender, SGNodeRef returnCanal) {
 
         }
     }

@@ -10,8 +10,8 @@ package injector;
 
 import configuration.XHost;
 import org.simgrid.msg.Msg;
-import scheduling.entropyBased.dvms2.dvms.LoggingActor;
-import scheduling.entropyBased.dvms2.dvms.LoggingProtocol;
+import scheduling.entropyBased.dvms2.dvms.dvms2.LoggingActor;
+import scheduling.entropyBased.dvms2.dvms.dvms2.LoggingProtocol;
 import simulation.SimulatorManager;
 
 public class FaultEvent implements InjectorEvent{

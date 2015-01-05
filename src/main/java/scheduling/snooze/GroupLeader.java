@@ -215,13 +215,17 @@ public class GroupLeader extends Process {
             new Process(host, host.getName() + "-glBeats") {
                 public void main(String[] args) {
                     String glHostname = host.getName();
+                    int beatCounter = 0;
                     while (!thisGLToBeTerminated) {
                         try {
-                            BeatGLMsg m =
-                                    new BeatGLMsg(Msg.getClock(), AUX.multicast+"-relayGLBeats", glHostname, null);
-                            m.send();
-                            Logger.info("[GL.procSendMyBeats] " + m);
-                            sleep(AUX.HeartbeatInterval*1000);
+                            if (beatCounter % 4 == 0) {
+                                BeatGLMsg m =
+                                        new BeatGLMsg(Msg.getClock(), AUX.multicast + "-relayGLBeats", glHostname, null);
+                                m.send();
+                                Logger.info("[GL.procSendMyBeats] " + m);
+                            }
+                            gmDead();
+                            sleep(AUX.HeartbeatInterval*1000/4);
                         } catch (HostFailureException e) {
                             thisGLToBeTerminated = true;
                             break;

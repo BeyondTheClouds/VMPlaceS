@@ -1,4 +1,4 @@
-package org.discovery.dvms.dvms
+package scheduling.entropyBased.dvms2.dvms.dvms2
 
 /* ============================================================
  * Discovery Project - DVMS
@@ -19,32 +19,29 @@ package org.discovery.dvms.dvms
  * limitations under the License.
  * ============================================================ */
 
-import org.discovery.dvms.dvms.DvmsModel._
 import scheduling.entropyBased.dvms2.SGNodeRef
 import java.util.UUID
+import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsModel._
 
-trait DvmsMessage
 
 object DvmsProtocol {
 
-   case class ThisIsYourNeighbor(neighbor: SGNodeRef)
-   case class CpuViolationDetected()
+  case class ThisIsYourNeighbor(neighbor: SGNodeRef)
 
-   // Message used for the base of DVMS
-   case class SetCurrentPartition(partition: DvmsPartition)
-   case class DissolvePartition(partitionId: UUID, reason: String)
-   case class TransmissionOfAnISP(currentPartition: DvmsPartition)
-//   case class IAmTheNewLeader(partition: DvmsPartition)
+  case class CpuViolationDetected()
 
-   // Message used for the merge of partitions
-   case class IsThisVersionOfThePartitionStillValid(partition: DvmsPartition)
-   case class CanIMergePartitionWithYou(partition: DvmsPartition, contact: SGNodeRef)
-   case class ChangeTheStateOfThePartition(newState: DvmsPartititionState)
+  // Message used for the base of DVMS
+  case class SetCurrentPartition(partition: DvmsPartition)
+  case class DissolvePartition(partitionId: String, reason: String)
+  case class TransmissionOfAnISP(currentPartition: DvmsPartition)
 
-   // Message for the resiliency
-//   case class AskTimeoutDetected(e: AskTimeoutException)
-   case class FailureDetected(node: SGNodeRef)
-   case class CheckTimeout()
+  // Message used for the merge of partitions
+  case class IsThisVersionOfThePartitionStillValid(partition: DvmsPartition)
+  case class CanIMergePartitionWithYou(partition: DvmsPartition, contact: SGNodeRef)
+  case class ChangeTheStateOfThePartition(newState: DvmsPartititionState)
 
-
+  // Message for the resiliency
+  case class FailureDetected(node: SGNodeRef)
+  case class CheckTimeout()
+  case class SnoozeTimeout()
 }

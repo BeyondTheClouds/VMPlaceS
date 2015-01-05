@@ -19,94 +19,46 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
-// TODO à fusionner avec dvms_scala/EntropyActor de SimgridInjector
-
-import scheduling.entropyBased.dvms2.SGActor
 import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
-import org.discovery.dvms.entropy.EntropyProtocol.MigrateVirtualMachine
-import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationlNoSolution, ReconfigurationResult}
-import entropy.configuration.{SimpleVirtualMachine, SimpleNode, SimpleConfiguration, Configuration}
-import org.discovery.dvms.dvms.DvmsModel.{ComputerSpecification, VirtualMachine, PhysicalNode}
-import simulation.{SimulatorManager, Main}
-import configuration._
-import scheduling.entropyBased.dvms2.{EntropyService, SGNodeRef}
+import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
+import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
+import entropy.configuration.Configuration
+import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
+import scheduling.entropyBased.entropy2.Entropy2RP
+import java.util
+import configuration.XHost
+import simulation.SimulatorManager
 
-//import org.discovery.EntropyService
-import scala.collection.JavaConversions._
-
-class EntropyActor(applicationRef: SGNodeRef) extends AbstractEntropyActor(applicationRef) {
+class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
   val planner: ChocoCustomRP = new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));
   planner.setTimeLimit(3);
 
-  //   def computeReconfigurationPlan(nodes: List[NodeRef]): Boolean = {
 
   def computeReconfigurationPlan(nodes: List[SGNodeRef]): ReconfigurationResult = {
+    val hostsToCheck: util.LinkedList[XHost] = new util.LinkedList[XHost]
+    for (node <- nodes) {
+      hostsToCheck.add(SimulatorManager.getXHostByName(node.getName))
+    }
 
-    val initialConfiguration: Configuration = new SimpleConfiguration();
-
-    val physicalNodesWithVmsConsumption: List[PhysicalNode] = nodes.map(n => {
-      val host = SimulatorManager.getXHostByName(n.getName)
-      val vms = host.getRunnings
-
-      var vmsAsScalaArray: List[entropy.configuration.VirtualMachine] = List()
-      try {
-        vmsAsScalaArray
-        = vms.map(vm =>
-          new SimpleVirtualMachine(vm.getName, vm.getCoreNumber.toInt, 100, vm.getMemSize, vm.getCPUDemand.toInt, 0)
-        ).toList
-      } catch {
-        case e: Exception =>
-          e.printStackTrace()
-          vmsAsScalaArray = List()
-      }
-      PhysicalNode(
-        new SGNodeRef(n.getName, n.getId),
-        vmsAsScalaArray.map(vm =>
-          VirtualMachine(
-            vm.getName,
-            vm.getCPUDemand,
-            ComputerSpecification(vm.getNbOfCPUs, vm.getMemoryDemand, vm.getCPUDemand))),
-        "",
-        ComputerSpecification(host.getNbCores, host.getMemSize, host.getCPUCapacity)
-      )
-    })
-
-
-    physicalNodesWithVmsConsumption.foreach(physicalNodeWithVmsConsumption => {
-
-      val entropyNode = new SimpleNode(physicalNodeWithVmsConsumption.ref.toString,
-        physicalNodeWithVmsConsumption.specs.numberOfCPU,
-        physicalNodeWithVmsConsumption.specs.coreCapacity,
-        physicalNodeWithVmsConsumption.specs.ramCapacity);
-      initialConfiguration.addOnline(entropyNode);
-
-      physicalNodeWithVmsConsumption.machines.foreach(vm => {
-        val entropyVm = new SimpleVirtualMachine(vm.name,
-          vm.specs.numberOfCPU,
-          0,
-          vm.specs.ramCapacity,
-          vm.specs.coreCapacity,
-          vm.specs.ramCapacity);
-        initialConfiguration.setRunOn(entropyVm, entropyNode);
-      })
-    })
-
-    EntropyService.computeReconfigurationPlan(initialConfiguration, physicalNodesWithVmsConsumption)
-    //    println("""/!\ UNIMPLEMENTED /!\: EntropyActor.computeReconfigurationPlan()""");
-    //    ReconfigurationlNoSolution()
+    val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
+    val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
+    entropyRes.getRes match {
+      case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
+      case _ => ReconfigurationlNoSolution()
+    }
   }
 
 
   override def receive(message: Object, sender: SGNodeRef, returnCanal: SGNodeRef) = message match {
 
-    case MigrateVirtualMachine(vmName, destination) => {
-      // Todo: reimplement this
-      println( """/!\ UNIMPLEMENTED /!\: EntropyActor.receive: MigrateVirtualMachine(vmName, destination)""");
-
+    case ComputeAndApplyPlan(nodes) => {
+      val result = computeReconfigurationPlan(nodes)
+      send(returnCanal, result)
     }
 
-    case msg => super.receive(msg, sender, returnCanal)
+    case msg =>
+      println(s"unknown message: $msg")
   }
 }

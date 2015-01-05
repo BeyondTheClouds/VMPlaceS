@@ -49,11 +49,10 @@ public class Multicast extends Process {
         while (!SimulatorManager.isEndOfInjection()) {
             try {
                 SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
+                handle(m);
                 glDead();
                 gmDead();
-                handle(m);
-                if(SnoozeProperties.shouldISleep())
-                    sleep(AUX.DefaultComputeInterval);
+                if(SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
                 Logger.exc("[MUL.main] HostFailureException");
             } catch (TimeoutException e) {
@@ -101,7 +100,7 @@ public class Multicast extends Process {
         ArrayList<String> orphanLCs = new ArrayList<String>();
 
         String gm = (String) m.getMessage();
-//        Logger.debug("[MUL(TermGM)] GM, gmInfo: " + gm + ", " + gmInfo.get(gm));
+        Logger.debug("[MUL(TermGM)] GM, gmInfo: " + gm + ", " + gmInfo.get(gm));
         gmInfo.remove(gm);
 //        for (String lc: lcInfo.keySet()) {
 //            if (lcInfo.get(lc).equals(gm)) orphanLCs.add(lc);
@@ -171,7 +170,13 @@ public class Multicast extends Process {
                 m.getClass().getSimpleName().equals("GLElecStopGMMsg") && gm.equals((String) m.getMessage());
 //                Logger.info("[MUL.leaderElection] GM->GL: " + m);
         if (success) {
-            glHostname = (String) m.getMessage();   // optimization
+            String newLeader = (String) m.getMessage();
+            if (!glHostname.isEmpty() && !newLeader.equals(glHostname)) {
+                m = new TermGLMsg(name, AUX.glInbox(glHostname), host.getName(), null);
+                Logger.debug("[MUL.leaderElection] GL termination message: " + m);
+                m.send();
+            }
+            glHostname = newLeader;
             glTimestamp = Msg.getClock();
             glDead = false;
             m = new GLElecStopGMMsg(name, AUX.gmInbox(gm), null, null);
@@ -393,6 +398,7 @@ public class Multicast extends Process {
                 public void main(String[] args) {
                     while (!SimulatorManager.isEndOfInjection()) {
                         try {
+                            gmDead();
                             // Get incoming message from GL
                             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGLBeats", AUX.durationToEnd());
                             Logger.info("[MUL.procRelayGLBeats] " + m);
@@ -421,6 +427,7 @@ public class Multicast extends Process {
                 public void main(String[] args) {
                     while (!SimulatorManager.isEndOfInjection()) {
                         try {
+                            glDead();
                             SnoozeMsg m = (SnoozeMsg) Task.receive(inbox + "-relayGMBeats", AUX.durationToEnd());
                             Logger.info("[MUL.procRelayGMBeats] " + m);
                             String gm = m.getOrigin();

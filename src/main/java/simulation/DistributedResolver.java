@@ -3,9 +3,7 @@ package simulation;
 
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.entropyBased.dvms2.DVMSProcess;
-import scheduling.entropyBased.dvms2.MonitorProcess;
-import scheduling.entropyBased.dvms2.TimeoutProcess;
+import scheduling.entropyBased.dvms2.*;
 import scheduling.entropyBased.dvms2.overlay.SimpleOverlay;
 
 
@@ -25,13 +23,19 @@ public class DistributedResolver extends Process {
 
         try {
 
-            DVMSProcess dmvsProcess = new DVMSProcess(this.getHost(), name, nodeId, port, neighborHostname, neighborPort);
+            TimeoutSnoozerProcess timeoutSnoozer = new TimeoutSnoozerProcess(this.getHost(), name, nodeId, port);
+            timeoutSnoozer.start();
+
+            EntropyProcess entropyProcess = new EntropyProcess(this.getHost(), name, nodeId, port);
+            entropyProcess.start();
+
+            DVMSProcess dmvsProcess = new DVMSProcess(this.getHost(), name, nodeId, port, entropyProcess.self(), timeoutSnoozer.self());
             dmvsProcess.start();
 
             MonitorProcess monitorProcess = new MonitorProcess(SimulatorManager.getXHostByName(host.getName()), nodeId, port, dmvsProcess.self(), dmvsProcess);
             monitorProcess.start();
 
-            TimeoutProcess timeoutProcess = new TimeoutProcess(SimulatorManager.getXHostByName(host.getName()), nodeId, port, dmvsProcess.self(), dmvsProcess);
+            TimeoutCheckerProcess timeoutProcess = new TimeoutCheckerProcess(SimulatorManager.getXHostByName(host.getName()), nodeId, port, dmvsProcess.self(), dmvsProcess);
             timeoutProcess.start();
 
             Msg.info("Agent "+nodeId+" started");

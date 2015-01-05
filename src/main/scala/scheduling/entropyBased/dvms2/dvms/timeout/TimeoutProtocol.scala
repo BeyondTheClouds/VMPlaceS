@@ -1,4 +1,4 @@
-package org.discovery.dvms.entropy
+package scheduling.entropyBased.dvms2.dvms.timeout
 
 /* ============================================================
  * Discovery Project - DVMS
@@ -19,11 +19,13 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
-import scheduling.entropyBased.dvms2.SGActor
 import scheduling.entropyBased.dvms2.SGNodeRef
 
-trait EntropyMessage
 
-object EntropyProtocol {
-   case class ComputeAndApplyPlan(nodes: List[SGNodeRef]) extends EntropyMessage
+object TimeoutProtocol {
+
+  case class EnableTimeoutSnoozing()
+  case class DisableTimeoutSnoozing()
+
+  case class WorkOnThisPartition(p: List[SGNodeRef])
 }

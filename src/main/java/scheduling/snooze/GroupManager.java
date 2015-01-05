@@ -220,8 +220,8 @@ public class GroupManager extends Process {
         if (!glHostname.equals(gl)) {
 //            Logger.debug("[GM.glBeats] GL initialized or changed: " + glHostname + ", " + gl);
             if (!gl.isEmpty()) {
+                Logger.info("[GM.glBeats] Update: " + m.getOrigin() + " <- " + glHostname + ", " + m);
                 glHostname = m.getOrigin();
-                Logger.info("[GM.glBeats] Updated: " + glHostname + ", " + m);
                 NewGMMsg ms = new NewGMMsg(this, AUX.glInbox(glHostname) + "-newGM", null, null);
                 ms.send();
 

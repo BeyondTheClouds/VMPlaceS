@@ -47,12 +47,13 @@ public class LocalController extends Process {
             init(SimulatorManager.getXHostByName(args[0]), args[1]);
             Test.lcsCreated.put(this.host.getName(), this);
             join();
-            procSendLCChargeToGM();
+            procSendLCChargeToHandleDeadGM();
             while (!stopThisLC()) {
                 try {
                     SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
-                    gmDead();
                     handle(m);
+//                    if (Task.listen(inbox)) handle((SnoozeMsg) Task.receive());
+                    gmDead();
                     if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
                 } catch (HostFailureException e) {
                     thisLCToBeStopped = true;
@@ -73,6 +74,7 @@ public class LocalController extends Process {
             thisLCToBeStopped = true;
         }
         gmHostname = "";
+        Logger.debug("[LC.main] LC stopped");
     }
 
     boolean stopThisLC() { return thisLCToBeStopped || SimulatorManager.isEndOfInjection(); }
@@ -120,8 +122,9 @@ public class LocalController extends Process {
                 int i = 0;
                 do {
                     gm = getGM(gl);
-                    if (gm.isEmpty()) continue;
-                    success = joinGM(gm);
+                    if (!gm.isEmpty()) success = joinGM(gm);
+//                    if (gm.isEmpty()) continue;
+//                    success = joinGM(gm);
                     i++;
                 } while (!success && i < 3);
                 if (!success) continue;
@@ -298,18 +301,23 @@ public class LocalController extends Process {
     /**
      * Send LC beats to GM
      */
-    void procSendLCChargeToGM() {
+    void procSendLCChargeToHandleDeadGM() {
         try {
             final XHost h = host;
             new Process(host.getSGHost(), host.getSGHost().getName() + "-lcCharge") {
                 public void main(String[] args) {
+                    int chargeCounter = 0;
                     while (!stopThisLC()) {
+                        chargeCounter++;
                         try {
-                            LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand(), Msg.getClock());
-                            LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
-                            m.send();
-                            Logger.info("[LC.procSendLCChargeToGM] Charge sent: " + m);
-                            sleep(AUX.HeartbeatInterval*1000);
+                            if (chargeCounter%4 == 0) {
+                                LCChargeMsg.LCCharge lc = new LCChargeMsg.LCCharge(h.getCPUDemand(), h.getMemDemand(), Msg.getClock());
+                                LCChargeMsg m = new LCChargeMsg(lc, AUX.gmInbox(gmHostname), h.getName(), null);
+                                m.send();
+                                Logger.info("[LC.procSendLCChargeToGM] Charge sent: " + m);
+                            }
+                            gmDead();
+                            sleep(AUX.HeartbeatInterval*1000/4);
                         } catch (HostFailureException e) {
                             Logger.exc("[LC.procSendLCChargeToGM] HostFailureException");
                             thisLCToBeStopped = true;
