@@ -1,7 +1,6 @@
 package simulation;
 
 
-import dvms.log.Logger;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.entropyBased.dvms2.DVMSProcess;
@@ -48,7 +47,6 @@ public class DistributedResolver extends Process {
             waitFor(3);
 
         } catch (Exception e){
-            Logger.flushAndClose();
             e.printStackTrace();
         }
 

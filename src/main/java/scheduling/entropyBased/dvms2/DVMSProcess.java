@@ -10,7 +10,6 @@ import org.simgrid.msg.MsgException;
 import org.simgrid.msg.Process;
 import org.simgrid.msg.Task;
 
-import dvms.log.Logger;
 import simulation.SimulatorManager;
 
 //Represents a server running on a worker node
@@ -81,13 +80,13 @@ public class DVMSProcess extends Process {
             try{
 
                 MsgForSG req=(MsgForSG) Task.receive(mBox);
-                Logger.log(Host.currentHost().getName() + ": received " + req.getMessage());
+//                System.out.println(Host.currentHost().getName() + ": received " + req.getMessage());
 //
                 Long reqId = nameToId(req.getSender().getHost().getName());
 //
                 dvms.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
             } catch (Exception e) {
-                Logger.log(e);
+                e.printStackTrace();
             }
         }
 

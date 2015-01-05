@@ -20,7 +20,7 @@ package scheduling.entropyBased.dvms2;
  * ============================================================ */
 
 //import akka.actor.ActorRef;
-import dvms.scheduling.ComputingState;
+import scheduling.Scheduler.*;
 import entropy.configuration.Configuration;
 import entropy.configuration.SimpleManagedElementSet;
 import entropy.execution.Dependencies;
@@ -104,7 +104,7 @@ public class EntropyService {
         }
 
 
-        ComputingState res = ComputingState.VMRP_SUCCESS;
+        ComputingState res = ComputingState.SUCCESS;
 
         List<VJob> vjobs = new ArrayList<VJob>();
         DefaultVJob v = new DefaultVJob("v1");
@@ -129,7 +129,7 @@ public class EntropyService {
             e.printStackTrace(System.out);
             System.out.println("Entropy: No solution :(");
             System.err.println("Entropy: No solution :(");
-            res = ComputingState.VMRP_FAILED;
+            res = ComputingState.PLACEMENT_FAILED;
         }
 
         int nbMigrations = 0;
@@ -172,7 +172,7 @@ public class EntropyService {
 
         }
 
-        if(res != ComputingState.VMRP_FAILED) {
+        if(res != ComputingState.PLACEMENT_FAILED) {
             return new ReconfigurationSolution(actions);
         } else {
             return new ReconfigurationlNoSolution();

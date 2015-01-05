@@ -16,8 +16,6 @@ import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.Scheduler;
 
-import dvms.log.Logger;
-
 import entropy.execution.Dependencies;
 import entropy.execution.TimedExecutionGraph;
 import entropy.plan.PlanException;
@@ -252,7 +250,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             Migration migration = (Migration)a;
             this.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
         } else{
-            Logger.log("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
+            System.err.println("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
         }
     }
 

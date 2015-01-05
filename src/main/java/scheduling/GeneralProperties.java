@@ -7,7 +7,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
 
-import dvms.log.Logger;
 
 public class GeneralProperties extends Properties {
 
@@ -30,10 +29,8 @@ public class GeneralProperties extends Properties {
 			reader.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
-			Logger.log(e);
 		} catch (IOException e) {
 			e.printStackTrace();
-			Logger.log(e);
 		}
 	}
 	
