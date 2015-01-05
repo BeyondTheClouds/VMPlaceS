@@ -1,45 +1,6 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
 <platform version="3">
-  <process host="node10" function="injector.Injector"> </process>
-  <process host="node0" function="simulation.DistributedResolver">
-                 <argument value="node0" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23000" />
-                 <argument value="node1" /><argument value="23001" />
-                 </process>
-  <process host="node1" function="simulation.DistributedResolver">
-                 <argument value="node1" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23001" />
-                 <argument value="node2" /><argument value="23002" />
-                 </process>
-  <process host="node2" function="simulation.DistributedResolver">
-                 <argument value="node2" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23002" />
-                 <argument value="node3" /><argument value="23003" />
-                 </process>
-  <process host="node3" function="simulation.DistributedResolver">
-                 <argument value="node3" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23003" />
-                 <argument value="node4" /><argument value="23004" />
-                 </process>
-  <process host="node4" function="simulation.DistributedResolver">
-                 <argument value="node4" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23004" />
-                 <argument value="node5" /><argument value="23005" />
-                 </process>
-  <process host="node5" function="simulation.DistributedResolver">
-                 <argument value="node5" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23005" />
-                 <argument value="node6" /><argument value="23006" />
-                 </process>
-  <process host="node6" function="simulation.DistributedResolver">
-                 <argument value="node6" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23006" />
-                 <argument value="node7" /><argument value="23007" />
-                 </process>
-  <process host="node7" function="simulation.DistributedResolver">
-                 <argument value="node7" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23007" />
-                 <argument value="node8" /><argument value="23008" />
-                 </process>
-  <process host="node8" function="simulation.DistributedResolver">
-                 <argument value="node8" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23008" />
-                 <argument value="node9" /><argument value="23009" />
-                 </process>
-  <process host="node9" function="simulation.DistributedResolver">
-         <argument value="node9" /><argument value="2" /><argument value="400" /><argument value="16192" /><argument value="23009" />
-         <argument value="node0" /><argument value="23000" />
-         </process>
+  <process host="node13" function="injector.Injector"> </process>
+  <process host="node12" function="simulation.CentralizedResolver"> </process>
 </platform>

@@ -448,16 +448,11 @@ public class SimulatorManager {
                     tmpHost.incViolation();
                     Trace.hostSetState(tmpHost.getName(), "PM", "violation");
 
-            } else {
-                //(previouslyViable || !previouslyViable) && tmpHost.IsViable
-                if (tmpHost.isViable()) {
+            } else if ((!previouslyViable) && (tmpHost.isViable())) {
                         Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
                         Trace.hostSetState (tmpHost.getName(), "PM", "normal");
-                }
-                // !previouslyViable && !tmpHost.IsViable
-                //  do nothing the host is already in violation-out.
             }
-
+            // else Do nothing the state does not change. 
 
             // Update getCPUDemand of the host
             Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());

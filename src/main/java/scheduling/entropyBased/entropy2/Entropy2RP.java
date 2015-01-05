@@ -46,6 +46,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 //		planner = new ChocoCustomPowerRP(new MockDurationEvaluator(2, 2, 2, 3, 6, 3, 1, 1));//Entropy2.0
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
 	//	planner.setTimeLimit(EntropyProperties.getEntropyPlanTimeout());
+        // TODO fix the timeout according to the effective node number - Adrien
         planner.setTimeLimit(SimulatorProperties.getNbOfHostingNodes()/8);
         this.loopID = loopID;
         this.abortRP = false;
