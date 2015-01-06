@@ -55,15 +55,13 @@ public class GroupManager extends Process {
         Test.gmsCreated.put(this.host.getName(), this);
 
         newJoin();
-        while (!SimulatorManager.isEndOfInjection()){
+        while (!thisGMToBeStopped()){
             try {
-                if (!thisGMToBeStopped) {
-                    m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
-                    handle(m);
-                    glDead();
-                    deadLCs();
-                    if(SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
-                } else break;
+                m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
+                handle(m);
+                glDead();
+                deadLCs();
+                if(SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
                 Logger.exc("[GM.main] HostFailureException");
                 thisGMToBeStopped = true;
@@ -276,7 +274,7 @@ public class GroupManager extends Process {
         try {
             new Process(host, host.getName() + "-gmCharge") {
                 public void main(String[] args) throws HostFailureException {
-                    while (!thisGMToBeStopped) {
+                    while (!thisGMToBeStopped()) {
                         try {
                             summaryInfoToGL();
                             BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
@@ -307,7 +305,7 @@ public class GroupManager extends Process {
                     boolean periodicScheduling = SnoozeProperties.getSchedulingPeriodic();
                     Logger.imp("[GM.procScheduling] periodicScheduling: " + periodicScheduling);
 
-                    while (!thisGMToBeStopped) {
+                    while (!thisGMToBeStopped()) {
                         long wait = period;
                         long previousDuration = 0;
                         boolean anyViolation = false;
@@ -321,7 +319,7 @@ public class GroupManager extends Process {
                             // TODO 70 ms is an arbitrary value, it would be better to get the RTT of the current topology based on the platform file.
                             for (XHost h : getManagedXHosts()) if (!h.isViable()) anyViolation = true;
                             if ((periodicScheduling || (!periodicScheduling && anyViolation))
-                                    && !scheduling && !glHostname.isEmpty() && !thisGMToBeStopped && !glDead) {
+                                    && !scheduling && !glHostname.isEmpty() && !thisGMToBeStopped() && !glDead) {
                                 scheduling = true;
                                 previousDuration = scheduleVMs(); // previousDuration is in ms.
                                 wait = period - previousDuration;
@@ -364,6 +362,8 @@ public class GroupManager extends Process {
             e.printStackTrace();
         }
     }
+
+    boolean thisGMToBeStopped() { return thisGMToBeStopped || SimulatorManager.isEndOfInjection(); }
 
     /**
      * Sends GM charge summary info to GL
