@@ -425,7 +425,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                             if (!sourceHost.isOff() && !destHost.isOff()) {
                                 incMig();
 
-
+                                double timeStartingMigration = Msg.getClock();
                                 Trace.hostPushState(vmName, "SERVICE", "migrate", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", vmName, sourceName, destName));
                                 int res = sourceHost.migrate(args[0], destHost);
                                 // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
@@ -446,9 +446,9 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                     }
 
                                     /* Export that the migration has finished */
-                                    //double migrationDuration = Msg.getClock() - timeStartingMigration;
-                                    //Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
-                                    //Trace.hostPopState(vmName, "migration");
+                                    double migrationDuration = Msg.getClock() - timeStartingMigration;
+                                    Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+                                    Trace.hostPopState(vmName, "migration");
                                 } else {
 
 
