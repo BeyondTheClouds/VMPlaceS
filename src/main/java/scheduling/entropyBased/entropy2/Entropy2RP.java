@@ -310,7 +310,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         enRes.setDuration(computationTime);
 
         if (computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)) {
-            Msg.info("Configuration remains unchanged");
+            Msg.info("Configuration remains unchanged"); //res is already set to 0.
         } else if (computingState.equals(ComputingState.SUCCESS)) {
 
 			/* Tracing code */
@@ -332,7 +332,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             if (isReconfigurationPlanAborted())
                 enRes.setRes(-2);
             else
-                enRes.setRes(0);
+                enRes.setRes(1);
 
             Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
         } else {
@@ -482,7 +482,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
 
 
-        private int res; // 0 everything is ok, -1 no viable configuration, -2 reconfiguration plan aborted
+        private int res; // 0 no reconfiguration needed, -1 no viable configuration, -2 reconfiguration plan aborted, 1 everything was ok
         private long duration; // in ms
 
         Entropy2RPRes(){

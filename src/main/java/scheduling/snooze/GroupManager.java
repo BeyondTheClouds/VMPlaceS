@@ -435,15 +435,16 @@ public class GroupManager extends Process {
         Entropy2RP.Entropy2RPRes entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
         long previousDuration = entropyRes.getDuration();
         if (entropyRes.getRes() == 0) {
-            Msg.info("Reconfiguration ok (duration: " + previousDuration + ")");
+            Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
         } else if (entropyRes.getRes() == -1) {
             Msg.info("No viable solution (duration: " + previousDuration + ")");
             // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
-            // numberOfCrash++;
-        } else { // res == -2 Reconfiguration has not been correctly performed
+        } else if (entropyRes.getRes() == -2) {
             Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
             // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
-            //numberOfBrokenPlan++;
+        } else {
+            // TODO Mario, please check where/how do you want to store numberOfSuccess
+            Msg.info("Reconfiguration succeed (duration: " + previousDuration + ")");
         }
         return previousDuration;
     }

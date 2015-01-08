@@ -47,6 +47,7 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     entropyRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()
+      // TODO How did you manage the three cases ?
     }
   }
 
