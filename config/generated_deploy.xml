@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
 <platform version="3">
-  <process host="node25" function="injector.Injector"> </process>
-  <process host="node24" function="simulation.CentralizedResolver"> </process>
+  <process host="node11" function="injector.Injector"> </process>
+  <process host="node10" function="simulation.CentralizedResolver"> </process>
 </platform>
