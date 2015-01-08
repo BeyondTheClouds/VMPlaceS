@@ -17,7 +17,7 @@ public class GroupLeader extends Process {
     Host host; //@ Make private
     ConcurrentHashMap<String, GMInfo> gmInfo = new ConcurrentHashMap<>(); //@ Make private
     private String inbox;
-    private boolean thisGLToBeTerminated = false;
+    private boolean thisGLToBeStopped = false;
     private ThreadPool lcAssPool;
     private ThreadPool newGMPool;
 
@@ -43,20 +43,15 @@ public class GroupLeader extends Process {
         procSendMyBeats();
 //        procNewGM();
         procGMInfo();
-        while (!SimulatorManager.isEndOfInjection()) {
+        while (!thisGLToBeStopped()) {
             try {
-                if (!thisGLToBeTerminated) {
                     SnoozeMsg m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
                     gmDead();
                     handle(m);
-                } else {
-                    Logger.err("[GL.main] TBTerminated: " + host.getName());
-                    break;
-                }
                 if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
             } catch (HostFailureException e) {
                 Logger.exc("[GL.main] HostFailureException");
-                thisGLToBeTerminated = true;
+                thisGLToBeStopped = true;
                 break;
             } catch (TimeoutException e) {
                 gmDead();
@@ -66,7 +61,8 @@ public class GroupLeader extends Process {
                 e.printStackTrace();
             }
         }
-        thisGLToBeTerminated=true;
+        Logger.err("[GL.main] TBTerminated: " + host.getName());
+        thisGLToBeStopped =true;
     }
 
     void handle(SnoozeMsg m) {
@@ -80,14 +76,14 @@ public class GroupLeader extends Process {
                 break;
 
             case "TestFailGLMsg":
-                Logger.err("[GL.main] thisGLToBeTerminated: " + host.getName());
-                thisGLToBeTerminated = true; break;
+                Logger.err("[GL.main] thisGLToBeStopped: " + host.getName());
+                thisGLToBeStopped = true; break;
         }
     }
 
     void handleTermGL(SnoozeMsg m) {
         Logger.debug("[GL(TermGL)] GL to be terminated: " + host.getName());
-        thisGLToBeTerminated = true;
+        thisGLToBeStopped = true;
     }
 
     void handleTermGM(SnoozeMsg m) {
@@ -175,7 +171,7 @@ public class GroupLeader extends Process {
         try {
             new Process(host, host.getName() + "-gmPeriodic") {
                 public void main(String[] args) throws HostFailureException {
-                    while (!thisGLToBeTerminated) {
+                    while (!thisGLToBeStopped()) {
                         try {
                             SnoozeMsg m = (SnoozeMsg)
                                     Task.receive(inbox + "-gmPeriodic", AUX.durationToEnd());
@@ -192,7 +188,7 @@ public class GroupLeader extends Process {
                         catch (TimeoutException e) {
                             Logger.exc("[GL.procGMInfo] PROBLEM? Timeout Exception");
                         } catch (HostFailureException e) {
-                            thisGLToBeTerminated = true;
+                            thisGLToBeStopped = true;
                             break;
                         } catch (Exception e) {
                             Logger.exc("[GL.procGMInfo] Exception, " + host.getName() + ": " + e.getClass().getName());
@@ -216,7 +212,7 @@ public class GroupLeader extends Process {
                 public void main(String[] args) {
                     String glHostname = host.getName();
                     int beatCounter = 0;
-                    while (!thisGLToBeTerminated) {
+                    while (!thisGLToBeStopped()) {
                         try {
                             if (beatCounter % 4 == 0) {
                                 BeatGLMsg m =
@@ -227,7 +223,7 @@ public class GroupLeader extends Process {
                             gmDead();
                             sleep(AUX.HeartbeatInterval*1000/4);
                         } catch (HostFailureException e) {
-                            thisGLToBeTerminated = true;
+                            thisGLToBeStopped = true;
                             break;
                         } catch (Exception e) { e.printStackTrace(); }
                     }
@@ -253,7 +249,7 @@ public class GroupLeader extends Process {
                 // Acknowledge integration
                 Logger.imp("[GL.RunNewGM] GM added: " + gmHostname + ", " + m);
             } catch (HostFailureException e) {
-                thisGLToBeTerminated = true;
+                thisGLToBeStopped = true;
             } catch (Exception e) {
                 Logger.exc("[GL.RunNewGM] Exception, " + host.getName() + ": " + e.getClass().getName());
                 e.printStackTrace();
@@ -284,6 +280,8 @@ public class GroupLeader extends Process {
             }
         }
     }
+
+    boolean thisGLToBeStopped() { return thisGLToBeStopped || SimulatorManager.isEndOfInjection(); }
 
     void dispatchVMRequest() {
 
