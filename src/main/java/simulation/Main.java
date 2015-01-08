@@ -43,8 +43,6 @@ public class Main {
      */
     public static void main(String[] args) throws NativeException {
 
-        double beginTimeOfSimulation = System.currentTimeMillis();
-        double endTimeOfSimulation;
 
         /*
         // Just a way to get the compilation time (useful to differentiate experiments)
@@ -65,10 +63,14 @@ public class Main {
         // print logback's internal status
         StatusPrinter.print(lc);
 
+        // Save the begining time
+        SimulatorManager.setBeginTimeOfSimulation(System.currentTimeMillis());
+
         // Init. internal values
         Msg.init(args);
 
         // Automatically generate deployment file that is mandatory for launching the simgrid simulation.
+        // TODO - implement a more generic way to generate the deployment file
         try {
 
             if (SimulatorProperties.getAlgo().equals("distributed")) {
@@ -136,14 +138,14 @@ public class Main {
 
 
 	    /*  execute the simulation. */
-        System.out.println("Begin simulation" + new Date().toString());
+        System.out.println("Launcher: begin Msg.run()" + new Date().toString());
         Msg.run();
 
-        System.out.println("End simulation" + new Date().toString());
+        System.out.println("Launcher: end of Msg.run()" + new Date().toString());
         Trace.flush();
         Msg.info("End of run");
-        endTimeOfSimulation = System.currentTimeMillis();
-        System.out.println("Duration in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
+
+
 
         Process.killAll(-1);
     }

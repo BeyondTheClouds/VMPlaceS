@@ -36,6 +36,15 @@ import java.util.*;
 public class SimulatorManager {
 
     /**
+     * Stupid variable to monitor the duration of the simulation
+     */
+    private static double beginTimeOfSimulation = -1;
+    /**
+     * Stupid variable to monitor the duration of the simulation
+     */
+    private static double endTimeOfSimulation = -1;
+
+    /**
      * The list of XVMs that are considered as off (i.e. the hosting machine is off)
      * @see configuration.XVM
      */
@@ -65,12 +74,6 @@ public class SimulatorManager {
      */
     private static HashMap<String, XHost> sgServiceHosts= null;
 
-
-    /**
-     * Just a stupid boolean to stop the simulation when the injector is finishing to consume events from its queue
-     */
-    private static boolean endOfInjection = false;
-
     /**
      * Average CPU demand of the infrastructure (just a hack to avoid to compute the CPUDemand each time (computing the CPU demand is O(n)
      */
@@ -81,7 +84,7 @@ public class SimulatorManager {
      * When the injection is complete, we turn the endOfInjection boolean to true and kill the running daemon inside each VM
      */
 	public static void setEndOfInjection(){
-		endOfInjection=true;
+		endTimeOfSimulation = System.currentTimeMillis();
 
         Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
         Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
@@ -90,18 +93,19 @@ public class SimulatorManager {
             Msg.info(host.getName() + " has been turned off "+host.getTurnOffNb()+" times and violated "+host.getNbOfViolations());
         }
 
-        // Kill all VMs in order to finalize the simulation correctly
+        // Kill all VMs daemons in order to finalize the simulation correctly
         for (XVM vm : SimulatorManager.getSGVMs()) {
             Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges());
             vm.getDaemon().kill();
         }
-	}
+        Msg.info("Duration of the simulation in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
+    }
 
     /**
      * @return whether the injection is completed or not
      */
 	public static boolean isEndOfInjection(){
-		return endOfInjection;
+		return (endTimeOfSimulation != -1);
 	}
 
 
@@ -452,7 +456,7 @@ public class SimulatorManager {
                         Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
                         Trace.hostSetState (tmpHost.getName(), "PM", "normal");
             }
-            // else Do nothing the state does not change. 
+            // else Do nothing the state does not change.
 
             // Update getCPUDemand of the host
             Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());
@@ -548,4 +552,27 @@ public class SimulatorManager {
         return -1;
 
     }
+
+
+    /**
+     * Stupid variable to monitor the duration of the simulation
+     */
+    public static void setBeginTimeOfSimulation(double beginTimeOfSimulation) {
+        SimulatorManager.beginTimeOfSimulation = beginTimeOfSimulation;
+    }
+
+    /**
+     * Stupid variable to monitor the duration of the simulation
+     */
+    public static void setEndTimeOfSimulation(double endTimeOfSimulation) {
+        SimulatorManager.endTimeOfSimulation = endTimeOfSimulation;
+    }
+
+    /**
+     * Stupid variable to monitor the duration of the simulation
+     */
+    public static double getSimulationDuration() {
+        return (endTimeOfSimulation != -1) ?  endTimeOfSimulation - beginTimeOfSimulation : endTimeOfSimulation;
+    }
+
 }
