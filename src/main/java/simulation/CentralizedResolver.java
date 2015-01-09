@@ -70,7 +70,7 @@ public class CentralizedResolver extends Process {
             System.err.println(e);
             System.exit(-1);
         }
-        Msg.info("Entropy has been invoked "+loopID+" times (success:"+ numberOfSucess+"failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
+        Msg.info("Entropy has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
 
     }
 
