@@ -21,6 +21,8 @@ public class HierarchicalResolver extends Process {
      */
     public void main(String[] args) throws MsgException {
 
+        Msg.info("Hierarchical algorithm variant: " + SnoozeProperties.getAlgVariant());
+
         // TODO what is the interest of the ep ?
         Msg.info("Start the entry point on " + Host.currentHost()+ "");
         new EntryPoint(Host.currentHost(), "entryPoint").start();

@@ -23,6 +23,7 @@ public class SnoozeProperties extends GeneralProperties {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Property keys
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        public final static String ALG_VARIANT = "snooze.alg-variant";
         public final static String GM_NUMBER = "snooze.gm-number";
         public final static String HEARTBEAT_PERIODICITY = "snooze.hb-periodicity";
         public final static String HEARTBEAT_TIMEOUT = "snooze.hb-timeout";
@@ -34,6 +35,7 @@ public class SnoozeProperties extends GeneralProperties {
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Property default values
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         public final static int DEFAULT_GM_NUMBER = SimulatorProperties.getNbOfServiceNodes();
         public final static long DEFAULT_HEARTBEAT_PERIODICITY = 2;
         public final static boolean DEFAULT_SCHEDULING_PERIODIC = true;
@@ -64,7 +66,19 @@ public class SnoozeProperties extends GeneralProperties {
         //Class methods
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        public static int getGMNumber() {
+    public static String getAlgVariant() {
+        String algVariant = "";
+        algVariant = INSTANCE.getProperty(ALG_VARIANT);
+        if (algVariant.equals(""))
+            algVariant = "hierarchical-" +
+                    (getSchedulingPeriodic() ? "periodic" + getSchedulingPeriodicity() + "s-" : "reactive-") +
+                    (SimulatorProperties.getNbOfServiceNodes()-1) + "GMs-" +
+                    SimulatorProperties.getNbOfHostingNodes() + "LCs-" +
+                    "beatFreq" + getHeartBeatPeriodicity() +"s";
+        return algVariant;
+    }
+
+    public static int getGMNumber() {
             return INSTANCE.getPropertyAsInt(GM_NUMBER, DEFAULT_GM_NUMBER);
 
         }
