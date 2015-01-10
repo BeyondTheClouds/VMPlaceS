@@ -1,11 +1,10 @@
 package simulation;
 
 
+import configuration.SimulatorProperties;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.snooze.EntryPoint;
-import scheduling.snooze.Multicast;
-import scheduling.snooze.Test;
+import scheduling.snooze.*;
 
 /**
  * Created by sudholt on 25/05/2014.
@@ -32,6 +31,25 @@ public class HierarchicalResolver extends Process {
         Multicast multicast = new Multicast(Host.currentHost(), "multicast");
         multicast.start();
 
+        Msg.info("Start the Test process on " + Host.currentHost()+ "");
+        new Test(Host.currentHost(), "test").start();
+
+        // Wait for GMs to be registered and then start LCs to ensure completely balanced distributed of LCs
+        //  (code copied from Test.procAddLCs())
+        // GMs are started by means of the generation script generate.py
+        waitFor(2);
+        int lcNo = 0; // no. of statically allocated LCs
+        for (int i = 0; i < SimulatorProperties.getNbOfHostingNodes(); i++) {
+            String[] lcArgs = new String[]{"node" + lcNo, "dynLocalController-" + lcNo};
+            LocalController lc =
+                    new LocalController(Host.getByName("node" + lcNo), "dynLocalController-" + lcNo, lcArgs);
+            lc.start();
+            Logger.info("[Test.addLCs] Dyn. LC added: " + lcArgs[1]);
+            lcNo++;
+            sleep(5);
+        }
+
+
 //        Start the group leadear (by default it is started on the first node of the infrastructure
 //        ne¡w GroupLeader(Host.getByName("node1"), "groupLeader").start();
 
@@ -53,9 +71,6 @@ public class HierarchicalResolver extends Process {
             initialGMs.add(i);
         }
         */
-
-        Msg.info("Start the Test process on " + Host.currentHost()+ "");
-        new Test(Host.currentHost(), "test").start();
 
         while (!SimulatorManager.isEndOfInjection()) {
             waitFor(3);
