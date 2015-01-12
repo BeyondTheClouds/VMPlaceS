@@ -73,6 +73,12 @@ public class XHost{
     private double currentCPUDemand;
 
     /**
+     * Stupid boolean to prevent turning off a node that is performing migrations (this is an ugly way to prevent the migration crash bug
+     * TODO fix the migration crash bug - Adrien
+     */
+    private boolean onGoingMigration;
+
+    /**
      * Constructor
      * Please note that by default a XHOST is off (you should invoke turnOn)
      * @param h MSG host to extend
@@ -94,6 +100,8 @@ public class XHost{
        this.turnOffNb = 0;
        this.nbOfViolations = 0;
        this.currentCPUDemand = 0;
+
+       this.onGoingMigration = false ;
     }
 
     /**
@@ -189,6 +197,11 @@ public class XHost{
      * @return 0 if the migration succeeded -1 if it crashed
      */
     public int migrate(String vmName, XHost dest) {
+
+        // Ugly patch to prevent migration crash when a node is turned off.
+        this.onGoingMigration = true;
+        dest.setOnGoingMigration(true);
+
         XVM vm = null ;
         for(XVM tmp : getRunnings()){
             if (tmp.getName().equals(vmName))
@@ -203,7 +216,9 @@ public class XHost{
             vm.migrate(dest);
         } catch (Exception e){
             Msg.info("Host failure exception");
-            return -1; 
+            this.onGoingMigration = false;
+            dest.setOnGoingMigration(false);
+            return -1;
         }
         if(this.isOff() || dest.isOff()) {
             // TODO, it is strange to return -1, because if the nodes have been turned off after the migration, the migration is correct. so returning -1 here is erroneous.
@@ -214,6 +229,8 @@ public class XHost{
         this.setCPUDemand(computeCPUDemand());
         dest.hostedVMs.add(vm);
         dest.setCPUDemand(dest.computeCPUDemand());
+        this.onGoingMigration = false;
+        dest.setOnGoingMigration(false);
         return 0;
     }
 
@@ -243,6 +260,11 @@ public class XHost{
      *  turnOff a host (the host should be off, otherwise nothing happens)
      */
     public void turnOff() {
+
+        if (this.onGoingMigration){
+            System.err.println("This should not be possible. You probably invoked turnOff without passing through the simulatorManager... bye bye");
+            System.exit(-1);
+        }
         if(!this.off) {
             Msg.info("Turn off " + this.sgHost.getName());
             this.off=true;
@@ -296,5 +318,18 @@ public class XHost{
         nbOfViolations++;
     }
 
-
+    /**
+     * Ugly patch to prevent migration crash when a node is switched off
+     * TODO this code should be removed and the migration should be robust
+     */
+    public boolean isOnGoingMigration(){
+        return this.onGoingMigration;
+    }
+    /**
+     * Ugly patch to prevent migration crash when a node is switched off
+     * TODO this code should be removed and the migration should be robust
+     */
+    public void setOnGoingMigration(boolean onGoingMigration) {
+        this.onGoingMigration = onGoingMigration;
+    }
 }

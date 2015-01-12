@@ -507,6 +507,10 @@ public class SimulatorManager {
      */
     public static void turnOff(XHost host) {
 
+        if(host.isOnGoingMigration()){
+            Msg.info("WARNING = WE ARE NOT GOING TO TURN OFF HOST "+host.getName()+" BECAUSE THERE IS AN ON-GOING MIGRATION");
+            return;
+        }
         if(!host.isOff()) {
             Msg.info("Turn off "+host.getName());
 
