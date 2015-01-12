@@ -1,0 +1,14 @@
+#!/usr/bin/Rscript
+
+data <- read.table("repartition/data/{{algo}}-{{node_count}}/repartition_{{metric}}.csv", header=T,sep=",")
+colnames(data) <- c("type", "value")
+attach(data)
+
+dev.new(width=8, height=6)
+
+n <- length(data$value)
+plot( 100*(1:n)/n ~ sort(data$value), xlab="{{legend}}", ylab='Cumulated Distribution (percentage)')
+lines(100*(1:n)/n ~ sort(data$value))  
+title(main="{{algo}} {{node_count}} nodes \n(Cumulated Frequency of {{metric}} distribution)")
+
+
