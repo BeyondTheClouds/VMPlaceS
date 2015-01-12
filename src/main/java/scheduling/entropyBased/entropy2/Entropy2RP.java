@@ -43,11 +43,8 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     public Entropy2RP(Configuration initialConfiguration, int loopID) {
 		super(initialConfiguration);
 		planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
-//		planner = new ChocoCustomPowerRP(new MockDurationEvaluator(2, 2, 2, 3, 6, 3, 1, 1));//Entropy2.0
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
-	//	planner.setTimeLimit(EntropyProperties.getEntropyPlanTimeout());
-        // TODO fix the timeout according to the effective node number - Adrien
-        planner.setTimeLimit(SimulatorProperties.getNbOfHostingNodes()/8);
+        planner.setTimeLimit(initialConfiguration.getAllNodes().size()/8);
         this.loopID = loopID;
         this.abortRP = false;
         //Log the current Configuration
@@ -310,7 +307,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         enRes.setDuration(computationTime);
 
         if (computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)) {
-            Msg.info("Configuration remains unchanged");
+            Msg.info("Configuration remains unchanged"); //res is already set to 0.
         } else if (computingState.equals(ComputingState.SUCCESS)) {
 
 			/* Tracing code */
@@ -332,7 +329,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             if (isReconfigurationPlanAborted())
                 enRes.setRes(-2);
             else
-                enRes.setRes(0);
+                enRes.setRes(1);
 
             Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
         } else {
@@ -431,6 +428,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                 // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
                                 // To this aim, please extend the hostPopState API to add meta data information
                                 Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", vmName, res));
+                                double migrationDuration = Msg.getClock() - timeStartingMigration;
 
                                 if (res == 0) {
                                     Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
@@ -446,11 +444,12 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                     }
 
                                     /* Export that the migration has finished */
-                                    double migrationDuration = Msg.getClock() - timeStartingMigration;
                                     Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
                                     Trace.hostPopState(vmName, "migration");
                                 } else {
 
+                                    Trace.hostSetState(vmName, "migration", "failed", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+                                    Trace.hostPopState(vmName, "migration");
 
                                     Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
                                     Msg.info("Reconfiguration plan cannot be completely applied so abort it");
@@ -482,7 +481,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
 
 
-        private int res; // 0 everything is ok, -1 no viable configuration, -2 reconfiguration plan aborted
+        private int res; // 0 no reconfiguration needed, -1 no viable configuration, -2 reconfiguration plan aborted, 1 everything was ok
         private long duration; // in ms
 
         Entropy2RPRes(){
