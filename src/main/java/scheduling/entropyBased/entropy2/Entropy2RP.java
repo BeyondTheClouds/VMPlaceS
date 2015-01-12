@@ -428,6 +428,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                 // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
                                 // To this aim, please extend the hostPopState API to add meta data information
                                 Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", vmName, res));
+                                double migrationDuration = Msg.getClock() - timeStartingMigration;
 
                                 if (res == 0) {
                                     Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
@@ -443,11 +444,12 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                     }
 
                                     /* Export that the migration has finished */
-                                    double migrationDuration = Msg.getClock() - timeStartingMigration;
                                     Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
                                     Trace.hostPopState(vmName, "migration");
                                 } else {
 
+                                    Trace.hostSetState(vmName, "migration", "failed", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+                                    Trace.hostPopState(vmName, "migration");
 
                                     Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
                                     Msg.info("Reconfiguration plan cannot be completely applied so abort it");
