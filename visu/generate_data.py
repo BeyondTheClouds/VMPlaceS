@@ -289,7 +289,13 @@ render_template("template/matrix_data.jinja2", {"algos": algos, "server_counts":
 render_template("template/matrix_data.jinja2", {"algos": algos, "server_counts": nodes_tuples, "data": map_success_psize},                   "data/success_psize.csv")
 render_template("template/matrix_data.jinja2", {"algos": algos, "server_counts": nodes_tuples, "data": map_migration_avg_duration},          "data/migration_avg_duration.csv")
 
-group_by_nodes     = ["distributed", "hierarchical"]
+# Add distributed class algorithmes to the group_by_nodes
+group_by_nodes     = ["distributed"]
+# Add hierarchical class algorithmes to the group_by_nodes
+for each in algos:
+    if "hierarchical" in each:
+        group_by_nodes += [each]
+
 not_group_by_nodes = list(set(algos) - set(group_by_nodes))
 
 print("group_by_nodes -> %s" %(group_by_nodes))
