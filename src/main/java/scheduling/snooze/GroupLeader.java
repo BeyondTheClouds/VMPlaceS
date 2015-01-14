@@ -32,9 +32,9 @@ public class GroupLeader extends Process {
 
     @Override
     public void main(String[] strings) {
-        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), AUX.lcPoolSize);
-        newGMPool = new ThreadPool(this, RunNewGM.class.getName(), AUX.gmPoolSize);
-        Logger.debug("noLCWorker: " + AUX.lcPoolSize + ", noGMWorker: " + AUX.gmPoolSize);
+        lcAssPool = new ThreadPool(this, RunLCAss.class.getName(), AUX.glLCPoolSize);
+        newGMPool = new ThreadPool(this, RunNewGM.class.getName(), AUX.glGMPoolSize);
+        Logger.debug("noLCWorker: " + AUX.glLCPoolSize + ", noGMWorker: " + AUX.glGMPoolSize);
 
         int n = 1;
 
