@@ -48,7 +48,7 @@ public class HierarchicalResolver extends Process {
             lc.start();
             Logger.info("[Test.addLCs] Dyn. LC added: " + lcArgs[1]);
             lcNo++;
-            sleep(5);
+//            sleep(5);
         }
 
 
