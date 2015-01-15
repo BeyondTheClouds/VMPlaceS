@@ -39,8 +39,8 @@ attach(algo2_matrix_data_out_hid_time)
 dev.new(width=8, height=6)
 
 g_range <- range(algo1_smp_det_duration, algo1_smp_hid_duration, algo1_out_det_duration, algo1_out_hid_duration, algo2_smp_det_duration, algo2_smp_hid_duration, algo2_out_det_duration, algo2_out_hid_duration)
-plot(    algo1_smp_det_time, algo1_smp_det_duration,  pch=7 ,  col=rgb(255, 153, 51 , 200,maxColorValue=255), ylim=g_range*1.2, 
-    ,xlim=c(0, 3600), xlab="Time (s)", ylab="Duration of the violation (s)")
+plot(    algo1_smp_det_time, algo1_smp_det_duration,  pch=7 ,  col=rgb(255, 153, 51 , 200,maxColorValue=255), ylim=g_range*1.35, 
+    ,xlim=c(0, {{duration}}), xlab="Time (s)", ylab="Duration of the violation (s)")
 #title(main="Duration of each violation")
 points(  algo1_smp_hid_time, algo1_smp_hid_duration,  pch=0 ,  col=rgb(255, 153, 51 , 200,maxColorValue=255))
 points(  algo1_out_det_time, algo1_out_det_duration,  pch=13,  col=rgb(255, 178, 102, 200,maxColorValue=255))

@@ -34,6 +34,12 @@ import json
 import jinja2
 
 ################################################################################
+# Constant and parameters
+################################################################################
+
+duration = 1800
+
+################################################################################
 # Functions of the script
 ################################################################################
 def execute_cmd(args):
@@ -182,7 +188,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     try:
                         data = json.loads(line)
 
-                        if float(data["time"]) > 3600:
+                        if float(data["time"]) > duration:
                             continue
                         # print(data)
 
@@ -301,16 +307,16 @@ not_group_by_nodes = list(set(algos) - set(group_by_nodes))
 print("group_by_nodes -> %s" %(group_by_nodes))
 print("not_group_by_nodes -> %s" %(not_group_by_nodes))
 
-render_template("template/matrix_script.jinja2", {"source": "data/compute_time.csv",                  "x_label": "Configuration", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": group_by_nodes, "not_group_by_nodes": not_group_by_nodes,  "title": "computation time"},                                             "scripts/compute_time.r")
-render_template("template/matrix_script.jinja2", {"source": "data/compute_time_per_service_node.csv", "x_label": "Configuration", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": group_by_nodes, "not_group_by_nodes": not_group_by_nodes,  "title": "computation time"},                                             "scripts/compute_time_per_service_node.r")
-render_template("template/matrix_script.jinja2", {"source": "data/violation_time.csv",                "x_label": "Configuration", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "violation time"},                                               "scripts/violation_time.r")
-render_template("template/matrix_script.jinja2", {"source": "data/migration_time.csv",                "x_label": "Configuration", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "migration time"},                                               "scripts/migration_time.r")
-render_template("template/matrix_script.jinja2", {"source": "data/total_time.csv",                    "x_label": "Configuration", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": group_by_nodes, "not_group_by_nodes": not_group_by_nodes,  "title": "reconfiguration time"},                                         "scripts/total_time.r")
-render_template("template/matrix_script.jinja2", {"source": "data/reconfigure_failure_count.csv",     "x_label": "Configuration", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "Failed reconfiguration count"},                                 "scripts/reconfigure_failure_count.r")
-render_template("template/matrix_script.jinja2", {"source": "data/reconfigure_success_count.csv",     "x_label": "Configuration", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "Successful reconfiguration count"},                             "scripts/reconfigure_success_count.r")
-render_template("template/matrix_script.jinja2", {"source": "data/reconfigure_noreconf_count.csv",    "x_label": "Configuration", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "No reconfiguration count"},                                     "scripts/reconfigure_noreconf_count.r")
-render_template("template/matrix_script.jinja2", {"source": "data/migration_count.csv",               "x_label": "Configuration", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "Migration count"},                                              "scripts/migration_count.r")
-render_template("template/matrix_script.jinja2", {"source": "data/success_psize.csv",                 "x_label": "Configuration", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "Average number of nodes involved in a successul computation"},  "scripts/success_psize.r")
-render_template("template/matrix_script.jinja2", {"source": "data/migration_avg_duration.csv",        "x_label": "Configuration", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "Average duration of migration"},                                "scripts/migration_avg_duration.r")
+render_template("template/matrix_script.jinja2", {"source": "data/compute_time.csv",                  "x_label": "Infrastructure sizes", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": group_by_nodes, "not_group_by_nodes": not_group_by_nodes,  "title": "cumulated computation time"},                                   "scripts/compute_time.r")
+render_template("template/matrix_script.jinja2", {"source": "data/compute_time_per_service_node.csv", "x_label": "Infrastructure sizes", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": group_by_nodes, "not_group_by_nodes": not_group_by_nodes,  "title": "computation time per service node"},                            "scripts/compute_time_per_service_node.r")
+render_template("template/matrix_script.jinja2", {"source": "data/violation_time.csv",                "x_label": "Infrastructure sizes", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "cumulated violation time"},                                     "scripts/violation_time.r")
+render_template("template/matrix_script.jinja2", {"source": "data/migration_time.csv",                "x_label": "Infrastructure sizes", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "cumulated migration time"},                                     "scripts/migration_time.r")
+render_template("template/matrix_script.jinja2", {"source": "data/total_time.csv",                    "x_label": "Infrastructure sizes", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": group_by_nodes, "not_group_by_nodes": not_group_by_nodes,  "title": "cumulated reconfiguration time"},                               "scripts/total_time.r")
+render_template("template/matrix_script.jinja2", {"source": "data/reconfigure_failure_count.csv",     "x_label": "Infrastructure sizes", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "failed reconfiguration count"},                                 "scripts/reconfigure_failure_count.r")
+render_template("template/matrix_script.jinja2", {"source": "data/reconfigure_success_count.csv",     "x_label": "Infrastructure sizes", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "successful reconfiguration count"},                             "scripts/reconfigure_success_count.r")
+render_template("template/matrix_script.jinja2", {"source": "data/reconfigure_noreconf_count.csv",    "x_label": "Infrastructure sizes", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "no reconfiguration count"},                                     "scripts/reconfigure_noreconf_count.r")
+render_template("template/matrix_script.jinja2", {"source": "data/migration_count.csv",               "x_label": "Infrastructure sizes", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "migration count"},                                              "scripts/migration_count.r")
+render_template("template/matrix_script.jinja2", {"source": "data/success_psize.csv",                 "x_label": "Infrastructure sizes", "y_label": "Count",    "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "average number of nodes involved in a successul computation"},  "scripts/success_psize.r")
+render_template("template/matrix_script.jinja2", {"source": "data/migration_avg_duration.csv",        "x_label": "Infrastructure sizes", "y_label": "Time (s)", "algos": algos, "x_axis": zip(nodes_tuples, vms_tuples), "group_by_nodes": [],             "not_group_by_nodes": [],                  "title": "average duration of migration"},                                "scripts/migration_avg_duration.r")
 
 

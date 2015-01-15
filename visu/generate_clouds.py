@@ -37,6 +37,12 @@ import jinja2
 import traceback
 
 ################################################################################
+# Constant and parameters
+################################################################################
+
+duration = 1800
+
+################################################################################
 # Functions of the script
 ################################################################################
 def execute_cmd(args):
@@ -176,7 +182,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     try:
                         data = json.loads(line)
 
-                        if float(data["time"]) > 3601:
+                        if float(data["time"]) > duration - 50:
                             continue
 
                         if data["event"] == "trace_event" and data["value"] == "violation-det":
@@ -272,7 +278,7 @@ def export_clouds_data(algo1, algo2, node_count):
 
     execute_cmd(["mkdir", "-p", folder_name])
 
-    render_template("template/cloud_script.jinja2", {"algo1": algo1, "algo2": algo2, "node_count": node_count},   "%s/compare.r" % (folder_name))
+    render_template("template/cloud_script.jinja2", {"algo1": algo1, "algo2": algo2, "node_count": node_count, "duration": duration},   "%s/compare.r" % (folder_name))
 
     pass
 
@@ -323,7 +329,7 @@ def export_clouds_single_data(algo, node_count):
 
     execute_cmd(["mkdir", "-p", folder_name])
 
-    render_template("template/cloud_single_script.jinja2", {"algo": algo, "node_count": node_count},   "%s/compare.r" % (folder_name))
+    render_template("template/cloud_single_script.jinja2", {"algo": algo, "node_count": node_count, "duration": duration},   "%s/compare.r" % (folder_name))
 
     pass
 

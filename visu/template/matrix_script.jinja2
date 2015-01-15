@@ -1,6 +1,6 @@
 #!/usr/bin/Rscript
 
-{% set colors = ["red", "blue", "green", "orange", "purple"] %}
+{% set colors = ["#E04836", "#5696BC", "#F39D41", "#8D5924", "#2F5168"] %}
 {% set algos_size = algos|count %}
 {% set tuple_size = x_axis|count %}
 {% set group_by_nodes_count = group_by_nodes|count %}
@@ -11,9 +11,16 @@ attach(data)
 # Compute the range of the series 
 g_range <- range(0{% for algo in algos %},{{ algo }} {% endfor %})
 
+{% set pch_start = 20 %}
+{% set lty_start = 3 %}
+
 # Plot the first serie
-plot({{algos[0]}}, type="o", col="{{ colors[0] }}", ylim=g_range, 
+{% set count = 0 %}
+plot({{algos[0]}}, type="o", col="{{ colors[0] }}", ylim=g_range, pch={{pch_start+count}}, cex=1.2, lwd=1.5, lty={{lty_start+count}}, 
    axes=FALSE, ann=FALSE)
+
+
+
 
 # Generate x-axis
 {% set count = 0 %}
@@ -29,29 +36,24 @@ box()
 
 # Graph other series of data
 {% set count = 0 %}
-{% set pch_start = 20 %}
-{% set lty_start = 3 %}
-{% for algo in algos %}{% if count > 0 %}lines({{ algo }}, type="o", pch={{pch_start+count}}, lty={{lty_start+count}}, col="{{ colors[count] }}"){% endif %}{% set count = count +1 %}
+{% for algo in algos %}{% if count > 0 %}lines({{ algo }}, type="o", pch={{pch_start+count}}, cex=1.2, lwd=1.5, lty={{lty_start+count}}, col="{{ colors[count] }}"){% endif %}{% set count = count +1 %}
 {% endfor %}
 
 # 		Create a title with a red, bold/italic font
-{% if group_by_nodes_count > 0 %}
-title(main="Cumulated {{title}}", col.main="red", font.main=4)
-{% else %}
-title(main="{{title|capitalize}}", col.main="red", font.main=4)
-{% endif %}
+title(main="{{title|capitalize}}", font.main=4)
+
 # 		Label the x and y axes with dark green text
-title(xlab="{{x_label}}", col.lab=rgb(0,0.5,0))
-title(ylab="{{y_label}}", col.lab=rgb(0,0.5,0))
+title(xlab="{{x_label}}", col.lab=rgb(0,0,0))
+title(ylab="{{y_label}}", col.lab=rgb(0,0,0))
 
 #abline(h=3600,col="black",lty=2)
-text(1.5, (3600+g_range[2]/40), "3600 s", col = "black")
+# text(1.5, (3600+g_range[2]/40), "3600 s", col = "black")
 
 # 		Create a legend at (1, g_range[2]) that is slightly smaller 
 # 		(cex) and uses the same line colors and points used by 
 # 		the actual plots 
 {% set count = 0 %}
-legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, 
+legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, lwd=1.5, 
    col=c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ colors[count] }}"{% set count = count +1 %}{% endfor %}), pch={{pch_start}}:{{pch_start + algos|length}}, lty={{lty_start}}:{{lty_start + algos|length}});
 
 
@@ -59,19 +61,31 @@ legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{
 
 
 
-{% if group_by_nodes_count > 0 %}
+
+
+
+
+{% set colors = ["#E04836", "#5696BC", "#F39D41", "#8D5924", "#2F5168"] %}
+{% set algos_size = algos|count %}
+{% set tuple_size = x_axis|count %}
+{% set group_by_nodes_count = group_by_nodes|count %}
 
 data <- read.table("{{source}}", header=T,sep=",")
 attach(data)
 
 # Compute the range of the series 
-#g_range <- range(0{% for algo in group_by_nodes %},{{ algo }}/nodes {% endfor %}{% for algo in not_group_by_nodes %},{{ algo }} {% endfor %})
+g_range <- range(min({% set count = 0 %}{% for algo in algos %}{% if count > 0 %}, {% endif %}{{algo}}{% set count = count +1 %}{% endfor %}), max({% set count = 0 %}{% for algo in algos %}{% if count > 0 %}, {% endif %}{{algo}}{% set count = count +1 %}{% endfor %}))
 
-g_range <- range(0{% for algo in algos %}, {% if algo in not_group_by_nodes %}{{ algo }}{% else %}{{ algo }}/nodes{% endif %}{% endfor %})
+{% set pch_start = 20 %}
+{% set lty_start = 3 %}
 
 # Plot the first serie
-#plot({{group_by_nodes[0]}}/nodes, type="o", col="blue", ylim=g_range, axes=FALSE, ann=FALSE)
-plot({% if algos[0] in not_group_by_nodes %}{{ algos[0] }}{% else %}{{ algos[0] }}/nodes{% endif %}, type="o", col="{{ colors[0] }}", ylim=g_range, axes=FALSE, ann=FALSE)
+{% set count = 0 %}
+plot({{algos[0]}}, type="o", col="{{ colors[0] }}", log="y", ylim=g_range, yaxt="n", pch={{pch_start+count}}, cex=1.2, lwd=1.5, lty={{lty_start+count}}, 
+   axes=FALSE, ann=FALSE)
+
+
+
 
 # Generate x-axis
 {% set count = 0 %}
@@ -87,26 +101,108 @@ box()
 
 # Graph other series of data
 {% set count = 0 %}
-{% set pch_start = 20 %}
-{% set lty_start = 3 %}
-{% for algo in algos %}{% if count > 0 %}lines({% if algo in not_group_by_nodes %}{{ algo }}{% else %}{{ algo }}/nodes{% endif %}, type="o", pch={{pch_start+count}}, lty={{lty_start+count}}, col="{{ colors[count] }}"){% endif %}{% set count = count +1 %}
+{% for algo in algos %}{% if count > 0 %}lines({{ algo }}, type="o", pch={{pch_start+count}}, cex=1.2, lwd=1.5, lty={{lty_start+count}}, col="{{ colors[count] }}"){% endif %}{% set count = count +1 %}
 {% endfor %}
 
-# 		Create a title with a red, bold/italic font
-title(main="{{title|capitalize}} per node", col.main="red", font.main=4)
+title(main="{{title|capitalize}} \n(logarithmic)", font.main=4)
 
 # 		Label the x and y axes with dark green text
-title(xlab="{{x_label}}", col.lab=rgb(0,0.5,0))
-title(ylab="{{y_label}}", col.lab=rgb(0,0.5,0))
+title(xlab="{{x_label}}", col.lab=rgb(0,0,0))
+title(ylab="{{y_label}}", col.lab=rgb(0,0,0))
 
-#abline(h=3600,col="black",lty=2)
-text(1.5, (3600+g_range[2]/40), "3600 s", col = "black")
 
 # 		Create a legend at (1, g_range[2]) that is slightly smaller 
 # 		(cex) and uses the same line colors and points used by 
 # 		the actual plots 
 {% set count = 0 %}
-legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, 
+legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, lwd=1.5, 
    col=c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ colors[count] }}"{% set count = count +1 %}{% endfor %}), pch={{pch_start}}:{{pch_start + algos|length}}, lty={{lty_start}}:{{lty_start + algos|length}});
 
-{% endif %}
+
+
+
+
+
+
+
+# {% set colors = ["#E04836", "#5696BC", "#F39D41", "#8D5924", "#2F5168"] %}
+# {% set algos_size = algos|count %}
+# {% set tuple_size = x_axis|count %}
+# {% set group_by_nodes_count = group_by_nodes|count %}
+
+# data <- read.table("{{source}}", header=T,sep=",")
+# attach(data)
+
+# # Compute the range of the series 
+# g_range <- range(min({% set count = 0 %}{% for algo in algos %}{% if count > 0 %}, {% endif %}{{algo}}{% set count = count +1 %}{% endfor %}), max({% set count = 0 %}{% for algo in algos %}{% if count > 0 %}, {% endif %}{{algo}}{% set count = count +1 %}{% endfor %}))
+
+# flog <- log10
+# factor <- 10
+
+# if (g_range[2] - g_range[1] < 10) {
+# 	flog <- log2
+# 	factor <- 2
+# }
+
+# log_g_range <- range(flog(min({% set count = 0 %}{% for algo in algos %}{% if count > 0 %}, {% endif %}{{algo}}{% set count = count +1 %}{% endfor %})), flog(max({% set count = 0 %}{% for algo in algos %}{% if count > 0 %}, {% endif %}{{algo}}{% set count = count +1 %}{% endfor %})))
+
+
+# {% set pch_start = 20 %}
+# {% set lty_start = 3 %}
+
+# # Plot the first serie
+# {% set count = 0 %}
+# plot(flog({{algos[0]}}), type="o", col="{{ colors[0] }}", ylim=log_g_range, yaxt="n", pch={{pch_start+count}}, cex=1.2, lwd=1.5, lty={{lty_start+count}}, 
+#    axes=FALSE, ann=FALSE)
+
+
+
+
+# # Generate x-axis
+# {% set count = 0 %}
+# axis(1, at=1:{{tuple_size}}, lab=c({% for server_count,vm_count in x_axis %}{% if count > 0 %},{% endif %}"{{server_count}} nodes\n{{vm_count}} vms"{% set count = count +1 %}{% endfor %}))
+
+# # print(g_range)
+# # print(log_g_range)
+
+# indice <- floor(log_g_range[1])
+# position <- 1
+# y_values <- range(0)
+# labels <- range(0)
+# while (indice < ceiling(log_g_range[2])) {
+# 	n <- factor^indice
+# 	y_values[position] <- indice
+#     labels[position] <- n
+#     indice <- indice+1
+#     position <- position+1
+# }
+# # print(y_values)
+# # print(labels)
+
+# y_values[indice+1] = 1 * log_g_range[2]
+# labels[indice+1] = round(factor^(1 * log_g_range[2]))
+# # axis(2)
+# axis(2, at=y_values, labels=labels, cex.axis=0.8)
+
+# # Create box around plot
+# box()
+
+# # Graph other series of data
+# {% set count = 0 %}
+# {% for algo in algos %}{% if count > 0 %}lines(flog({{ algo }}), type="o", pch={{pch_start+count}}, cex=1.2, lwd=1.5, lty={{lty_start+count}}, col="{{ colors[count] }}"){% endif %}{% set count = count +1 %}
+# {% endfor %}
+
+# title(main="{{title|capitalize}} \n(logarithmic)", font.main=4)
+
+# # Label the x and y axes with dark green text
+# title(xlab="{{x_label}}", col.lab=rgb(0,0,0))
+# title(ylab="{{y_label}}", col.lab=rgb(0,0,0))
+
+
+# # Create a legend at (1, g_range[2]) that is slightly smaller 
+# # (cex) and uses the same line colors and points used by 
+# # the actual plots 
+# {% set count = 0 %}
+# legend(1, g_range[2], c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ algo }}"{% set count = count +1 %}{% endfor %}), cex=0.8, lwd=1.5, 
+#    col=c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ colors[count] }}"{% set count = count +1 %}{% endfor %}), pch={{pch_start}}:{{pch_start + algos|length}}, lty={{lty_start}}:{{lty_start + algos|length}});
+
