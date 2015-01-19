@@ -8,6 +8,7 @@ import org.simgrid.msg.Msg;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
+import scheduling.snooze.SnoozeProperties;
 import trace.Trace;
 
 import scheduling.entropyBased.entropy2.EntropyProperties;
@@ -31,8 +32,12 @@ public class Injector extends Process {
        // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
         //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
-        faultQueue =generateFaultQueue(SimulatorManager.getSGHosts().toArray(new XHost[SimulatorManager.getSGHosts().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
-       // System.out.println("Size of fault queue:"+faultQueue.size());
+        // Stupid code to stress Snooze service nodes - Used for the paper submission
+        if(SnoozeProperties.faultMode())
+            faultQueue =generateSnoozeFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration());
+        else
+        faultQueue =generateFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
+        // System.out.println("Size of fault queue:"+faultQueue.size());
         evtQueue = mergeQueues(loadQueue,faultQueue);
        // System.out.println("Size of event queue:"+evtQueue.size());
     }
@@ -102,7 +107,84 @@ public class Injector extends Process {
         return -Math.log(1 - rand.nextDouble()) / lambda;
     }
 
-    public static Deque<FaultEvent> generateFaultQueue(XHost[] xhosts,  long duration, int faultPeriod){
+
+    public static Deque<FaultEvent> generateSnoozeFaultQueue(XHost[] xhosts,  long duration) {
+        LinkedList<FaultEvent> faultQueue = new LinkedList<FaultEvent>();
+        long id=0;
+        XHost tempHost;
+        double currentTime = 0;
+        double crashDuration = SimulatorProperties.getCrashDuration();
+        long GLFaultPeriod = SnoozeProperties.getGLFaultPeriodicity();
+        long GMFaultPeriod = SnoozeProperties.getGMFaultPeriodicity();
+
+        // Kill GL
+        currentTime = GLFaultPeriod;
+        do{
+
+            tempHost =  xhosts[SimulatorManager.getSGHostingHosts().size()];
+
+            if(!ifStillOffUpdate(tempHost, faultQueue, currentTime)) {
+                // and change its state
+                // false = off , on = true
+                // Add a new event queue
+                faultQueue.add(new FaultEvent(id++, currentTime, tempHost, false));
+            }
+            if (currentTime + crashDuration < duration) {
+                //For the moment, downtime of a node is arbitrarily set to crashDuration
+                faultQueue.add(new FaultEvent(id++, currentTime + (crashDuration), tempHost, true));
+                //        System.err.println(eventQueue.size());
+            }
+            currentTime += GLFaultPeriod;
+        } while(currentTime<duration);
+
+
+        // Random kill GM
+        Random randHostPicker = new Random(SimulatorProperties.getSeed());
+        currentTime = GMFaultPeriod;
+        do{
+            // Random select of one GM
+            int index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size()-1);
+
+            tempHost = xhosts[SimulatorManager.getSGHostingHosts().size()+1+index];
+
+            if(!ifStillOffUpdate(tempHost, faultQueue, currentTime)) {
+                // and change its state
+                // false = off , on = true
+                // Add a new event queue
+                faultQueue.add(new FaultEvent(id++, currentTime, tempHost, false));
+            }
+            if (currentTime + crashDuration < duration) {
+                //For the moment, downtime of a node is arbitrarily set to crashDuration
+                faultQueue.add(new FaultEvent(id++, currentTime + (crashDuration), tempHost, true));
+                //        System.err.println(eventQueue.size());
+            }
+            currentTime += GMFaultPeriod;
+        }while(currentTime < duration);
+
+
+        Msg.info("Number of events:"+faultQueue.size());
+        for (InjectorEvent evt: faultQueue){
+            Msg.info(evt.toString());
+        }
+
+        // Sort the list for the merge:
+        Collections.sort(faultQueue, new Comparator<FaultEvent>() {
+            @Override
+            public int compare(FaultEvent o1, FaultEvent o2) {
+                if (o1.getTime() > o2.getTime())
+                    return 1 ;
+                else if (o1.getTime() == o2.getTime())
+                    return 0 ;
+                else // o1.getTime() < o2.getTime()
+                    return -1;
+            }
+        });
+
+        return faultQueue;
+
+    }
+
+        public static Deque<FaultEvent> generateFaultQueue(XHost[] xhosts,  long duration, int faultPeriod){
         LinkedList<FaultEvent> faultQueue = new LinkedList<FaultEvent>();
         Random randExpDis=new Random(SimulatorProperties.getSeed());
         double currentTime = 0 ;

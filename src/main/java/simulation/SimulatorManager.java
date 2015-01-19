@@ -73,7 +73,11 @@ public class SimulatorManager {
      * The list of Xhosts  that are running
      */
     private static HashMap<String, XHost> sgServiceHosts= null;
-
+    /**
+     * Just a stupid sorted table to have a reference toward each host
+     * Used by the injector when generating the different event queues.
+     */
+    private static XHost[] xhosts = null;
     /**
      * Average CPU demand of the infrastructure (just a hack to avoid to compute the CPUDemand each time (computing the CPU demand is O(n)
      */
@@ -136,12 +140,23 @@ public class SimulatorManager {
 
     /**
      * @return the collection of XHosts (i.e. the hosts that composed the infrastructure).
+     * Please note that the returned collection is not sorted. If you need a sorted structure, you should call getSGHostsToArray() that returns an simple array
      */
     public static Collection<XHost> getSGHosts(){
         LinkedList<XHost> tmp = new LinkedList<XHost>(sgHostingHosts.values());
         tmp.addAll(sgServiceHosts.values());
+
         return tmp;
     }
+
+    /**
+     * @return the collection of XHosts (i.e. the hosts that composed the infrastructure).
+     * Please note that the returned collection is not sorted. If you need a sorted structure, you should call getSGHosts() that returns an simple array
+     */
+    public static XHost[] getSGHostsToArray(){
+        return xhosts;
+    }
+
 
     /**
      * @return the collection of XHosts that have been declared as hosting nodes (i.e. that can host VMs)
@@ -195,6 +210,7 @@ public class SimulatorManager {
         sgHostsOff = new HashMap<String,XHost>();
         sgHostingHosts = new HashMap<String,XHost>();
         sgServiceHosts = new HashMap<String,XHost>();
+        xhosts = new XHost[nbOfHostingHosts+nbOfHostingHosts];
 
         XHost xtmp;
 
@@ -207,6 +223,7 @@ public class SimulatorManager {
                 xtmp.turnOn();
                sgHostsOn.put("node"+i, xtmp);
                 sgHostingHosts.put("node" + i, xtmp);
+                xhosts[i]=xtmp;
             } catch (HostNotFoundException e) {
                 e.printStackTrace();
             }
@@ -221,6 +238,7 @@ public class SimulatorManager {
                 xtmp.turnOn();
                 sgHostsOn.put("node" + i, xtmp);
                 sgServiceHosts.put("node" + i, xtmp);
+                xhosts[i]=xtmp;
             } catch (HostNotFoundException e) {
                 e.printStackTrace();
             }
