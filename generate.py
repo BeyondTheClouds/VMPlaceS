@@ -27,7 +27,8 @@ elif (sys.argv[1] == 'hierarchical'):
         "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
         "<platform version=\"3\">\n"
         "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
-        "  <process host=\"node%d\" function=\"simulation.HierarchicalResolver\"> </process>\n" % (nb_nodes + nb_servicenodes, nb_nodes +1))
+        "  <process host=\"node%d\" function=\"simulation.HierarchicalResolver\"> </process>\n"
+        % (nb_nodes + nb_servicenodes, nb_nodes + nb_servicenodes))
 
 #        for i in range(0, nb_nodes):
 #                line = "  <process host=\"node%d\" function=\"scheduling.snooze.LocalController\">\

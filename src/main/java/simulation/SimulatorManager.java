@@ -21,6 +21,8 @@ import configuration.XVM;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
+import scheduling.snooze.LocalController;
+import scheduling.snooze.Logger;
 import trace.Trace;
 
 import java.io.*;
@@ -491,28 +493,43 @@ public class SimulatorManager {
      * @param host the host to turn on
      */
     public static void turnOn(XHost host) {
+        String name = host.getName();
         if(host.isOff()) {
-            Msg.info("Turn on node "+host.getName());
+            Msg.info("Turn on node "+name);
             host.turnOn();
-            sgHostsOff.remove(host.getName());
-            sgHostsOn.put(host.getName(), host);
+            sgHostsOff.remove(name);
+            sgHostsOn.put(name, host);
 
             // If your turn on an hosting node, then update the LOAD
-            if(sgHostingHosts.containsKey(host.getName())) {
+            if(sgHostingHosts.containsKey(name)) {
 
                 for (XVM vm: host.getRunnings()){
-                    Msg.info("TURNING NODE "+host.getName()+"ON - ADD VM "+vm.getName());
+                    Msg.info("TURNING NODE "+name+"ON - ADD VM "+vm.getName());
                     sgVMsOff.remove(vm.getName());
                     sgVMsOn.put(vm.getName(), vm);
                 }
 
                 // Update getCPUDemand of the host
-                Trace.hostVariableSet(host.getName(), "LOAD", host.getCPUDemand());
+                Trace.hostVariableSet(name, "LOAD", host.getCPUDemand());
 
                 // TODO test whether the node is violated or not (this can occur)
 
                 //Update global getCPUDemand
                 Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "LOAD", SimulatorManager.getCPUDemand());
+            }
+            if (SimulatorProperties.getAlgo().equals("hierarchical")) {
+                int hostNo = Integer.parseInt(name.replaceAll("\\D", ""));
+                if (hostNo < SimulatorProperties.getNbOfHostingNodes()) {
+                    try {
+                        String[] lcArgs = new String[]{name, "dynLocalController-" + hostNo};
+                        LocalController lc =
+                                new LocalController(host.getSGHost(), "dynLocalController-" + hostNo, lcArgs);
+                        lc.start();
+                        Logger.info("[SimulatorManager.turnOn] Dyn. LC added: " + lcArgs[1]);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         } else{
             Msg.info("Weird... you are asking to turn on a host that is already on !");

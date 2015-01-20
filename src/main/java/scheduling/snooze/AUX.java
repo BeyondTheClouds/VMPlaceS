@@ -24,8 +24,11 @@ public class AUX {
 //    static final long DeadTimeout = SnoozeProperties.getHeartBeatPeriodicity()/3;
     static final double MessageReceptionTimeout = 0.2;
 
-    static final int lcPoolSize = Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1);
-    static final int gmPoolSize = Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1);
+    static final int glLCPoolSize = Math.max(SimulatorProperties.getNbOfHostingNodes()/10, 1);
+    static final int glGMPoolSize = Math.max((SimulatorProperties.getNbOfServiceNodes()-1)/10, 1);
+    static final int gmLCPoolSize =
+            Math.max(SimulatorProperties.getNbOfHostingNodes()/(SimulatorProperties.getNbOfServiceNodes()-1)/10, 1);
+
 //    static final long PoolingTimeout = SimulatorProperties.getDuration(); // Timeout for worker tasks
 
     // constants for variants of Snooze alg.

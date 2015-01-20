@@ -33,11 +33,11 @@ public class Injector extends Process {
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
         //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
         // Stupid code to stress Snooze service nodes - Used for the paper submission
-        if(SnoozeProperties.faultMode())
+        if(SimulatorProperties.getAlgo().equals("hierarchical") && SnoozeProperties.faultMode())
             faultQueue =generateSnoozeFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration());
         else
-        faultQueue =generateFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
-        // System.out.println("Size of fault queue:"+faultQueue.size());
+            faultQueue =generateFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
+         System.out.println("Size of fault queue:"+faultQueue.size());
         evtQueue = mergeQueues(loadQueue,faultQueue);
        // System.out.println("Size of event queue:"+evtQueue.size());
     }

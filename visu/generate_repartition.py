@@ -37,6 +37,12 @@ import jinja2
 import traceback
 
 ################################################################################
+# Constant and parameters
+################################################################################
+
+duration = 1800
+
+################################################################################
 # Functions of the script
 ################################################################################
 def execute_cmd(args):
@@ -173,7 +179,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     try:
                         data = json.loads(line)
 
-                        if float(data["time"]) > 3601:
+                        if float(data["time"]) > duration:
                             continue
 
                         if data["event"] == "trace_event" and data["value"] == "migrate":

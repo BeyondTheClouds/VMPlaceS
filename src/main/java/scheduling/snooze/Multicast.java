@@ -40,9 +40,9 @@ public class Multicast extends Process {
 
         Test.multicast = this;
 
-        newLCPool = new ThreadPool(this, RunNewLC.class.getName(), AUX.lcPoolSize);
-        newLCPool = new ThreadPool(this, RunNewGM.class.getName(), AUX.gmPoolSize);
-        Logger.debug("[MUL.main] noLCWorkers: " + AUX.lcPoolSize);
+        newLCPool = new ThreadPool(this, RunNewLC.class.getName(), AUX.glLCPoolSize);
+        newLCPool = new ThreadPool(this, RunNewGM.class.getName(), AUX.glGMPoolSize);
+        Logger.debug("[MUL.main] noLCWorkers: " + AUX.glLCPoolSize);
 
         procRelayGLBeats();
         procRelayGMBeats();
@@ -260,6 +260,8 @@ public class Multicast extends Process {
                 } catch (NullPointerException e) {
                     Logger.exc("[MUL.relayGLBeats] NullPointer, GM: " + gm);
                     gmInfo.remove(gm);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
                 Logger.info("[MUL.relayGLbeats] Beat relayed to GM: " + m);
             }
