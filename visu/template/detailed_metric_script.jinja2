@@ -1,0 +1,18 @@
+\begin{table}[ht]
+\centering
+    {\scriptsize \begin{tabular}{|P{27mm}@{\:}||@{\:}c@{\:}|@{\:}c@{\:}|@{\:}c@{\:}||@{\:}c@{\:}|@{\:}c@{\:}|@{\:}c@{\:}|}
+      \thickhline
+      \textbf{Infrastructure Size}
+        & \multicolumn{ {{algos|length }} }{c@{\:}||@{\:}}{\textbf{Algorithm}}
+          \Tstrut \\
+         \hfill & {% for algo in algos %}{% if loop.index > 1 %}&{% endif %}{% if not loop.last %} ~{{algo}}~ {% else %} {{algo}} {% endif %}{% endfor %} \Bstrut \\
+      \thickhline
+
+      {% for node_number in node_numbers %} {{"%4d"|format(node_number)}} nodes {% for algo in algos %}& {{data[metric][node_number][algo][0]}} $\pm$ {{data[metric][node_number][algo][1]}} {% endfor %} {% if not loop.last %}\\{% endif %}
+      {% endfor %}
+      \Rstrut  \\ \hline
+      \thickhline
+  \end{tabular} }
+\caption{Means $\pm$ Std deviations of {{metric}} durations.}
+\label{table:detailed_{{metric}}}
+\end{table}
