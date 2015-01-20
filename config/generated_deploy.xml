@@ -1,19 +1,11 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
 <platform version="3">
-  <process host="node141" function="injector.Injector"> </process>
-  <process host="node129" function="simulation.HierarchicalResolver"> </process>
+  <process host="node133" function="injector.Injector"> </process>
+  <process host="node133" function="simulation.HierarchicalResolver"> </process>
   <process host="node128" function="scheduling.snooze.GroupManager"><argument value="node128" /><argument value="groupManager-128" /></process>
   <process host="node129" function="scheduling.snooze.GroupManager"><argument value="node129" /><argument value="groupManager-129" /></process>
   <process host="node130" function="scheduling.snooze.GroupManager"><argument value="node130" /><argument value="groupManager-130" /></process>
   <process host="node131" function="scheduling.snooze.GroupManager"><argument value="node131" /><argument value="groupManager-131" /></process>
   <process host="node132" function="scheduling.snooze.GroupManager"><argument value="node132" /><argument value="groupManager-132" /></process>
-  <process host="node133" function="scheduling.snooze.GroupManager"><argument value="node133" /><argument value="groupManager-133" /></process>
-  <process host="node134" function="scheduling.snooze.GroupManager"><argument value="node134" /><argument value="groupManager-134" /></process>
-  <process host="node135" function="scheduling.snooze.GroupManager"><argument value="node135" /><argument value="groupManager-135" /></process>
-  <process host="node136" function="scheduling.snooze.GroupManager"><argument value="node136" /><argument value="groupManager-136" /></process>
-  <process host="node137" function="scheduling.snooze.GroupManager"><argument value="node137" /><argument value="groupManager-137" /></process>
-  <process host="node138" function="scheduling.snooze.GroupManager"><argument value="node138" /><argument value="groupManager-138" /></process>
-  <process host="node139" function="scheduling.snooze.GroupManager"><argument value="node139" /><argument value="groupManager-139" /></process>
-  <process host="node140" function="scheduling.snooze.GroupManager"><argument value="node140" /><argument value="groupManager-140" /></process>
 </platform>

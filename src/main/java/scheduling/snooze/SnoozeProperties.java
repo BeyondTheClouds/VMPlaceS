@@ -32,7 +32,12 @@ public class SnoozeProperties extends GeneralProperties {
         public final static String INFO_LEVEL = "snooze.info-level";
         public final static String INFO_PERIODICITY = "snooze.info-periodicity";
         public final static String SIMULATE_LOCALCOMPUTATION = "snooze.simulate-localcomputation";
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        public final static String FAULT_MODE = "snooze.faultmode";
+        public final static String FAULT_MODE_GLPERIOD = "snooze.glcrash-period";
+         public final static String FAULT_MODE_GMPERIOD = "snooze.gmcrash-period";
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Property default values
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -45,9 +50,11 @@ public class SnoozeProperties extends GeneralProperties {
 
         public final static int DEFAULT_INFO_LEVEL = 2;
         public final static int DEFAULT_INFO_PERIODICITY = 5;
+
         public static boolean DEFAULT_SIMULATE_LOCALCOMPUTATION = false;
-
-
+        public static boolean DEFAULT_FAULT_MODE = false ;
+        public static long DEFAULT_FAULT_MODE_GLPERIOD = SimulatorProperties.getDuration()/2 ;
+        public static long DEFAULT_FAULT_MODE_GMPERIOD = 300 ;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         //Constructors
@@ -110,6 +117,19 @@ public class SnoozeProperties extends GeneralProperties {
     public static boolean shouldISleep() {
         return INSTANCE.getPropertyAsBoolean(SIMULATE_LOCALCOMPUTATION, DEFAULT_SIMULATE_LOCALCOMPUTATION);
     }
+
+    public static boolean faultMode() {
+        return INSTANCE.getPropertyAsBoolean(FAULT_MODE, DEFAULT_FAULT_MODE);
+    }
+
+    public static long getGLFaultPeriodicity(){
+        return INSTANCE.getPropertyAsLong(FAULT_MODE_GLPERIOD, DEFAULT_FAULT_MODE_GLPERIOD);
+    }
+
+    public static long getGMFaultPeriodicity(){
+        return INSTANCE.getPropertyAsLong(FAULT_MODE_GMPERIOD, DEFAULT_FAULT_MODE_GMPERIOD);
+    }
+
 
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -37,7 +37,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     private boolean abortRP;
 
     public Entropy2RP(Configuration initialConfiguration) {
-        this(initialConfiguration, -1);
+        this(initialConfiguration,new Random().nextInt());
     }
 
     public Entropy2RP(Configuration initialConfiguration, int loopID) {
@@ -275,6 +275,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         }
 
         Msg.info("Launching scheduler (loopId = " + loopID + ") - start to compute");
+        Msg.info("Nodes considered: "+initialConfiguration.getAllNodes().toString());
 
         /** PLEASE NOTE THAT ALL COMPUTATIONS BELOW DOES NOT MOVE FORWARD THE MSG CLOCK ***/
         beginTimeOfCompute = System.currentTimeMillis();
@@ -454,11 +455,6 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                                     Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
                                     Msg.info("Reconfiguration plan cannot be completely applied so abort it");
                                     abortReconfigurationPlan();
-
-
-                                    System.out.println("Current processus killed by SIMGRID!!!");
-                                    Process.currentProcess().exit();
-//                                    System.out.println("continue...");
                                 }
                                 decMig();
                             }

@@ -266,7 +266,7 @@ public class XHost{
             System.exit(-1);
         }
         if(!this.off) {
-            Msg.info("Turn off " + this.sgHost.getName());
+         //   Msg.info("Turn off " + this.sgHost.getName());
             this.off=true;
             this.turnOffNb++;
             this.sgHost.off();

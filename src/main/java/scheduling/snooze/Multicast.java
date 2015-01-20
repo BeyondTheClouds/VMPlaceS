@@ -260,6 +260,8 @@ public class Multicast extends Process {
                 } catch (NullPointerException e) {
                     Logger.exc("[MUL.relayGLBeats] NullPointer, GM: " + gm);
                     gmInfo.remove(gm);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
                 Logger.info("[MUL.relayGLbeats] Beat relayed to GM: " + m);
             }

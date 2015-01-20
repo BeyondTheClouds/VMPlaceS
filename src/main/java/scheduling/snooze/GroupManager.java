@@ -44,42 +44,41 @@ public class GroupManager extends Process {
 
     @Override
     public void main(String[] strings) {
-        thisGM = this;
-        SnoozeMsg m = null;
-        boolean success = false;
-        int n = 1;
+        try {
+            thisGM = this;
+            SnoozeMsg m = null;
+            boolean success = false;
+            int n = 1;
 
-        Logger.imp("[GM.main] GM started: " + host.getName());
-        Test.gmsCreated.remove(this);
-        Test.gmsJoined.remove(this);
-        Test.gmsCreated.put(this.host.getName(), this);
+            Logger.imp("[GM.main] GM started: " + host.getName());
+            Test.gmsCreated.remove(this);
+            Test.gmsJoined.remove(this);
+            Test.gmsCreated.put(this.host.getName(), this);
 
-        newJoin();
-        while (!thisGMToBeStopped()){
-            try {
+            newJoin();
+            while (!thisGMToBeStopped()) {
                 m = (SnoozeMsg) Task.receive(inbox, AUX.durationToEnd());
                 handle(m);
                 glDead();
                 deadLCs();
-                if(SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
-            } catch (HostFailureException e) {
-                Logger.exc("[GM.main] HostFailureException");
-                thisGMToBeStopped = true;
-                break;
-            } catch (TimeoutException e) {
-                // Logger.exc("[GM.main] TimeoutException");
-                glDead();
-                deadLCs();
-            } catch (Exception e) {
-                String cause = e.getClass().getName();
-                Logger.exc("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
-                e.printStackTrace();
+                if (SnoozeProperties.shouldISleep()) sleep(AUX.DefaultComputeInterval);
             }
+            thisGMToBeStopped = true;
+            Logger.err("[GM.main] GM stopped: " + host.getName() + ", " + m);
+            Test.gmsCreated.remove(this);
+            Test.gmsJoined.remove(this);
+        } catch (HostFailureException e) {
+            Logger.exc("[GM.main] HostFailureException");
+            thisGMToBeStopped = true;
+        } catch (TimeoutException e) {
+            // Logger.exc("[GM.main] TimeoutException");
+            glDead();
+            deadLCs();
+        } catch (Exception e) {
+            String cause = e.getClass().getName();
+            Logger.exc("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
+            e.printStackTrace();
         }
-        thisGMToBeStopped=true;
-        Logger.err("[GM.main] GM stopped: " + host.getName() + ", " + m);
-        Test.gmsCreated.remove(this);
-        Test.gmsJoined.remove(this);
     }
 
     void handle(SnoozeMsg m) throws HostFailureException {
@@ -239,7 +238,8 @@ public class GroupManager extends Process {
     }
 
     void glDead() {
-        if (glDead && !joining) {
+        if (AUX.timeDiff(glTimestamp) > AUX.HeartbeatTimeout && !joining) {
+            glDead = true;
             Logger.err("[GM.glDead] GL DEAD, promotion: " + glHostname + ", " + glTimestamp + ", " + Msg.getClock());
             glHostname = "";
             triggerGLPromotion();
@@ -273,19 +273,20 @@ public class GroupManager extends Process {
     void procSendMyCharge() {
         try {
             new Process(host, host.getName() + "-gmCharge") {
-                public void main(String[] args) throws HostFailureException {
-                    while (!thisGMToBeStopped()) {
-                        try {
+                public void main(String[] args) {
+                    try {
+                        while (!thisGMToBeStopped()) {
                             summaryInfoToGL();
                             BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
                             m.send();
                             Logger.info("[GM.procSendMyCharge] " + m);
-                            sleep(AUX.HeartbeatInterval*1000);
-                        } catch (HostFailureException e) {
-                            Logger.exc("[GM.main] HostFailureException");
-                            thisGMToBeStopped = true;
-                            break;
-                        } catch (Exception e) { e.printStackTrace(); }
+                            sleep(AUX.HeartbeatInterval * 1000);
+                        }
+                    } catch (HostFailureException e) {
+                        Logger.exc("[GM.main] HostFailureException");
+                        thisGMToBeStopped = true;
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             }.start();
@@ -300,16 +301,16 @@ public class GroupManager extends Process {
     void procScheduling() {
         try {
             new Process(host, host.getName() + "-gmScheduling") {
-                public void main(String[] args) throws HostFailureException {
-                    long period = (SnoozeProperties.getSchedulingPeriodicity()*1000);
-                    boolean periodicScheduling = SnoozeProperties.getSchedulingPeriodic();
-                    Logger.imp("[GM.procScheduling] periodicScheduling: " + periodicScheduling);
+                public void main(String[] args) {
+                    try {
+                        long period = (SnoozeProperties.getSchedulingPeriodicity() * 1000);
+                        boolean periodicScheduling = SnoozeProperties.getSchedulingPeriodic();
+                        Logger.imp("[GM.procScheduling] periodicScheduling: " + periodicScheduling);
 
-                    while (!thisGMToBeStopped()) {
-                        long wait = period;
-                        long previousDuration = 0;
-                        boolean anyViolation = false;
-                        try {
+                        while (!thisGMToBeStopped()) {
+                            long wait = period;
+                            long previousDuration = 0;
+                            boolean anyViolation = false;
                             if (periodicScheduling) {
                                 if (wait > 0) Process.sleep(wait);
                             } else
@@ -325,11 +326,12 @@ public class GroupManager extends Process {
                                 wait = period - previousDuration;
                                 scheduling = false;
                             }
-                        } catch (HostFailureException e) {
-                            Logger.exc("[GM.main] HostFailureException");
-                            thisGMToBeStopped = true;
-                            break;
-                        } catch (Exception e) { e.printStackTrace(); }
+                        }
+                    } catch (HostFailureException e) {
+                        Logger.exc("[GM.main] HostFailureException");
+                        thisGMToBeStopped = true;
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
                 }
             }.start();
