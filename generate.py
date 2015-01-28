@@ -11,7 +11,7 @@ import sys, random
 largv=len(sys.argv)
 nb_nodes = int(sys.argv[2])
 
-if (sys.argv[1] == 'centralized'):
+if (sys.argv[1] == 'centralized') or (sys.argv[1] == 'without'):
     sys.stderr.write("generate deployment file for entropy");
     sys.stdout.write("<?xml version='1.0'?>\n"
     "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
