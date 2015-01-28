@@ -11,7 +11,7 @@ import sys, random
 largv=len(sys.argv)
 nb_nodes = int(sys.argv[2])
 
-if (sys.argv[1] == 'centralized') or (sys.argv[1] == 'without'):
+if (sys.argv[1] == 'centralized'):
     sys.stderr.write("generate deployment file for entropy");
     sys.stdout.write("<?xml version='1.0'?>\n"
     "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
@@ -19,6 +19,14 @@ if (sys.argv[1] == 'centralized') or (sys.argv[1] == 'without'):
     "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
     "  <process host=\"node%d\" function=\"simulation.CentralizedResolver\"> </process>\n"
     "</platform>" % (nb_nodes +1, nb_nodes));
+
+elif (sys.argv[1] == 'without'):
+    sys.stderr.write("generate deployment file for entropy");
+    sys.stdout.write("<?xml version='1.0'?>\n"
+                     "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
+                     "<platform version=\"3\">\n"
+                     "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
+                     "</platform>" % (nb_nodes +1));
 
 elif (sys.argv[1] == 'hierarchical'):
         nb_servicenodes = int(sys.argv[3])
