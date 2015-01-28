@@ -65,8 +65,6 @@ public class GroupManager extends Process {
             }
             thisGMToBeStopped = true;
             Logger.err("[GM.main] GM stopped: " + host.getName() + ", " + m);
-            Test.gmsCreated.remove(this);
-            Test.gmsJoined.remove(this);
         } catch (HostFailureException e) {
             Logger.exc("[GM.main] HostFailureException");
             thisGMToBeStopped = true;
@@ -79,6 +77,8 @@ public class GroupManager extends Process {
             Logger.exc("[GM.main] PROBLEM? Exception: " + host.getName() + ": " + cause);
             e.printStackTrace();
         }
+        Test.gmsCreated.remove(this);
+        Test.gmsJoined.remove(this);
     }
 
     void handle(SnoozeMsg m) throws HostFailureException {
@@ -223,7 +223,7 @@ public class GroupManager extends Process {
                 ms.send();
 
                 if (joining) {
-                    procSendMyCharge();
+                    procSendMyChargeBeat();
                     procScheduling();
                     newLCPool = new ThreadPool(this, RunNewLC.class.getName(), AUX.gmLCPoolSize);
                     Logger.imp("[GM.glBeats] GM Join finished: " + m + ", LCPool: " + AUX.gmLCPoolSize);
@@ -270,7 +270,7 @@ public class GroupManager extends Process {
     /**
      * Sends GM charge summary info to GL
      */
-    void procSendMyCharge() {
+    void procSendMyChargeBeat() {
         try {
             new Process(host, host.getName() + "-gmCharge") {
                 public void main(String[] args) {
@@ -279,11 +279,11 @@ public class GroupManager extends Process {
                             summaryInfoToGL();
                             BeatGMMsg m = new BeatGMMsg(thisGM, AUX.multicast + "-relayGMBeats", host.getName(), null);
                             m.send();
-                            Logger.info("[GM.procSendMyCharge] " + m);
+                            Logger.info("[GM.procSendMyChargeBeat] " + m);
                             sleep(AUX.HeartbeatInterval * 1000);
                         }
                     } catch (HostFailureException e) {
-                        Logger.exc("[GM.main] HostFailureException");
+                        Logger.exc("[GM.procSendMyChargeBeat] HostFailureException");
                         thisGMToBeStopped = true;
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -309,12 +309,19 @@ public class GroupManager extends Process {
 
                         while (!thisGMToBeStopped()) {
                             long wait = period;
+                            double previousCallScheduleVMs = 0;
                             long previousDuration = 0;
                             boolean anyViolation = false;
                             if (periodicScheduling) {
                                 if (wait > 0) Process.sleep(wait);
-                            } else
+                            } else {
                                 Process.sleep(70); // This sleep simulates the communications between the GM and the LC to update the monitoring information (i.e. a pull model)
+                                if ((Msg.getClock() - previousCallScheduleVMs < 1) && (Msg.getClock() > 1)) {
+                                    // Avoid too fast rescheduling: problematic if violation cannot be resolved
+                                    Logger.debug("[GM.procScheduling] Too fast rescheduling: sleep(1000)");
+                                    sleep(1000);
+                                }
+                            }
                             // A push model would have been better but let's keep it simple and stupid ;)
                             // 70 ms correspond to a round trip between GM and LCs.
                             // TODO 70 ms is an arbitrary value, it would be better to get the RTT of the current topology based on the platform file.
@@ -323,12 +330,13 @@ public class GroupManager extends Process {
                                     && !scheduling && !glHostname.isEmpty() && !thisGMToBeStopped() && !glDead) {
                                 scheduling = true;
                                 previousDuration = scheduleVMs(); // previousDuration is in ms.
+                                previousCallScheduleVMs = Msg.getClock();
                                 wait = period - previousDuration;
                                 scheduling = false;
                             }
                         }
                     } catch (HostFailureException e) {
-                        Logger.exc("[GM.main] HostFailureException");
+                        Logger.exc("[GM.procScheduling] HostFailureException");
                         thisGMToBeStopped = true;
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -359,7 +367,7 @@ public class GroupManager extends Process {
                 Logger.info("[GM.stopThisGM] LC to rejoin: " + m);
             }
             thisGMToBeStopped = true;
-            Logger.imp("[GM.stopThisGM] MUL, LCs to be notified, rejoin");
+            Logger.imp("[GM.stopThisGM] GM to be stopped");
         } catch (Exception e) {
             e.printStackTrace();
         }

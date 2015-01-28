@@ -301,10 +301,10 @@ public class Multicast extends Process {
                     m = new RBeatGMMsg(g, AUX.lcInbox(lc) + "-gmBeats", gm, null);
                     LocalController lco = null;
                     try {
-                        lco = Test.lcsCreated.get(lc);
+                        lco = Test.lcsJoined.get(lc).lco;
                         lco.handleGMBeats(m);
                     } catch (NullPointerException e) {
-                        Logger.exc("[MUL.relayGMBeats] NullPointer, LC: " + lc);
+                        Logger.exc("[MUL.relayGMBeats] NullPointer, LC: " + lc + ", " + m);
                         lcInfo.remove(lc);
                     }
                     i++;
