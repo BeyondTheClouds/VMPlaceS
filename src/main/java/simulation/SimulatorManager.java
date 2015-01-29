@@ -212,7 +212,7 @@ public class SimulatorManager {
         sgHostsOff = new HashMap<String,XHost>();
         sgHostingHosts = new HashMap<String,XHost>();
         sgServiceHosts = new HashMap<String,XHost>();
-        xhosts = new XHost[nbOfHostingHosts+nbOfHostingHosts];
+        xhosts = new XHost[nbOfHostingHosts+nbOfServiceHosts];
 
         XHost xtmp;
 
