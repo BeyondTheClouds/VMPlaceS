@@ -305,22 +305,22 @@ public class GroupManager extends Process {
                     try {
                         long period = (SnoozeProperties.getSchedulingPeriodicity() * 1000);
                         boolean periodicScheduling = SnoozeProperties.getSchedulingPeriodic();
+                        double previousCallScheduleVMs = 0;
                         Logger.imp("[GM.procScheduling] periodicScheduling: " + periodicScheduling);
 
                         while (!thisGMToBeStopped()) {
                             long wait = period;
-                            double previousCallScheduleVMs = 0;
                             long previousDuration = 0;
                             boolean anyViolation = false;
                             if (periodicScheduling) {
                                 if (wait > 0) Process.sleep(wait);
                             } else {
                                 Process.sleep(70); // This sleep simulates the communications between the GM and the LC to update the monitoring information (i.e. a pull model)
-                                if ((Msg.getClock() - previousCallScheduleVMs < 1) && (Msg.getClock() > 1)) {
-                                    // Avoid too fast rescheduling: problematic if violation cannot be resolved
-                                    Logger.debug("[GM.procScheduling] Too fast rescheduling: sleep(1000)");
-                                    sleep(1000);
-                                }
+                            }
+                            if ((Msg.getClock() - previousCallScheduleVMs < 1) && (Msg.getClock() > 1)) {
+                                // Avoid too fast rescheduling: problematic if violation cannot be resolved
+                                Logger.debug("[GM.procScheduling] Too fast rescheduling: sleep(1000)");
+                                sleep(1000);
                             }
                             // A push model would have been better but let's keep it simple and stupid ;)
                             // 70 ms correspond to a round trip between GM and LCs.
