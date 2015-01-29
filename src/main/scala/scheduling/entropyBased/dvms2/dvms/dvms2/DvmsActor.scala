@@ -245,9 +245,10 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess, entropyAc
 
               // it was enough: the partition is no more useful
               val nodes: List[SGNodeRef] =currentPartition.get.nodes
-              nodes.foreach(node => {
-                send(node, DissolvePartition(currentPartition.get.id, "reconfigurationPlan applied"))
+              nodes.filterNot(n => n.getId == applicationRef.getId).foreach(node => {
+                ask(node, DissolvePartition(currentPartition.get.id, "reconfigurationPlan applied"))
               })
+              dissolvePartition(currentPartition.get.id, "reconfigurationPlan applied")
             }
             case ReconfigurationlNoSolution() => {
 
@@ -367,6 +368,7 @@ class DvmsActor(applicationRef: SGNodeRef, parentProcess: DVMSProcess, entropyAc
 
     case DissolvePartition(id, reason) =>
       dissolvePartition(id, reason)
+      send(returnCanal, true)
 
     case msg@SetCurrentPartition(partition: DvmsPartition) =>
       logInfo(s"received an ISP update: $msg @$currentPartition and @$firstOut")
