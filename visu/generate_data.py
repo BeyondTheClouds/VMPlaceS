@@ -164,7 +164,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 compute_node_count = data["server_count"]
                 service_node_count = data["service_node_count"]
 
-                if algo == "distributed":
+                if "distributed" in algo:
                     service_node_count = compute_node_count
 
                 node_count = compute_node_count + service_node_count
@@ -233,7 +233,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 map_simulation_count[nodes_vms_tuple]   += 1
 
                 map_compute_time[nodes_vms_tuple]                    = compute_time
-                map_compute_time_per_service_node[nodes_vms_tuple]   = compute_time / service_node_count
+                map_compute_time_per_service_node[nodes_vms_tuple]   = compute_time / service_node_count if service_node_count > 0 else -1
                 map_violation_time[nodes_vms_tuple]                  = violation_time
                 map_migration_time[nodes_vms_tuple]                  = migrate_time
                 map_total_time[nodes_vms_tuple]                      = reconfigure_time

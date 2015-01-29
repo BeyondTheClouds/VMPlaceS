@@ -1,0 +1,18 @@
+\begin{table}[ht]
+\centering
+    {\scriptsize \begin{tabular}{|P{27mm}@{\:}||@{\:}c@{\:}|@{\:}c@{\:}|@{\:}c@{\:}||@{\:}c@{\:}|@{\:}c@{\:}|@{\:}c@{\:}|}
+      \thickhline
+      \textbf{Infrastructure Size}
+        & \multicolumn{ {{metrics|length }} }{c@{\:}||@{\:}}{\textbf{Algorithm}}
+          \Tstrut \\
+         \hfill & {% for metric in metrics %}{% if loop.index > 1 %}&{% endif %}{% if not loop.last %} ~{{metric}}~ {% else %} {{metric}} {% endif %}{% endfor %} \Bstrut \\
+      \thickhline
+
+      {% for node_number in node_numbers %} {{"%4d"|format(node_number)}} nodes {% for metric in metrics %}& {{data[algo][node_number][metric][0]}} $\pm$ {{data[algo][node_number][metric][1]}} {% endfor %} {% if not loop.last %}\\{% endif %}
+      {% endfor %}
+      \Rstrut  \\ \hline
+      \thickhline
+  \end{tabular} }
+\caption{Influence of the group size in {{algo}} ($Med\pm \sigma$)}
+\label{table:detailed_{{algo}}}
+\end{table}

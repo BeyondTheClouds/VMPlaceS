@@ -79,6 +79,7 @@ public class DVMSProcess extends Process {
 
                 dvms.receive(req.getMessage(), new SGNodeRef(req.getOrigin(), reqId), new SGNodeRef(req.getReplyBox(), -1L));
             } catch (Exception e) {
+                Msg.info(String.format("Failure on %s", mBox));
                 e.printStackTrace();
             }
         }

@@ -20,6 +20,14 @@ if (sys.argv[1] == 'centralized'):
     "  <process host=\"node%d\" function=\"simulation.CentralizedResolver\"> </process>\n"
     "</platform>" % (nb_nodes +1, nb_nodes));
 
+elif (sys.argv[1] == 'without'):
+    sys.stderr.write("generate deployment file for entropy");
+    sys.stdout.write("<?xml version='1.0'?>\n"
+                     "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid.dtd\">\n"
+                     "<platform version=\"3\">\n"
+                     "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
+                     "</platform>" % (nb_nodes +1));
+
 elif (sys.argv[1] == 'hierarchical'):
         nb_servicenodes = int(sys.argv[3])
         sys.stderr.write("generate deployment file for snooze");

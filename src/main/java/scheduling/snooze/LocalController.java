@@ -288,13 +288,13 @@ public class LocalController extends Process {
     void handleGMBeats(SnoozeMsg m) {
         String gm = (String) m.getOrigin();
         if (gmHostname.isEmpty()) {
-            Logger.err("[LC.handleGMBeats] No GM");
+            Logger.err("[LC.handleGMBeats] No GM: " + host.getName());
         }
         if (!gmHostname.equals(gm)) {
-            Logger.err("[LC.handleGMBeats] Multiple GMs: " + gmHostname + ", " + gm);
+            Logger.err("[LC.handleGMBeats] Multiple GMs: " + host.getName() + ", " + gmHostname + ", " + gm);
         } else {
             gmTimestamp = Msg.getClock();
-            Logger.info("[LC.handleGMBeats] " + gmHostname + ", TS: " + gmTimestamp);
+            Logger.info("[LC.handleGMBeats] " + host.getName() + ", "  + gmHostname + ", TS: " + gmTimestamp);
         }
     }
 
