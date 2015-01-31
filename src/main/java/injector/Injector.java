@@ -146,12 +146,13 @@ public class Injector extends Process {
         do {
             // Random select of one GM
             int index = -1;
-            if (GLFaultPeriod != 0)
+            if (GLFaultPeriod == 0)
                 index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size());
             else // GL faults have been already treated, so only consider GMs
              index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size()-1);
 
-            tempHost = xhosts[SimulatorManager.getSGHostingHosts().size()+1+index];
+            // Please remind that node0 hosts VMs, so the first service node is Simulator.Manager.getSGHostingHosts().
+            tempHost = xhosts[SimulatorManager.getSGHostingHosts().size()+index];
 
             if(!ifStillOffUpdate(tempHost, faultQueue, currentTime)) {
                 // and change its state
