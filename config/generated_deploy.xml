@@ -1,11 +1,261 @@
 <?xml version='1.0'?>
 <!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid.dtd">
 <platform version="3">
-  <process host="node133" function="injector.Injector"> </process>
-  <process host="node133" function="simulation.HierarchicalResolver"> </process>
-  <process host="node128" function="scheduling.snooze.GroupManager"><argument value="node128" /><argument value="groupManager-128" /></process>
-  <process host="node129" function="scheduling.snooze.GroupManager"><argument value="node129" /><argument value="groupManager-129" /></process>
-  <process host="node130" function="scheduling.snooze.GroupManager"><argument value="node130" /><argument value="groupManager-130" /></process>
-  <process host="node131" function="scheduling.snooze.GroupManager"><argument value="node131" /><argument value="groupManager-131" /></process>
-  <process host="node132" function="scheduling.snooze.GroupManager"><argument value="node132" /><argument value="groupManager-132" /></process>
+  <process host="node64" function="injector.Injector"> </process>
+  <process host="node0" function="simulation.DistributedResolver">
+                 <argument value="node0" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23000" />
+                 <argument value="node1" /><argument value="23001" />
+                 </process>
+  <process host="node1" function="simulation.DistributedResolver">
+                 <argument value="node1" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23001" />
+                 <argument value="node2" /><argument value="23002" />
+                 </process>
+  <process host="node2" function="simulation.DistributedResolver">
+                 <argument value="node2" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23002" />
+                 <argument value="node3" /><argument value="23003" />
+                 </process>
+  <process host="node3" function="simulation.DistributedResolver">
+                 <argument value="node3" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23003" />
+                 <argument value="node4" /><argument value="23004" />
+                 </process>
+  <process host="node4" function="simulation.DistributedResolver">
+                 <argument value="node4" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23004" />
+                 <argument value="node5" /><argument value="23005" />
+                 </process>
+  <process host="node5" function="simulation.DistributedResolver">
+                 <argument value="node5" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23005" />
+                 <argument value="node6" /><argument value="23006" />
+                 </process>
+  <process host="node6" function="simulation.DistributedResolver">
+                 <argument value="node6" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23006" />
+                 <argument value="node7" /><argument value="23007" />
+                 </process>
+  <process host="node7" function="simulation.DistributedResolver">
+                 <argument value="node7" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23007" />
+                 <argument value="node8" /><argument value="23008" />
+                 </process>
+  <process host="node8" function="simulation.DistributedResolver">
+                 <argument value="node8" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23008" />
+                 <argument value="node9" /><argument value="23009" />
+                 </process>
+  <process host="node9" function="simulation.DistributedResolver">
+                 <argument value="node9" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23009" />
+                 <argument value="node10" /><argument value="23010" />
+                 </process>
+  <process host="node10" function="simulation.DistributedResolver">
+                 <argument value="node10" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23010" />
+                 <argument value="node11" /><argument value="23011" />
+                 </process>
+  <process host="node11" function="simulation.DistributedResolver">
+                 <argument value="node11" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23011" />
+                 <argument value="node12" /><argument value="23012" />
+                 </process>
+  <process host="node12" function="simulation.DistributedResolver">
+                 <argument value="node12" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23012" />
+                 <argument value="node13" /><argument value="23013" />
+                 </process>
+  <process host="node13" function="simulation.DistributedResolver">
+                 <argument value="node13" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23013" />
+                 <argument value="node14" /><argument value="23014" />
+                 </process>
+  <process host="node14" function="simulation.DistributedResolver">
+                 <argument value="node14" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23014" />
+                 <argument value="node15" /><argument value="23015" />
+                 </process>
+  <process host="node15" function="simulation.DistributedResolver">
+                 <argument value="node15" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23015" />
+                 <argument value="node16" /><argument value="23016" />
+                 </process>
+  <process host="node16" function="simulation.DistributedResolver">
+                 <argument value="node16" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23016" />
+                 <argument value="node17" /><argument value="23017" />
+                 </process>
+  <process host="node17" function="simulation.DistributedResolver">
+                 <argument value="node17" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23017" />
+                 <argument value="node18" /><argument value="23018" />
+                 </process>
+  <process host="node18" function="simulation.DistributedResolver">
+                 <argument value="node18" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23018" />
+                 <argument value="node19" /><argument value="23019" />
+                 </process>
+  <process host="node19" function="simulation.DistributedResolver">
+                 <argument value="node19" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23019" />
+                 <argument value="node20" /><argument value="23020" />
+                 </process>
+  <process host="node20" function="simulation.DistributedResolver">
+                 <argument value="node20" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23020" />
+                 <argument value="node21" /><argument value="23021" />
+                 </process>
+  <process host="node21" function="simulation.DistributedResolver">
+                 <argument value="node21" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23021" />
+                 <argument value="node22" /><argument value="23022" />
+                 </process>
+  <process host="node22" function="simulation.DistributedResolver">
+                 <argument value="node22" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23022" />
+                 <argument value="node23" /><argument value="23023" />
+                 </process>
+  <process host="node23" function="simulation.DistributedResolver">
+                 <argument value="node23" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23023" />
+                 <argument value="node24" /><argument value="23024" />
+                 </process>
+  <process host="node24" function="simulation.DistributedResolver">
+                 <argument value="node24" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23024" />
+                 <argument value="node25" /><argument value="23025" />
+                 </process>
+  <process host="node25" function="simulation.DistributedResolver">
+                 <argument value="node25" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23025" />
+                 <argument value="node26" /><argument value="23026" />
+                 </process>
+  <process host="node26" function="simulation.DistributedResolver">
+                 <argument value="node26" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23026" />
+                 <argument value="node27" /><argument value="23027" />
+                 </process>
+  <process host="node27" function="simulation.DistributedResolver">
+                 <argument value="node27" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23027" />
+                 <argument value="node28" /><argument value="23028" />
+                 </process>
+  <process host="node28" function="simulation.DistributedResolver">
+                 <argument value="node28" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23028" />
+                 <argument value="node29" /><argument value="23029" />
+                 </process>
+  <process host="node29" function="simulation.DistributedResolver">
+                 <argument value="node29" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23029" />
+                 <argument value="node30" /><argument value="23030" />
+                 </process>
+  <process host="node30" function="simulation.DistributedResolver">
+                 <argument value="node30" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23030" />
+                 <argument value="node31" /><argument value="23031" />
+                 </process>
+  <process host="node31" function="simulation.DistributedResolver">
+                 <argument value="node31" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23031" />
+                 <argument value="node32" /><argument value="23032" />
+                 </process>
+  <process host="node32" function="simulation.DistributedResolver">
+                 <argument value="node32" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23032" />
+                 <argument value="node33" /><argument value="23033" />
+                 </process>
+  <process host="node33" function="simulation.DistributedResolver">
+                 <argument value="node33" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23033" />
+                 <argument value="node34" /><argument value="23034" />
+                 </process>
+  <process host="node34" function="simulation.DistributedResolver">
+                 <argument value="node34" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23034" />
+                 <argument value="node35" /><argument value="23035" />
+                 </process>
+  <process host="node35" function="simulation.DistributedResolver">
+                 <argument value="node35" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23035" />
+                 <argument value="node36" /><argument value="23036" />
+                 </process>
+  <process host="node36" function="simulation.DistributedResolver">
+                 <argument value="node36" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23036" />
+                 <argument value="node37" /><argument value="23037" />
+                 </process>
+  <process host="node37" function="simulation.DistributedResolver">
+                 <argument value="node37" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23037" />
+                 <argument value="node38" /><argument value="23038" />
+                 </process>
+  <process host="node38" function="simulation.DistributedResolver">
+                 <argument value="node38" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23038" />
+                 <argument value="node39" /><argument value="23039" />
+                 </process>
+  <process host="node39" function="simulation.DistributedResolver">
+                 <argument value="node39" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23039" />
+                 <argument value="node40" /><argument value="23040" />
+                 </process>
+  <process host="node40" function="simulation.DistributedResolver">
+                 <argument value="node40" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23040" />
+                 <argument value="node41" /><argument value="23041" />
+                 </process>
+  <process host="node41" function="simulation.DistributedResolver">
+                 <argument value="node41" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23041" />
+                 <argument value="node42" /><argument value="23042" />
+                 </process>
+  <process host="node42" function="simulation.DistributedResolver">
+                 <argument value="node42" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23042" />
+                 <argument value="node43" /><argument value="23043" />
+                 </process>
+  <process host="node43" function="simulation.DistributedResolver">
+                 <argument value="node43" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23043" />
+                 <argument value="node44" /><argument value="23044" />
+                 </process>
+  <process host="node44" function="simulation.DistributedResolver">
+                 <argument value="node44" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23044" />
+                 <argument value="node45" /><argument value="23045" />
+                 </process>
+  <process host="node45" function="simulation.DistributedResolver">
+                 <argument value="node45" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23045" />
+                 <argument value="node46" /><argument value="23046" />
+                 </process>
+  <process host="node46" function="simulation.DistributedResolver">
+                 <argument value="node46" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23046" />
+                 <argument value="node47" /><argument value="23047" />
+                 </process>
+  <process host="node47" function="simulation.DistributedResolver">
+                 <argument value="node47" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23047" />
+                 <argument value="node48" /><argument value="23048" />
+                 </process>
+  <process host="node48" function="simulation.DistributedResolver">
+                 <argument value="node48" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23048" />
+                 <argument value="node49" /><argument value="23049" />
+                 </process>
+  <process host="node49" function="simulation.DistributedResolver">
+                 <argument value="node49" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23049" />
+                 <argument value="node50" /><argument value="23050" />
+                 </process>
+  <process host="node50" function="simulation.DistributedResolver">
+                 <argument value="node50" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23050" />
+                 <argument value="node51" /><argument value="23051" />
+                 </process>
+  <process host="node51" function="simulation.DistributedResolver">
+                 <argument value="node51" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23051" />
+                 <argument value="node52" /><argument value="23052" />
+                 </process>
+  <process host="node52" function="simulation.DistributedResolver">
+                 <argument value="node52" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23052" />
+                 <argument value="node53" /><argument value="23053" />
+                 </process>
+  <process host="node53" function="simulation.DistributedResolver">
+                 <argument value="node53" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23053" />
+                 <argument value="node54" /><argument value="23054" />
+                 </process>
+  <process host="node54" function="simulation.DistributedResolver">
+                 <argument value="node54" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23054" />
+                 <argument value="node55" /><argument value="23055" />
+                 </process>
+  <process host="node55" function="simulation.DistributedResolver">
+                 <argument value="node55" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23055" />
+                 <argument value="node56" /><argument value="23056" />
+                 </process>
+  <process host="node56" function="simulation.DistributedResolver">
+                 <argument value="node56" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23056" />
+                 <argument value="node57" /><argument value="23057" />
+                 </process>
+  <process host="node57" function="simulation.DistributedResolver">
+                 <argument value="node57" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23057" />
+                 <argument value="node58" /><argument value="23058" />
+                 </process>
+  <process host="node58" function="simulation.DistributedResolver">
+                 <argument value="node58" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23058" />
+                 <argument value="node59" /><argument value="23059" />
+                 </process>
+  <process host="node59" function="simulation.DistributedResolver">
+                 <argument value="node59" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23059" />
+                 <argument value="node60" /><argument value="23060" />
+                 </process>
+  <process host="node60" function="simulation.DistributedResolver">
+                 <argument value="node60" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23060" />
+                 <argument value="node61" /><argument value="23061" />
+                 </process>
+  <process host="node61" function="simulation.DistributedResolver">
+                 <argument value="node61" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23061" />
+                 <argument value="node62" /><argument value="23062" />
+                 </process>
+  <process host="node62" function="simulation.DistributedResolver">
+                 <argument value="node62" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23062" />
+                 <argument value="node63" /><argument value="23063" />
+                 </process>
+  <process host="node63" function="simulation.DistributedResolver">
+         <argument value="node63" /><argument value="1" /><argument value="700" /><argument value="32384" /><argument value="23063" />
+         <argument value="node0" /><argument value="23000" />
+         </process>
 </platform>
