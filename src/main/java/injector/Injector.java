@@ -117,35 +117,42 @@ public class Injector extends Process {
         long GLFaultPeriod = SnoozeProperties.getGLFaultPeriodicity();
         long GMFaultPeriod = SnoozeProperties.getGMFaultPeriodicity();
 
-        // Kill GL
-        currentTime = GLFaultPeriod;
-        do{
+        if (GLFaultPeriod != 0) {
 
-            tempHost =  xhosts[SimulatorManager.getSGHostingHosts().size()];
+            // Kill GL in a specific way
+            currentTime = GLFaultPeriod;
+            do {
 
-            if(!ifStillOffUpdate(tempHost, faultQueue, currentTime)) {
-                // and change its state
-                // false = off , on = true
-                // Add a new event queue
-                faultQueue.add(new FaultEvent(id++, currentTime, tempHost, false));
-            }
-            if (currentTime + crashDuration < duration) {
-                //For the moment, downtime of a node is arbitrarily set to crashDuration
-                faultQueue.add(new FaultEvent(id++, currentTime + (crashDuration), tempHost, true));
-                //        System.err.println(eventQueue.size());
-            }
-            currentTime += GLFaultPeriod;
-        } while(currentTime<duration);
+                tempHost = xhosts[SimulatorManager.getSGHostingHosts().size()];
 
+                if (!ifStillOffUpdate(tempHost, faultQueue, currentTime)) {
+                    // and change its state
+                    // false = off , on = true
+                    // Add a new event queue
+                    faultQueue.add(new FaultEvent(id++, currentTime, tempHost, false));
+                }
+                if (currentTime + crashDuration < duration) {
+                    //For the moment, downtime of a node is arbitrarily set to crashDuration
+                    faultQueue.add(new FaultEvent(id++, currentTime + (crashDuration), tempHost, true));
+                    //        System.err.println(eventQueue.size());
+                }
+                currentTime += GLFaultPeriod;
+            } while (currentTime < duration);
+        }
 
         // Random kill GM
         Random randHostPicker = new Random(SimulatorProperties.getSeed());
         currentTime = GMFaultPeriod;
-        do{
+        do {
             // Random select of one GM
-            int index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size()-1);
+            int index = -1;
+            if (GLFaultPeriod == 0)
+                index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size());
+            else // GL faults have been already treated, so only consider GMs
+             index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size()-1);
 
-            tempHost = xhosts[SimulatorManager.getSGHostingHosts().size()+1+index];
+            // Please remind that node0 hosts VMs, so the first service node is Simulator.Manager.getSGHostingHosts().
+            tempHost = xhosts[SimulatorManager.getSGHostingHosts().size()+index];
 
             if(!ifStillOffUpdate(tempHost, faultQueue, currentTime)) {
                 // and change its state
