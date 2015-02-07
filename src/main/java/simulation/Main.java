@@ -112,8 +112,12 @@ public class Main {
         SimulatorManager.writeCurrentConfiguration();
 
         String algorithmName = SimulatorProperties.getAlgo();
-        if (algorithmName.equals("hierarchical")) algorithmName += AUX.assignmentAlg;
-        Trace.simulationDeclare(algorithmName, SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs());
+        String algorithmDetails = "";
+        if (algorithmName.equals("hierarchical")) {
+            int lcsRatio = SimulatorProperties.getNbOfHostingNodes() / (SimulatorProperties.getNbOfServiceNodes() -1 );
+            algorithmDetails = String.format("{\"assignmentAlgorithm\": \"%s\", \"lcsRatio\": %d}", AUX.assignmentAlg, lcsRatio);
+        }
+        Trace.simulationDeclare(algorithmName, SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), algorithmDetails);
 
         /* Prepare TRACE variables */
         System.out.println("Prepare TRACE module" + new Date().toString());
