@@ -37,7 +37,8 @@ According to the investigated algorithm, VMs are relocated through the different
 The ultimate objective of the Simgrid Injector VM framework is to deliver a building block that will enable to compare fairly different VM placement algorithms.
 
 ** Configure your development environment
-SBT TODO Jonathan Pastor
+VMPlaces is using SBT. 
+You can find information regarding how configuring VMPlaces directly on the github page (see README.md). If you need additional information, please contact <jonathan.pastor@inria.fr> if you are not familiar with SBT.  
 
 ** Executing SimgridInjector
 Once you have configured the different parameters of your simulation (config/simulator.properties), you can run the simulation by executing the simulation.Main class.
@@ -59,11 +60,14 @@ For instance, if you have configured the simulation in order to simulate the cen
 This is important as the crash injector only consider nodes between 0 (inclusive) and nb_nodes. In other words, the injector node can never crash.
 
 ** Implement/evaluate a new algorithm
-TODO - Describe the process to add a new scheduler into the injector
+We chose to implement  centralized, hierarchical and distributed scheduling approaches in order to illustrate the different possibilites to implement scheduling policies. 
+Hence, according to the scheduling you want to evaluate and the software architecture you want to rely on, you can simply give a look to the corresponding launchers available in the simulation package (CentralizedResolver, HierarchichalResolver and DistributedResolver). The work consists in forking such a launcher in order to replace the scheduling strategy invoked.  
+While VMPlaceS has been developped with the objective of facilitating the evaluations of different scheduling policies, we strongly encourage new users to startby evaluating your scheduling policy in a centralized manner (See CentralizedResolver launcher). 
+A complete example, should be available on the website soon.
 
 ** Contributors
 - Adrien Lebre - adrien.lebre@inria.fr - France - Project founder, principal maintainer
 - Jonathan Pastor - jonathan.pastor@inria.fr - France - Implementation of the distributed resolver (based on the DVMS proposal)
-- Flavien Quesnel - xxxx - France - Contributor (simulator properties, bug fixes, distributed resolver)
+- Flavien Quesnel -  flavien.quesnel@irt-systemx.fr - France - Contributor (simulator properties, bug fixes, distributed resolver)
 - José Simao - jsimao@cc.isel.ipl.pt - Portugal - First beta tester - few bug fixes
 - Mario Sudhol - mario.sudholt@inria.fr - Implementation of the hierarchical resolver (based on the Snooze proposal)
