@@ -41,7 +41,7 @@ import traceback
 # Constant and parameters
 ################################################################################
 
-duration = 1800
+duration = 3600
 
 ################################################################################
 # Functions of the script
@@ -255,25 +255,6 @@ legends = {
     "reconfigurations": "reconfigurations time (s)"
 }
 
-# \begin{table}[ht]
-# \centering
-#     {\scriptsize \begin{tabular}{|P{10mm}@{\:}||@{\:}c@{\:}|@{\:}c@{\:}|@{\:}c@{\:}||@{\:}c@{\:}|@{\:}c@{\:}|@{\:}c@{\:}|}
-#       \thickhline
-#       \textbf{Infrastructure Size}
-#         & \multicolumn{4}{c@{\:}||@{\:}}{\textbf{Algorithm}}
-#           \Tstrut \\
-#          \hfill & ~Without~ & ~Centralized~ & ~Hierarchical~ & Distributed \Bstrut \\
-#       \thickhline
-#         128 nodes  & 79.20 $\pm$  89.94 & 21.26 $\pm$ 13.55 & 21.07 $\pm$ 12.32 &   9.55 $\pm$ 2.57 \\
-#         256 nodes  & 70.86 $\pm$  87.56 & 40.09 $\pm$ 24.15 & 21.45 $\pm$ 12.10 &   9.58 $\pm$ 2.51 \\
-#         512 nodes  & 65.63 $\pm$  65.56 & 55.63 $\pm$ 42.26 & 24.54 $\pm$ 16.95 &   9.57 $\pm$ 2.67 \\
-#         1024 nodes & 85.90 $\pm$ 101.51 & 81.57 $\pm$ 86.59 & 29.01 $\pm$ 38.14 & \:9.61 $\pm$ 2.54
-#       \Rstrut  \\ \hline
-#       \thickhline
-#   \end{tabular} }
-# \caption{Means $\pm$ Std deviations of violation durations.}
-# \label{table:detailed_violation_time}
-# \end{table}
 metrics_data = {}
 for metric in metrics:
     metrics_data[metric] = {}

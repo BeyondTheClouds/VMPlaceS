@@ -8,8 +8,8 @@ public class Trace {
     /**
      * Declare information about the simulation.
      */
-    public static void simulationDeclare(String algorithm, int serverCount, int serviceNodeCount, int vmCount) {
-        TraceImpl.getInstance().simulationDeclare(algorithm, serverCount, serviceNodeCount, vmCount);
+    public static void simulationDeclare(String algorithm, int serverCount, int serviceNodeCount, int vmCount, String algorithmDetails) {
+        TraceImpl.getInstance().simulationDeclare(algorithm, serverCount, serviceNodeCount, vmCount, algorithmDetails);
     }
 
     /**

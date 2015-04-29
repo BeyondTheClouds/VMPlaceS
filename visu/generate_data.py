@@ -37,7 +37,7 @@ import jinja2
 # Constant and parameters
 ################################################################################
 
-duration = 1800
+duration = 3600
 
 ################################################################################
 # Functions of the script
@@ -90,6 +90,8 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 header_data = json.loads(header_line)
                 data = header_data["data"]
                 algo = data["algorithm"]
+                if "hierarchical" in algo:
+                    algo = "%s_%s" % (algo, data["algorithm_details"]["lcsRatio"])
                 if not algo in algos:
                     algos += [algo]
 print algos
@@ -159,7 +161,10 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 header_line = f.readline()
                 header_data = json.loads(header_line)
                 data = header_data["data"]
+                
                 algo = data["algorithm"]
+                if "hierarchical" in algo:
+                    algo = "%s_%s" % (algo, data["algorithm_details"]["lcsRatio"])
 
                 compute_node_count = data["server_count"]
                 service_node_count = data["service_node_count"]
@@ -169,7 +174,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
 
                 node_count = compute_node_count + service_node_count
 
-                nodes_vms_tuple = "%s-%s" % (data["algorithm"], compute_node_count)
+                nodes_vms_tuple = "%s-%s" % (algo, compute_node_count)
                 
                 compute_time                  = 0
                 violation_time                = 0
