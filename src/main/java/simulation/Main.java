@@ -112,7 +112,7 @@ public class Main {
         SimulatorManager.writeCurrentConfiguration();
 
         String algorithmName = SimulatorProperties.getAlgo();
-        String algorithmDetails = "";
+        String algorithmDetails = "{}";
         if (algorithmName.equals("hierarchical")) {
             int lcsRatio = SimulatorProperties.getNbOfHostingNodes() / (SimulatorProperties.getNbOfServiceNodes() -1 );
             algorithmDetails = String.format("{\"assignmentAlgorithm\": \"%s\", \"lcsRatio\": %d}", AUX.assignmentAlg, lcsRatio);
