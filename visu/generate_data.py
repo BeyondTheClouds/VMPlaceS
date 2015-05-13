@@ -1,6 +1,8 @@
 #!/usr/bin/python
 from __future__ import division
 from pkg_resources import WorkingSet , DistributionNotFound
+import sys
+
 working_set = WorkingSet()
 
 # Printing all installed modules
