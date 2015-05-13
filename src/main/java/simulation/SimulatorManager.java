@@ -18,6 +18,7 @@ import configuration.SimulatorProperties;
 import configuration.VMClasses;
 import configuration.XHost;
 import configuration.XVM;
+import injector.LoadEvent;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
@@ -486,6 +487,13 @@ public class SimulatorManager {
             Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
 
         }
+    }
+
+    public static boolean willItBeViableWith(XVM sgVM, int load){
+        XHost tmpHost = sgVM.getLocation();
+        double hostPreviousLoad = tmpHost.getCPUDemand();
+        double vmPreviousLoad = sgVM.getCPUDemand();
+        return ((hostPreviousLoad-vmPreviousLoad+load) <= tmpHost.getCPUCapacity());
     }
 
     /**

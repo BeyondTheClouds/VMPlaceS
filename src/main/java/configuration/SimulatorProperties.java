@@ -120,6 +120,8 @@ public class SimulatorProperties extends Properties {
 	public final static String SCRIPT_INJECT_LOAD = "script.injectload";
 	
 	private static final String SIMU_ALGO = "simulator.algorithm";
+	private static final String STATIONARY_STATUS = "simulator.gotostationarystatus";
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Property default values
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -165,9 +167,11 @@ public class SimulatorProperties extends Properties {
 	public final static String DEFAULT_SCRIPT_INJECT_LOAD = null;
 
 	private static final String DEFAULT_SIMU_ALGO = "centralized";
+	private static final boolean DEFAULT_STATIONARY_STATUS = false;
 
 
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Constructors
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
@@ -355,12 +359,17 @@ public class SimulatorProperties extends Properties {
 	public static boolean getSimulation(){
 		return getPropertyAsBoolean(SIMULATION, DEFAULT_SIMULATION);
 	}
-	
+
+	/*
 	public static boolean getMonitoring(){
 		return getPropertyAsBoolean(MONITORING, DEFAULT_MONITORING)
 				&& !getSimulation();
+	}*/
+
+
+	public static boolean goToStationaryStatus() {
+		return getPropertyAsBoolean(STATIONARY_STATUS, DEFAULT_STATIONARY_STATUS);
 	}
-	
 	public static boolean getWaitForUserInput(){
 		return getPropertyAsBoolean(WAIT_FOR_USER_INPUT, DEFAULT_WAIT_FOR_USER_INPUT);
 	}
@@ -407,13 +416,11 @@ public class SimulatorProperties extends Properties {
 		System.out.println("step by step: " + SimulatorProperties.getStepByStep());
 		System.out.println("nodes names file: " + SimulatorProperties.getVirtualNodesNamesFile());
 		System.out.println("simulation: " + SimulatorProperties.getSimulation());
-		System.out.println("monitoring: " + SimulatorProperties.getMonitoring());
+		//System.out.println("monitoring: " + SimulatorProperties.getMonitoring());
 		System.out.println("wait for user input: " + SimulatorProperties.getWaitForUserInput());
 		System.out.println("worker nodes file: " + SimulatorProperties.getWorkerNodesFile());
 		System.out.println("script to create vms: " + SimulatorProperties.getScriptCreateVMs());
 		System.out.println("script to inject getCPUDemand: " + SimulatorProperties.getScriptInjectLoad());
 	}
-
-
 
 }
