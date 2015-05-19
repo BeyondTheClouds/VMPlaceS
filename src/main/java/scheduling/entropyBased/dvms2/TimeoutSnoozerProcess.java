@@ -22,9 +22,9 @@ public class TimeoutSnoozerProcess extends Process {
 
     public TimeoutSnoozerProcess(Host host, String name, String hostname, int port) throws UnknownHostException {
         super(host, String.format("%s-timeoutsnoozer", hostname, port));
-        this.name = name;
+        this.name = String.format("%s-timeoutsnoozer", hostname, port);
         this.id = nameToId(hostname);
-        this.timeoutSnoozerActor = new TimeoutSnoozerActor(new SGNodeRef(String.format("%s-timeoutsnoozer", hostname, port), id),  host);
+        this.timeoutSnoozerActor = new TimeoutSnoozerActor(new SGNodeRef(this.name, id),  host);
     }
 
     public SGNodeRef self() {
