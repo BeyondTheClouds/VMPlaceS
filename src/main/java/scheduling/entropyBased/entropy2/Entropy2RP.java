@@ -236,6 +236,10 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
                 watchDog ++;
                 if (watchDog%100==0){
                   Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
+                    if(SimulatorManager.isEndOfInjection()){
+                        Msg.info("Something wrong we are waiting too much, bye bye");
+                        System.exit(-1);
+                    }
                 }
             } catch (HostFailureException e) {
                 e.printStackTrace();
