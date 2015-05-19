@@ -40,6 +40,21 @@ public class Injector extends Process {
          System.out.println("Size of fault queue:"+faultQueue.size());
         evtQueue = mergeQueues(loadQueue,faultQueue);
        // System.out.println("Size of event queue:"+evtQueue.size());
+
+        // Serialize eventqueue in a file.
+        File f = new File ("injector_queue.txt");
+        try
+        {
+            FileWriter fw = new FileWriter (f);
+
+            for (InjectorEvent evt: evtQueue)
+                fw.write (evt.toString()+"\n");
+            fw.close();
+        }
+        catch (IOException exception)
+        {
+            System.out.println ("Erreur lors de la lecture : " + exception.getMessage());
+        }
     }
 
 

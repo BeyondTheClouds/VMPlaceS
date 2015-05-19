@@ -232,7 +232,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         while(this.ongoingMigration()){
         //while(this.ongoingMigration() && !SimulatorManager.isEndOfInjection()){
             try {
-                org.simgrid.msg.Process.currentProcess().waitFor(1);
+                org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
                 if (watchDog%100==0){
                   Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");

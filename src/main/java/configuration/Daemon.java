@@ -62,6 +62,6 @@ public class Daemon extends Process {
     }
 
     public double getRemaining(){
-        return this.currentTask.getRemainingDuration();
+        return this.currentTask.getFlopsAmount();
     }
 }

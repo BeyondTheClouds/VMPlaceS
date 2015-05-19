@@ -51,6 +51,12 @@ public class XVM {
     private int NbOfLoadChanges;
 
     /**
+     * The number of times the VM has been migrated during the simulation.
+     * This metric is relevant to check whether one particular VM is more affected than the others
+     */
+    private int NbOfMigrations;
+
+    /**
      * The daemon that runs inside the VM in order to simulate the load.
      */
     private Daemon daemon;
@@ -100,6 +106,7 @@ public class XVM {
         this.daemon = new Daemon(this.vm, 100);
         this.host = host;
         this.NbOfLoadChanges = 0;
+         this.NbOfMigrations = 0;
         this.isMigrating = false;
    }
 
@@ -153,6 +160,13 @@ public class XVM {
         return NbOfLoadChanges;
     }
 
+    /**
+     * @return the number of times the VM has been migrated since the begining of the simulation
+     */
+    public int getNbOfMigrations() {
+        return NbOfMigrations;
+    }
+
 
     /**
      *  Override start method in order to start the daemon at the same time that should run inside the VM.
@@ -178,6 +192,7 @@ public class XVM {
             Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
             try {
                 this.vm.migrate(host.getSGHost());
+                this.NbOfMigrations++;
                 this.host = host;
                 this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
                 //The dummy cpu action is not bounded.

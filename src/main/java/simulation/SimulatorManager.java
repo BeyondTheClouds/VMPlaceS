@@ -102,7 +102,7 @@ public class SimulatorManager {
 
         // Kill all VMs daemons in order to finalize the simulation correctly
         for (XVM vm : SimulatorManager.getSGVMs()) {
-            Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges());
+            Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges() + "/ migrated: "+vm.getNbOfMigrations());
             vm.getDaemon().kill();
         }
         Msg.info("Duration of the simulation in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
