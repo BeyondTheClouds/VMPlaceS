@@ -12,14 +12,19 @@ import scheduling.entropyBased.dvms2.overlay.SimpleOverlay;
 */
 public class DistributedResolver extends Process {
 
+    private String name;
+
     DistributedResolver(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
         super(host, name, args);
+        this.name = name;
     }
 
     private void launchInstance(
             String nodeId, int nbCPUs, int cpuCapacity, int memoryTotal,//Information for DVMSNode
             int port,//Information for associated DVMSServer
             String neighborHostname, int neighborPort){//Information for neighbor DVMSServer
+
+        Host host = Host.currentHost();
 
         try {
 

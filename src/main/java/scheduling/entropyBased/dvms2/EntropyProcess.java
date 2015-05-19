@@ -13,6 +13,8 @@ import java.net.UnknownHostException;
 public class EntropyProcess extends Process {
 
     private SGActor entropyActor;
+    private String name;
+    private long id;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Constructor
@@ -20,7 +22,8 @@ public class EntropyProcess extends Process {
 
     public EntropyProcess(Host host, String name, String hostname, int port) throws UnknownHostException {
         super(host, String.format("%s-entropy", hostname, port));
-
+        this.name = name;
+        this.id = nameToId(hostname);
         this.entropyActor = new EntropyActor(new SGNodeRef(String.format("%s-entropy", hostname, port), id));
     }
 

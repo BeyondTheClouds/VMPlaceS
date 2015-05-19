@@ -13,6 +13,8 @@ import java.net.UnknownHostException;
 public class TimeoutSnoozerProcess extends Process {
 
     private SGActor timeoutSnoozerActor;
+    private String name;
+    private long id;
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //Constructor
@@ -20,7 +22,8 @@ public class TimeoutSnoozerProcess extends Process {
 
     public TimeoutSnoozerProcess(Host host, String name, String hostname, int port) throws UnknownHostException {
         super(host, String.format("%s-timeoutsnoozer", hostname, port));
-
+        this.name = name;
+        this.id = nameToId(hostname);
         this.timeoutSnoozerActor = new TimeoutSnoozerActor(new SGNodeRef(String.format("%s-timeoutsnoozer", hostname, port), id),  host);
     }
 
