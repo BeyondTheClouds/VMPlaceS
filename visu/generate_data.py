@@ -89,7 +89,8 @@ for dirname, dirnames, filenames in os.walk('./events'):
         if filename.endswith(".json"):
             with open("%s/%s" % (dirname, filename), 'r') as f:
                 header_line = f.readline()
-                header_data = json.loads(header_line)
+                print header_line
+		header_data = json.loads(header_line)
                 data = header_data["data"]
                 algo = data["algorithm"]
                 if "hierarchical" in algo:
