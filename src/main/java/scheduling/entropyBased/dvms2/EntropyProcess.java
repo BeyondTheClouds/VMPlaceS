@@ -22,9 +22,10 @@ public class EntropyProcess extends Process {
 
     public EntropyProcess(Host host, String name, String hostname, int port) throws UnknownHostException {
         super(host, String.format("%s-entropy", hostname, port));
-        this.name = name;
+        this.name = String.format("%s-entropy", hostname, port);
+//        this.name = hostname;
         this.id = nameToId(hostname);
-        this.entropyActor = new EntropyActor(new SGNodeRef(String.format("%s-entropy", hostname, port), id));
+        this.entropyActor = new EntropyActor(new SGNodeRef(this.name, id));
     }
 
     public SGNodeRef self() {
