@@ -135,20 +135,22 @@ nodes_vms_tuples = [str(tuple2[0])+"-"+str(tuple2[1]) for tuple2 in zip(nodes_tu
 # Fill data maps with computed metrics
 ################################################################################
 
-def export_csv_data(algo, node_count, computes, migrations, violations, reconfigurations):
+def export_csv_data(algo, node_count, computes, migrations, migrations_count, violations, reconfigurations):
 
     folder_name = "detailed/data/%s-%d" % (algo, node_count)
 
     execute_cmd(["mkdir", "-p", folder_name])
 
     render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": computes,         "labels": ["type", "value"]}, "%s/detailed_computations.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": migrations_count, "labels": ["type", "value"]}, "%s/detailed_migrations_count.csv" % (folder_name))
     render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": migrations,       "labels": ["type", "value"]}, "%s/detailed_migrations.csv" % (folder_name))
+    render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations_count, "labels": ["type", "value"]}, "%s/detailed_violations_count.csv" % (folder_name))
     render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": violations,       "labels": ["type", "value"]}, "%s/detailed_violations.csv" % (folder_name))
     render_template("template/cloud_data.jinja2", {"algo": algo, "node_count": node_count, "violations": reconfigurations, "labels": ["type", "value"]}, "%s/detailed_reconfigurations.csv" % (folder_name))
 
 map_algos_size = {}
 
-metrics = ["migrations", "computations", "violations", "reconfigurations"]
+metrics = ["migrations_count", "migrations", "computations", "violations_count", "violations", "reconfigurations"]
 
 # variable that is used to detect "violation-out", "violation-normal" and "violation-sched":
 # it will store the last line about "violations-out" or "violation-det", to detect if the next
@@ -184,7 +186,9 @@ for dirname, dirnames, filenames in os.walk('./events'):
                 map_algos_size[compute_node_count] += [algo]
 
                 computes = []
+                migrations_count = 0
                 migrations = []
+                violations_count = 0
                 violations = []
                 reconfigurations = []
 
@@ -198,6 +202,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                         if data["event"] == "trace_event" and data["value"] == "migrate":
                             migration_duration = data["duration"]
                             migrations += [migration_duration]
+                            migrations_count += 1
 
                         if data["event"] == "trace_event" and data["value"] == "compute":
                             compute_duration = data["duration"]
@@ -207,6 +212,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                         if data["event"] == "trace_event" and data["value"] == "violation":
                             violation_duration = data["duration"]
                             violations += [violation_duration]
+                            violations_count += 1
 
                         if data["event"] == "trace_event" and data["value"] == "reconfigure":
                             reconfiguration_duration = data["duration"]
@@ -217,9 +223,11 @@ for dirname, dirnames, filenames in os.walk('./events'):
                         pass
 
                 algos_map[algo][compute_node_count] = {
+                    "migrations_count": [migrations_count],
                     "migrations": migrations,
                     "reconfigurations": reconfigurations,
                     "computations": computes,
+                    "violations_count": [violations_count],
                     "violations": violations
                 }
 
@@ -227,8 +235,10 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     if not metrics_map[metric].has_key(compute_node_count):
                         metrics_map[metric][compute_node_count] = {}
 
+                metrics_map["migrations_count"][compute_node_count][algo] = [migrations_count]
                 metrics_map["migrations"][compute_node_count][algo] = migrations
                 metrics_map["computations"][compute_node_count][algo] = computes
+                metrics_map["violations_count"][compute_node_count][algo] = [violations_count]
                 metrics_map["violations"][compute_node_count][algo] = violations
                 metrics_map["reconfigurations"][compute_node_count][algo] = reconfigurations
     
@@ -249,8 +259,10 @@ execute_cmd(["mkdir", "-p", "detailed/results"])
 node_numbers = nodes_tuples
 
 legends = {
+    "migrations_count": "migrations count", 
     "migrations": "migration time (s)", 
     "computations": "computation time (s)",
+    "violations_count": "violations count", 
     "violations": "violation time (s)",
     "reconfigurations": "reconfigurations time (s)"
 }

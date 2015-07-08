@@ -40,7 +40,7 @@ import traceback
 # Constant and parameters
 ################################################################################
 
-duration = 3600
+max_duration = 86400
 
 ################################################################################
 # Functions of the script
@@ -153,6 +153,8 @@ map_algos_size = {}
 # "violation" has been already processed!
 last_line = None
 
+max_plot_time = 0
+
 for dirname, dirnames, filenames in os.walk('./events'):
     # print path to all subdirectories first.
     for filename in filenames:
@@ -182,8 +184,10 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     try:
                         data = json.loads(line)
 
-                        if float(data["time"]) > duration - 50:
+                        if float(data["time"]) > max_duration - 50:
                             continue
+                        if float(data["time"]) > max_plot_time:
+                            max_plot_time = float(data["time"])
 
                         if data["event"] == "trace_event" and data["value"] == "violation-det":
                             current_violation_det = (float(data["time"]), float(data["duration"]), data["origin"], "det")
@@ -278,7 +282,7 @@ def export_clouds_data(algo1, algo2, node_count):
 
     execute_cmd(["mkdir", "-p", folder_name])
 
-    render_template("template/cloud_script.jinja2", {"algo1": algo1, "algo2": algo2, "node_count": node_count, "duration": duration},   "%s/compare.r" % (folder_name))
+    render_template("template/cloud_script.jinja2", {"algo1": algo1, "algo2": algo2, "node_count": node_count, "duration": max_plot_time},   "%s/compare.r" % (folder_name))
 
     pass
 
@@ -329,7 +333,7 @@ def export_clouds_single_data(algo, node_count):
 
     execute_cmd(["mkdir", "-p", folder_name])
 
-    render_template("template/cloud_single_script.jinja2", {"algo": algo, "node_count": node_count, "duration": duration},   "%s/compare.r" % (folder_name))
+    render_template("template/cloud_single_script.jinja2", {"algo": algo, "node_count": node_count, "duration": max_plot_time},   "%s/compare.r" % (folder_name))
 
     pass
 
