@@ -39,7 +39,9 @@ import jinja2
 # Constant and parameters
 ################################################################################
 
-duration = 3600
+# duration = 3600
+max_duration = 86400
+
 
 ################################################################################
 # Functions of the script
@@ -88,6 +90,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
     for filename in filenames:
         if filename.endswith(".json"):
             with open("%s/%s" % (dirname, filename), 'r') as f:
+                print("loading %s/%s" % (dirname, filename))
                 header_line = f.readline()
                 print header_line
 		header_data = json.loads(header_line)
@@ -196,7 +199,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
                     try:
                         data = json.loads(line)
 
-                        if float(data["time"]) > duration:
+                        if float(data["time"]) > max_duration:
                             continue
                         # print(data)
 
