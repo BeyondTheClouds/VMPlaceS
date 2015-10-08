@@ -30,10 +30,15 @@ cmake -Denable_tracing=ON -Denable_documentation=OFF -Denable_java=ON -Denable_s
 and then
 
 ```
+make 
+```
+please note that you can compile the src code faster by using -j argument of make command (man make for further information)
+
+```
 make install
 ```
+file named **simgrid_full.jar**, containing java bindings to simgrid should be located in the simgrid folder:
 
-a file named **simgrid_full.jar**, containing java bindings to simgrid should be located in the simgrid folder:
 
 ```
 jonathan@artoo ~/simgrid (master)> ls -lh *.jar
