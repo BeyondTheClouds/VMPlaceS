@@ -107,3 +107,8 @@ tramp
 *_archive
 # flymake-mode
 *_flymake.*
+
+## Generated files
+events.json
+injector_queue.txt
+simu.trace
