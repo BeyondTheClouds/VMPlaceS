@@ -30,15 +30,19 @@ cmake -Denable_tracing=ON -Denable_documentation=OFF -Denable_java=ON -Denable_s
 and then
 
 ```
+make 
+```
+please note that you can compile the src code faster by using -j argument of make command (man make for further information)
+
+```
 make install
 ```
+file named **simgrid.jar**, containing java bindings to simgrid should be located in the simgrid folder:
 
-a file named **simgrid_full.jar**, containing java bindings to simgrid should be located in the simgrid folder:
 
 ```
 jonathan@artoo ~/simgrid (master)> ls -lh *.jar
 -rw-r--r--  1 jonathan  staff    43K Nov  4 17:28 simgrid.jar
--rw-r--r--  1 jonathan  staff   2.5M Nov  4 17:28 simgrid_full.jar
 ```
 
 This file will be used during step **2.2**.
@@ -57,7 +61,7 @@ Inside the project source folder, run the following:
 $ sbt update
 ```
 
-and then copy the **simgrid_full.jar** from **step 1.2** in the lib folder
+and then copy the **simgrid.jar** from **step 1.2** in the lib folder
 
 
 ### Configuring the simulation environement
