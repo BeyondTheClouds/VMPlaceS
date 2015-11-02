@@ -120,6 +120,7 @@ public class SimulatorProperties extends Properties {
 	public final static String SCRIPT_INJECT_LOAD = "script.injectload";
 	
 	private static final String SIMU_ALGO = "simulator.algorithm";
+	private static final String SIMU_IMPL = "simulator.implementation";
 	private static final String STATIONARY_STATUS = "simulator.gotostationarystatus";
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,6 +168,7 @@ public class SimulatorProperties extends Properties {
 	public final static String DEFAULT_SCRIPT_INJECT_LOAD = null;
 
 	private static final String DEFAULT_SIMU_ALGO = "centralized";
+    private static final String DEFAULT_SIMU_IMPL = "scheduling.entropyBased.entropy2.Entropy2RP";
 	private static final boolean DEFAULT_STATIONARY_STATUS = false;
 
 
@@ -391,8 +393,11 @@ public class SimulatorProperties extends Properties {
 		return INSTANCE.getProperty(SCRIPT_INJECT_LOAD, DEFAULT_SCRIPT_INJECT_LOAD);
 	}
 	public static String getAlgo() {
-		return INSTANCE.getProperty(SIMU_ALGO, DEFAULT_SIMU_ALGO);
+        return INSTANCE.getProperty(SIMU_ALGO, DEFAULT_SIMU_ALGO);
 	}
+    public static String getImplementation() {
+        return INSTANCE.getProperty(SIMU_IMPL, DEFAULT_SIMU_IMPL);
+    }
 	
 	public static void main(String[] args){
 		System.out.println(SimulatorProperties.INSTANCE);

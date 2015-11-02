@@ -19,21 +19,16 @@ package scheduling.entropyBased.dvms2.dvms.dvms3
 * limitations under the License.
 * ============================================================ */
 
-import scheduling.entropyBased.dvms2.{DvmsProperties, DVMSProcess, SGActor, SGNodeRef}
+import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationResult, ReconfigurationlNoSolution}
+import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
 import org.simgrid.msg.{Host, Msg}
 import scheduling.entropyBased.dvms2.dvms.dvms2.LoggingProtocol
-import LoggingProtocol._
-import scheduling.entropyBased.dvms2.overlay.SimpleOverlay
-import java.util
-import configuration.XHost
-import simulation.SimulatorManager
-import scheduling.entropyBased.entropy2.Entropy2RP
-import entropy.configuration.Configuration
-import java.util.Random
+import scheduling.entropyBased.dvms2.dvms.dvms2.LoggingProtocol._
 import scheduling.entropyBased.dvms2.dvms.dvms3.LocalityBasedSchedulerProtocol._
-import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationlNoSolution, ReconfigurationResult}
 import scheduling.entropyBased.dvms2.dvms.timeout.TimeoutProtocol.{DisableTimeoutSnoozing, EnableTimeoutSnoozing, WorkOnThisPartition}
-import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
+import scheduling.entropyBased.dvms2.overlay.SimpleOverlay
+import scheduling.entropyBased.dvms2.{DVMSProcess, DvmsProperties, SGActor, SGNodeRef}
+import simulation.SimulatorManager
 
 trait DvmsMessage
 
