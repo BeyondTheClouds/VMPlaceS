@@ -25,6 +25,7 @@ public class EntropyProcess extends Process {
         this.name = String.format("%s-entropy", hostname, port);
 //        this.name = hostname;
         this.id = nameToId(hostname);
+        // TODO change here
         this.entropyActor = new EntropyActor(new SGNodeRef(this.name, id));
     }
 

@@ -31,6 +31,7 @@ public class DistributedResolver extends Process {
             TimeoutSnoozerProcess timeoutSnoozer = new TimeoutSnoozerProcess(this.getHost(), name, nodeId, port);
             timeoutSnoozer.start();
 
+            // TODO change here
             EntropyProcess entropyProcess = new EntropyProcess(this.getHost(), name, nodeId, port);
             entropyProcess.start();
 

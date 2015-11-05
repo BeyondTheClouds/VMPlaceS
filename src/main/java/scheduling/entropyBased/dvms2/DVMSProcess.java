@@ -1,13 +1,7 @@
 package scheduling.entropyBased.dvms2;
 
-import java.net.UnknownHostException;
-
-import org.simgrid.msg.Host;
-import org.simgrid.msg.Msg;
-import org.simgrid.msg.MsgException;
+import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import org.simgrid.msg.Task;
-
 import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsActor;
 import scheduling.entropyBased.dvms2.dvms.dvms3.LocalityBasedScheduler;
 import simulation.SimulatorManager;
