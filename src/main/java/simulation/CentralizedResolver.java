@@ -2,13 +2,11 @@ package simulation;
 
 import configuration.SimulatorProperties;
 import configuration.XHost;
-import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.CentralizedResolverProperties;
 import scheduling.Scheduler;
 import scheduling.SchedulerRes;
-import scheduling.entropyBased.entropy2.Entropy2RP;
 import trace.Trace;
 
 import java.lang.reflect.Constructor;
