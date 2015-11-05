@@ -13,8 +13,6 @@ crossPaths := false
 
 retrieveManaged := true
 
-libraryDependencies += "org.btrplace" % "scheduler" % "0.41"
-
 // Excluding the following directories for compilation: scheduling/dvms
 excludeFilter in unmanagedSources := new sbt.FileFilter{
   //def accept(f: File): Boolean = "(?s).*scheduling/dvms/.*|.*scheduling/hubis/.*".r.pattern.matcher(f.getAbsolutePath).matches
