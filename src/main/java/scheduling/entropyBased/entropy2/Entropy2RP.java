@@ -33,12 +33,15 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
     private boolean abortRP;
 
-    public Entropy2RP(Configuration initialConfiguration) {
-        this(initialConfiguration,new Random().nextInt());
+    public Entropy2RP(Collection<XHost> xhosts) {
+        super();
+        this.loopID = new Random().nextInt();
+        this.initialConfiguration = this.extractConfiguration(xhosts);
     }
 
-    public Entropy2RP(Configuration initialConfiguration, int loopID) {
-		super(initialConfiguration);
+    public Entropy2RP(Collection<XHost> xhosts, Integer loopID) {
+		super();
+        this.initialConfiguration = this.extractConfiguration(xhosts);
 		planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
         planner.setTimeLimit(initialConfiguration.getAllNodes().size()/8);
@@ -348,7 +351,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     }
 
     // Create configuration for Entropy
-    public static Object ExtractConfiguration(Collection<XHost> xhosts) {
+    private Configuration extractConfiguration(Collection<XHost> xhosts) {
         Configuration currConf = new SimpleConfiguration();
 
         // Add nodes

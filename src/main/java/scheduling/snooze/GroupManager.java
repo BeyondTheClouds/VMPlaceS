@@ -1,15 +1,21 @@
 package scheduling.snooze;
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
-import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import scheduling.Scheduler;
 import scheduling.SchedulerRes;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
 
-import java.util.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,6 +42,8 @@ public class GroupManager extends Process {
     private Collection<XHost> managedLCs;
     private ThreadPool newLCPool;
 
+    private Constructor<?> schedulerConstructor;
+
     public GroupManager(Host host, String name, String[] args) {
         super(host, name, args);
         this.host = host;
@@ -50,6 +58,10 @@ public class GroupManager extends Process {
             SnoozeMsg m = null;
             boolean success = false;
             int n = 1;
+
+
+            Class<?> schedulerClass = Class.forName(SimulatorProperties.getImplementation());
+            schedulerConstructor = schedulerClass.getConstructor(Collection.class, Integer.class);
 
             Logger.imp("[GM.main] GM started: " + host.getName());
             Test.gmsCreated.remove(this);
@@ -442,20 +454,28 @@ public class GroupManager extends Process {
 
         /* Compute and apply the plan */
         Collection<XHost> hostsToCheck = this.getManagedXHosts();
-        Entropy2RP scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck));
-        SchedulerRes schedulerRes = scheduler.checkAndReconfigure(hostsToCheck);
-        long previousDuration = schedulerRes.getDuration();
-        if (schedulerRes.getRes() == 0) {
-            Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
-        } else if (schedulerRes.getRes() == -1) {
-            Msg.info("No viable solution (duration: " + previousDuration + ")");
-            // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
-        } else if (schedulerRes.getRes() == -2) {
-            Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
-            // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
-        } else {
-            // TODO Mario, please check where/how do you want to store numberOfSuccess
-            Msg.info("Reconfiguration succeed (duration: " + previousDuration + ")");
+        Scheduler scheduler;
+        long previousDuration = 0;
+        try {
+            scheduler = (Scheduler) schedulerConstructor.newInstance(hostsToCheck);
+            SchedulerRes schedulerRes = scheduler.checkAndReconfigure(hostsToCheck);
+            previousDuration = schedulerRes.getDuration();
+            if (schedulerRes.getRes() == 0) {
+                Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
+            } else if (schedulerRes.getRes() == -1) {
+                Msg.info("No viable solution (duration: " + previousDuration + ")");
+                // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
+            } else if (schedulerRes.getRes() == -2) {
+                Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
+                // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
+            } else {
+                // TODO Mario, please check where/how do you want to store numberOfSuccess
+                Msg.info("Reconfiguration succeed (duration: " + previousDuration + ")");
+            }
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            // We should never go here, "newInstance" method should exist
+            System.err.println(e);
+            System.exit(-1);
         }
         return previousDuration;
     }

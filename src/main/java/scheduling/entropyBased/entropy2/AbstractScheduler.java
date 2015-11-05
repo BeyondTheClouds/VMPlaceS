@@ -14,7 +14,7 @@ public abstract class AbstractScheduler implements Scheduler {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	//The initial configuration
-	protected final Configuration initialConfiguration;
+	protected Configuration initialConfiguration;
 	
 	//The new/final configuration
 	protected Configuration newConfiguration;
@@ -48,8 +48,7 @@ public abstract class AbstractScheduler implements Scheduler {
 	//Constructor
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	protected AbstractScheduler(Configuration initialConfiguration){
-		this.initialConfiguration = initialConfiguration;
+	protected AbstractScheduler(){
 		timeToComputeVMPP = 0;
 		timeToComputeVMRP = 0;
 		timeToApplyReconfigurationPlan = 0;

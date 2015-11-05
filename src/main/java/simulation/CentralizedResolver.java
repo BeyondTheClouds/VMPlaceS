@@ -1,5 +1,6 @@
 package simulation;
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
@@ -10,6 +11,8 @@ import scheduling.SchedulerRes;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import trace.Trace;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
 
@@ -40,8 +43,14 @@ public class CentralizedResolver extends Process {
         long previousDuration = 0;
         Scheduler scheduler;
         SchedulerRes schedulerRes;
+        Class<?> schedulerClass;
+        Constructor<?> schedulerConstructor;
 
         try{
+
+            schedulerClass = Class.forName(SimulatorProperties.getImplementation());
+            schedulerConstructor = schedulerClass.getConstructor(Collection.class, Integer.class);
+
             while (!SimulatorManager.isEndOfInjection()) {
 
                 long wait = ((long) (period * 1000)) - previousDuration;
@@ -50,7 +59,8 @@ public class CentralizedResolver extends Process {
 
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
-                scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
+
+                scheduler = (Scheduler) schedulerConstructor.newInstance(hostsToCheck, loopID++);
                 schedulerRes = scheduler.checkAndReconfigure(hostsToCheck);
                 previousDuration = schedulerRes.getDuration();
                 if (schedulerRes.getRes() == 0) {
@@ -67,7 +77,8 @@ public class CentralizedResolver extends Process {
                     numberOfSucess++;
                 }
             }
-        } catch(HostFailureException e){
+        } catch(HostFailureException | ClassNotFoundException | NoSuchMethodException
+                | InvocationTargetException | InstantiationException | IllegalAccessException e){
             System.err.println(e);
             System.exit(-1);
         }

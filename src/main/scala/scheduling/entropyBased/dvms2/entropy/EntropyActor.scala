@@ -19,22 +19,22 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
+import java.lang.reflect.Constructor
+
 import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
-import entropy.configuration.Configuration
-import scheduling.SchedulerRes
+import scheduling.{Scheduler, SchedulerRes}
 import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
-import scheduling.entropyBased.entropy2.Entropy2RP
 import java.util
-import configuration.XHost
+import configuration.{SimulatorProperties, XHost}
 import simulation.SimulatorManager
 
 class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
-  val planner: ChocoCustomRP = new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));
-  planner.setTimeLimit(3);
+  val planner: ChocoCustomRP = new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4))
+  planner.setTimeLimit(3)
 
 
   def computeReconfigurationPlan(nodes: List[SGNodeRef]): ReconfigurationResult = {
@@ -43,7 +43,10 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       hostsToCheck.add(SimulatorManager.getXHostByName(node.getName))
     }
 
-    val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
+    val schedulerClass: Class[_] = Class.forName(SimulatorProperties.getImplementation)
+    val schedulerConstructor: Constructor[_] = schedulerClass.getConstructor(classOf[util.Collection[XHost]])
+
+    val scheduler: Scheduler = schedulerConstructor.newInstance(hostsToCheck).asInstanceOf[Scheduler]
     val schedulerRes: SchedulerRes = scheduler.checkAndReconfigure(hostsToCheck)
     schedulerRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
