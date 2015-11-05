@@ -5,6 +5,8 @@ import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.CentralizedResolverProperties;
+import scheduling.Scheduler;
+import scheduling.SchedulerRes;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import trace.Trace;
 
@@ -36,8 +38,8 @@ public class CentralizedResolver extends Process {
         Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
         long previousDuration = 0;
-        Entropy2RP scheduler;
-        Entropy2RP.Entropy2RPRes entropyRes;
+        Scheduler scheduler;
+        SchedulerRes entropyRes;
 
         try{
             while (!SimulatorManager.isEndOfInjection()) {

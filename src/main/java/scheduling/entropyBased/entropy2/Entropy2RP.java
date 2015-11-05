@@ -1,21 +1,10 @@
 package scheduling.entropyBased.entropy2;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.*;
-
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
-import org.simgrid.msg.*;
-import org.simgrid.msg.Process;
-import scheduling.Scheduler;
-
 import entropy.execution.Dependencies;
 import entropy.execution.TimedExecutionGraph;
 import entropy.plan.PlanException;
@@ -25,9 +14,17 @@ import entropy.plan.choco.ChocoCustomRP;
 import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
+import org.simgrid.msg.Host;
+import org.simgrid.msg.HostFailureException;
+import org.simgrid.msg.Msg;
+import org.simgrid.msg.Process;
+import scheduling.Scheduler;
+import scheduling.SchedulerRes;
 import simulation.SimulatorManager;
-
 import trace.Trace;
+
+import java.io.*;
+import java.util.*;
 
 public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
@@ -261,14 +258,14 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
      * @param hostsToCheck
      * @return the duration of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
      */
-    public Entropy2RPRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
+    public SchedulerRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
 
         long beginTimeOfCompute;
         long endTimeOfCompute;
         long computationTime;
         ComputingState computingState;
         long reconfigurationTime = 0;
-        Entropy2RPRes enRes = new Entropy2RPRes();
+        SchedulerRes enRes = new SchedulerRes();
 
 		/* Tracing code */
         int i;
@@ -474,33 +471,6 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
         } else {
             System.err.println("You are trying to relocate a VM on a non existing node");
             System.exit(-1);
-        }
-    }
-
-    public class Entropy2RPRes {
-
-        private int res; // 0 no reconfiguration needed, -1 no viable configuration, -2 reconfiguration plan aborted, 1 everything was ok
-        private long duration; // in ms
-
-        Entropy2RPRes(){
-            this.res = 0;
-            this.duration = 0;
-        }
-
-        public void setRes(int res) {
-            this.res = res;
-        }
-
-        public long getDuration() {
-            return duration;
-        }
-
-        public void setDuration(long duration) {
-            this.duration = duration;
-        }
-
-        public int getRes() {
-            return res;
         }
     }
 

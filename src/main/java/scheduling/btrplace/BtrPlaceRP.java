@@ -12,6 +12,7 @@ import org.btrplace.model.view.ShareableResource;
 import org.btrplace.scheduler.choco.ChocoScheduler;
 import org.btrplace.scheduler.choco.DefaultChocoScheduler;
 import scheduling.Scheduler;
+import scheduling.SchedulerRes;
 
 import java.util.Collection;
 import java.util.Random;
@@ -44,7 +45,6 @@ public class BtrPlaceRP implements Scheduler {
     public BtrPlaceRP(Model sourceModel) {
         this(sourceModel, new Random().nextInt());
     }
-
 
     /**
      * Creates a Model for BtrPlace
@@ -98,11 +98,13 @@ public class BtrPlaceRP implements Scheduler {
         return null;
     }
 
-    public int getReconfigurationPlanCost() {
-        return 0;
+    @Override
+    public SchedulerRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
+        return null;
     }
 
     public void applyReconfigurationPlan() {
 
     }
+
 }

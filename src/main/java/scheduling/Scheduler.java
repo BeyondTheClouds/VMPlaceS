@@ -13,7 +13,7 @@ import java.util.Collection;
  */
 public interface Scheduler {
 
-    public enum ComputingState {
+    enum ComputingState {
         NO_RECONFIGURATION_NEEDED("NO_RECONFIGURATION_NEEDED"), PLACEMENT_FAILED("PLACEMENT_FAILED"), RECONFIGURATION_FAILED("RECONFIGURATION_FAILED"), SUCCESS("SUCCESS");
         private String name;
 
@@ -23,9 +23,10 @@ public interface Scheduler {
         public String toString(){
             return name;
         }
-    };
+    }
 
     ComputingState computeReconfigurationPlan();
-    int getReconfigurationPlanCost();
+    SchedulerRes checkAndReconfigure(Collection<XHost> hostsToCheck);
     void applyReconfigurationPlan();
+
 }
