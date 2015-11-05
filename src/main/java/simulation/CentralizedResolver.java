@@ -39,7 +39,7 @@ public class CentralizedResolver extends Process {
 
         long previousDuration = 0;
         Scheduler scheduler;
-        SchedulerRes entropyRes;
+        SchedulerRes schedulerRes;
 
         try{
             while (!SimulatorManager.isEndOfInjection()) {
@@ -51,15 +51,15 @@ public class CentralizedResolver extends Process {
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
                 scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
-                entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
-                previousDuration = entropyRes.getDuration();
-                if (entropyRes.getRes() == 0) {
+                schedulerRes = scheduler.checkAndReconfigure(hostsToCheck);
+                previousDuration = schedulerRes.getDuration();
+                if (schedulerRes.getRes() == 0) {
                     Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
 
-                } else if (entropyRes.getRes() == -1) {
+                } else if (schedulerRes.getRes() == -1) {
                     Msg.info("No viable solution (duration: " + previousDuration + ")");
                     numberOfCrash++;
-                } else if (entropyRes.getRes() == -2) {
+                } else if (schedulerRes.getRes() == -2) {
                     Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
                     numberOfBrokenPlan++;
                 } else { // entropyRes.getRes() == 1

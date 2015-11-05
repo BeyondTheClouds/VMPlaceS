@@ -1,4 +1,4 @@
-import sbtassembly.Plugin.AssemblyKeys
+import sbtassembly.Plugin.{MergeStrategy, AssemblyKeys}
 import AssemblyKeys._
 
 name := "VMPlaceS"
@@ -12,6 +12,8 @@ scalaVersion := "2.10.4"
 crossPaths := false
 
 retrieveManaged := true
+
+libraryDependencies += "org.btrplace" % "scheduler" % "0.41"
 
 // Excluding the following directories for compilation: scheduling/dvms
 excludeFilter in unmanagedSources := new sbt.FileFilter{
