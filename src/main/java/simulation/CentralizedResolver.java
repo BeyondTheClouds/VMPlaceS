@@ -7,9 +7,11 @@ import org.simgrid.msg.Process;
 import scheduling.CentralizedResolverProperties;
 import scheduling.Scheduler;
 import scheduling.SchedulerRes;
+import scheduling.btrplace.BtrPlaceRP;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import trace.Trace;
 
+import java.io.*;
 import java.util.Collection;
 
 
@@ -50,6 +52,19 @@ public class CentralizedResolver extends Process {
 
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
+                BtrPlaceRP btrPlaceRP = new BtrPlaceRP(hostsToCheck);
+
+
+                /* Test BTRPLACE */
+                java.io.File file = new java.io.File("logs/btrplace_model-"+ System.currentTimeMillis() + ".log");
+                try {
+                    FileWriter fw = new FileWriter(file);
+                    fw.write(btrPlaceRP.sourceModel.toString());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+
                 scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
                 entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
                 previousDuration = entropyRes.getDuration();

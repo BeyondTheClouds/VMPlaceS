@@ -24,6 +24,7 @@ import entropy.plan.durationEvaluator.MockDurationEvaluator
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
 import entropy.configuration.Configuration
+import scheduling.SchedulerRes
 import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
 import scheduling.entropyBased.entropy2.Entropy2RP
 import java.util
@@ -43,7 +44,7 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     }
 
     val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
-    val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
+    val entropyRes: SchedulerRes = scheduler.checkAndReconfigure(hostsToCheck)
     entropyRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()
