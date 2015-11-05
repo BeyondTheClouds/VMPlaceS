@@ -4,6 +4,7 @@ import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import scheduling.SchedulerRes;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
@@ -442,14 +443,14 @@ public class GroupManager extends Process {
         /* Compute and apply the plan */
         Collection<XHost> hostsToCheck = this.getManagedXHosts();
         Entropy2RP scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck));
-        Entropy2RP.Entropy2RPRes entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
-        long previousDuration = entropyRes.getDuration();
-        if (entropyRes.getRes() == 0) {
+        SchedulerRes schedulerRes = scheduler.checkAndReconfigure(hostsToCheck);
+        long previousDuration = schedulerRes.getDuration();
+        if (schedulerRes.getRes() == 0) {
             Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
-        } else if (entropyRes.getRes() == -1) {
+        } else if (schedulerRes.getRes() == -1) {
             Msg.info("No viable solution (duration: " + previousDuration + ")");
             // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
-        } else if (entropyRes.getRes() == -2) {
+        } else if (schedulerRes.getRes() == -2) {
             Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
             // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
         } else {

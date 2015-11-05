@@ -44,8 +44,8 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     }
 
     val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
-    val entropyRes: SchedulerRes = scheduler.checkAndReconfigure(hostsToCheck)
-    entropyRes.getRes match {
+    val schedulerRes: SchedulerRes = scheduler.checkAndReconfigure(hostsToCheck)
+    schedulerRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()
       // TODO How did you manage the three cases ?
