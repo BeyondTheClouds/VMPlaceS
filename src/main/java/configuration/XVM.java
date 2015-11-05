@@ -142,6 +142,7 @@ public class XVM {
         NbOfLoadChanges++;
     }
 
+    // TODO c'est crade
     public int getLoad(){
         return this.currentLoadDemand;
     }
