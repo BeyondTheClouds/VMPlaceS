@@ -1,4 +1,4 @@
-import sbtassembly.Plugin.AssemblyKeys
+import sbtassembly.Plugin.{MergeStrategy, AssemblyKeys}
 import AssemblyKeys._
 
 name := "VMPlaceS"
@@ -34,9 +34,18 @@ jarName in assembly := "simulation.jar"
 assemblyOption in assembly ~= { _.copy(includeScala = false) }
 
 mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
-{
-  case "application.conf" => MergeStrategy.rename
-  case "META-INF/MANIFEST.MF" => old("META-INF/MANIFEST.MF")
-  case x => MergeStrategy.first
+  {
+    case "application.conf" => MergeStrategy.rename
+    case "META-INF/MANIFEST.MF" => old("META-INF/MANIFEST.MF")
+    case x => MergeStrategy.first
+  }
 }
-}
+
+libraryDependencies ++= Seq(
+  "org.btrplace" % "scheduler-api" % "0.41",
+  "org.btrplace" % "scheduler-choco" % "0.41",
+  "org.btrplace" % "scheduler-json" % "0.41",
+  "org.btrplace" % "btrpsl" % "0.41",
+  "org.btrplace" % "scheduler" % "0.41",
+  "org.btrplace" % "bench" % "0.41"
+)
