@@ -11,7 +11,7 @@ import org.simgrid.msg.Process;
 import scheduling.snooze.SnoozeProperties;
 import trace.Trace;
 
-import scheduling.entropyBased.entropy2.EntropyProperties;
+import scheduling.entropy2.EntropyProperties;
 import simulation.*;
 
 import java.io.BufferedWriter;
