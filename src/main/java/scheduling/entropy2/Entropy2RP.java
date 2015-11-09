@@ -1,4 +1,4 @@
-package scheduling.entropyBased.entropy2;
+package scheduling.entropy2;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -12,8 +12,11 @@ import configuration.XHost;
 import configuration.XVM;
 import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
+import entropy.plan.TimedReconfigurationPlans;
+import entropy.plan.parser.PBTimedReconfigurationPlan;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import scheduling.AbstractScheduler;
 import scheduling.Scheduler;
 
 import entropy.execution.Dependencies;

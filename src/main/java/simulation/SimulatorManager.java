@@ -121,7 +121,7 @@ public class SimulatorManager {
      * (i.e. hosted on hosts that have been turned off)
      */
     public static Collection<XVM> getSGVMs(){
-        LinkedList<XVM> tmp = new LinkedList<>(sgVMsOn.values());
+        LinkedList<XVM> tmp = new LinkedList<XVM>(sgVMsOn.values());
         tmp.addAll(sgVMsOff.values());
         return tmp;
     }

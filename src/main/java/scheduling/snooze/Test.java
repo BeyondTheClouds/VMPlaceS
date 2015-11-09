@@ -22,10 +22,10 @@ public class Test extends Process {
 
     static Multicast multicast;
     static GroupLeader gl;
-    static ConcurrentHashMap<String, GroupManager> gmsCreated = new ConcurrentHashMap<>();
-    static ConcurrentHashMap<String, GroupManager> gmsJoined = new ConcurrentHashMap<>();
-    static ConcurrentHashMap<String, LocalController> lcsCreated = new ConcurrentHashMap<>();
-    static ConcurrentHashMap<String, LCJoined> lcsJoined = new ConcurrentHashMap<>();
+    static ConcurrentHashMap<String, GroupManager> gmsCreated = new ConcurrentHashMap<String, GroupManager>();
+    static ConcurrentHashMap<String, GroupManager> gmsJoined = new ConcurrentHashMap<String, GroupManager>();
+    static ConcurrentHashMap<String, LocalController> lcsCreated = new ConcurrentHashMap<String, LocalController>();
+    static ConcurrentHashMap<String, LCJoined> lcsJoined = new ConcurrentHashMap<String, LCJoined>();
 
     static int noGMJoins = 0;
     static int noLCJoins = 0;

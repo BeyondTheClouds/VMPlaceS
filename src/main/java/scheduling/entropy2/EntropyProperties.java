@@ -1,4 +1,4 @@
-package scheduling.entropyBased.entropy2;
+package scheduling.entropy2;
 
 import configuration.SimulatorProperties;
 import scheduling.GeneralProperties;

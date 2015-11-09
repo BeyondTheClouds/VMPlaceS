@@ -22,8 +22,8 @@ public class Multicast extends Process {
     private boolean electingOrPromoting = false;
     private ThreadPool newLCPool;
     private ThreadPool newGMPool;
-    ConcurrentHashMap<String, GMInfo> gmInfo = new ConcurrentHashMap<>();  //@ Make private
-    ConcurrentHashMap<String, LCInfo> lcInfo = new ConcurrentHashMap<>();  //@ Make private
+    ConcurrentHashMap<String, GMInfo> gmInfo = new ConcurrentHashMap<String, GMInfo>();  //@ Make private
+    ConcurrentHashMap<String, LCInfo> lcInfo = new ConcurrentHashMap<String, LCInfo>();  //@ Make private
 
     public Multicast(Host host, String name) {
         super(host, name);

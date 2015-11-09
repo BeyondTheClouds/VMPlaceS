@@ -19,7 +19,7 @@ package scheduling.entropyBased.dvms2.dvms.timeout
  * limitations under the License.
  * ============================================================ */
 
-import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
+import scheduling.dvms2.{SGActor, SGNodeRef}
 import scheduling.entropyBased.dvms2.dvms.timeout.TimeoutProtocol._
 import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsModel.DvmsPartition
 import org.simgrid.msg.Host

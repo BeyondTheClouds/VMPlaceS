@@ -1,4 +1,4 @@
-package scheduling.entropyBased.dvms2;
+package scheduling.dvms2;
 
 import org.discovery.dvms.entropy.EntropyActor;
 import org.simgrid.msg.*;

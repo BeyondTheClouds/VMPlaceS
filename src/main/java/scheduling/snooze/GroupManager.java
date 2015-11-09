@@ -4,7 +4,7 @@ import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.entropyBased.entropy2.Entropy2RP;
+import scheduling.entropy2.Entropy2RP;
 import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
 
@@ -24,7 +24,7 @@ public class GroupManager extends Process {
     private boolean thisGMToBeStopped = false;
     String glHostname = "";   //@ Make private
     private double glTimestamp;
-    ConcurrentHashMap<String, LCInfo> lcInfo = new ConcurrentHashMap<>();  //@ Make private
+    ConcurrentHashMap<String, LCInfo> lcInfo = new ConcurrentHashMap<String, LCInfo>();  //@ Make private
     // one mailbox per LC: lcHostname+"beat"
     private double procSum;
     private int memSum;

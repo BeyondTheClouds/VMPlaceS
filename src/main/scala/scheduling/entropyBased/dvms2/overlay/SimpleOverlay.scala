@@ -1,6 +1,6 @@
 package scheduling.entropyBased.dvms2.overlay
 
-import scheduling.entropyBased.dvms2.SGNodeRef
+import scheduling.dvms2.SGNodeRef
 import simulation.DistributedResolver
 import configuration.{SimulatorProperties, XHost}
 

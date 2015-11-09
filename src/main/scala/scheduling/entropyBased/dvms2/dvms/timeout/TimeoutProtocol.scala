@@ -19,7 +19,7 @@ package scheduling.entropyBased.dvms2.dvms.timeout
  * limitations under the License.
  * ============================================================ */
 
-import scheduling.entropyBased.dvms2.SGNodeRef
+import scheduling.dvms2.SGNodeRef
 
 
 object TimeoutProtocol {

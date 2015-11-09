@@ -19,7 +19,7 @@ package scheduling.entropyBased.dvms2.dvms.dvms2
  * limitations under the License.
  * ============================================================ */
 
-import scheduling.entropyBased.dvms2.SGNodeRef
+import scheduling.dvms2.SGNodeRef
 import java.util.UUID
 import scheduling.entropyBased.dvms2.dvms.dvms2.DvmsModel._
 

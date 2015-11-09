@@ -21,11 +21,13 @@ package org.discovery.dvms.entropy
 
 import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
+import org.btrplace.model.Mapping
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
 import entropy.configuration.Configuration
-import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
-import scheduling.entropyBased.entropy2.Entropy2RP
+import scheduling.btrplace.{ConfigBtrPlace, BtrPlaceRP}
+import scheduling.entropy2.Entropy2RP
+import scheduling.dvms2.{SGActor, SGNodeRef}
 import java.util
 import configuration.XHost
 import simulation.SimulatorManager
@@ -41,9 +43,11 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     for (node <- nodes) {
       hostsToCheck.add(SimulatorManager.getXHostByName(node.getName))
     }
-
-    val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
-    val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
+// TODO : !!!!!!!
+    //val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
+    val scheduler: BtrPlaceRP = new BtrPlaceRP(BtrPlaceRP.ExtractConfiguration(hostsToCheck).asInstanceOf[ConfigBtrPlace])
+    //val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
+    val entropyRes: BtrPlaceRP#Btr_PlaceRPRes = scheduler.checkAndReconfigure(hostsToCheck)
     entropyRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()

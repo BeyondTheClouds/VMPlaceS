@@ -22,7 +22,7 @@ package scheduling.entropyBased.dvms2.dvms.dvms2
 
 import org.simgrid.msg.{Process, Msg}
 import org.discovery.dvms.entropy.EntropyMessage
-import scheduling.entropyBased.dvms2.{DvmsProperties, DVMSProcess, SGNodeRef, SGActor}
+import scheduling.dvms2.{DvmsProperties, DVMSProcess, SGNodeRef, SGActor}
 import configuration.XVM
 import simulation.SimulatorManager
 import org.discovery.DiscoveryModel.model.ReconfigurationModel._

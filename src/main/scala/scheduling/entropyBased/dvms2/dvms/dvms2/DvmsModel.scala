@@ -20,7 +20,7 @@ package scheduling.entropyBased.dvms2.dvms.dvms2
  * ============================================================ */
 
 import java.util.UUID
-import scheduling.entropyBased.dvms2.SGNodeRef
+import scheduling.dvms2.SGNodeRef
 import scala.util.Random
 import configuration.SimulatorProperties
 
