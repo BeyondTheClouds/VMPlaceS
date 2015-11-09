@@ -83,12 +83,16 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
 			timeToComputeVMRP = System.currentTimeMillis();
             reconfigurationPlan = planner.solve(initialConfiguration.getModel(), initialConfiguration.getCstrs());
 //            reconfigurationPlan = planner.solve(initialConfiguration.getModel(), new ArrayList<SatConstraint>());
+//            if(reconfigurationPlan == null){
+//                System.out.println("SOLVER NULL");
+//                System.exit(1);
+//            }
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 		} catch (SchedulerException e) {
 			e.printStackTrace();
             Msg.error("Scheduler has failed to compute !");
             System.out.println(e.getMessage());
-			res = ComputingState.RECONFIGURATION_FAILED ;
+//			res = ComputingState.RECONFIGURATION_FAILED ;
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 			reconfigurationPlan = null;
 		}
@@ -104,9 +108,9 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
                     initialConfiguration.getNodeNames());
 			nbMigrations = computeNbMigrations();
 			reconfigurationGraphDepth = computeReconfigurationGraphDepth();
-		} //else {
-//            res = ComputingState.RECONFIGURATION_FAILED ;
-//        }
+		} else {
+            res = ComputingState.RECONFIGURATION_FAILED ;
+        }
 
 		return res;
 	}
@@ -363,15 +367,16 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
 
     // Create configuration for Entropy
     public static Object ExtractConfiguration(Collection<XHost> xhosts) {
-        //        Configuration currConf = new SimpleConfiguration();
+
         Model model = new DefaultModel();
         Mapping map = model.getMapping();
         Map<VM, String> vmNames = new HashMap<VM, String>();
         Map<Node, String> nodeNames = new HashMap<Node, String>();
         List<SatConstraint> cstrs = new ArrayList<SatConstraint>();
-            //VM4 must be running, It asks for 3 cpu and 2 mem resources
+
         ShareableResource rcCPU = new ShareableResource("cpu");
         ShareableResource rcMem = new ShareableResource("mem");
+
         // Add nodes
         for (XHost tmpH:xhosts){
             // Consider only hosts that are turned on

@@ -1,11 +1,13 @@
 package simulation;
 
 import configuration.XHost;
+import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.CentralizedResolverProperties;
 import scheduling.btrplace.BtrPlaceRP;
 import scheduling.btrplace.ConfigBtrPlace;
+import scheduling.entropy2.Entropy2RP;
 import trace.Trace;
 
 import java.util.Collection;
@@ -36,8 +38,8 @@ public class CentralizedResolver extends Process {
         Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
         long previousDuration = 0;
-        //Entropy2RP scheduler;
-        //Entropy2RP.Entropy2RPRes entropyRes;
+//        Entropy2RP scheduler;
+//        Entropy2RP.Entropy2RPRes entropyRes;
         BtrPlaceRP scheduler;
         BtrPlaceRP.Btr_PlaceRPRes entropyRes;
 
