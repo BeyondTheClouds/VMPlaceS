@@ -441,7 +441,7 @@ public class GroupManager extends Process {
 
         /* Compute and apply the plan */
         Collection<XHost> hostsToCheck = this.getManagedXHosts();
-        Entropy2RP scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck));
+        Entropy2RP scheduler = new Entropy2RP(hostsToCheck);
         Entropy2RP.Entropy2RPRes entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
         long previousDuration = entropyRes.getDuration();
         if (entropyRes.getRes() == 0) {

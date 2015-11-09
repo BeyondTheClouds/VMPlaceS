@@ -52,8 +52,8 @@ public class CentralizedResolver extends Process {
 
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
-//                scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
-                scheduler = new BtrPlaceRP((ConfigBtrPlace) BtrPlaceRP.ExtractConfiguration(hostsToCheck), loopID++);
+//                scheduler = new Entropy2RP(hostsToCheck, loopID++);
+                scheduler = new BtrPlaceRP(hostsToCheck, loopID++);
                 entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
                 previousDuration = entropyRes.getDuration();
                 if (entropyRes.getRes() == 0) {

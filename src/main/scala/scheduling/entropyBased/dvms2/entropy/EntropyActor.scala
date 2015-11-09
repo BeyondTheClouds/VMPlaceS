@@ -44,9 +44,9 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       hostsToCheck.add(SimulatorManager.getXHostByName(node.getName))
     }
 // TODO : !!!!!!!
-//    val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
+//    val scheduler: Entropy2RP = new Entropy2RP(hostsToCheck)
 //    val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
-        val scheduler: BtrPlaceRP = new BtrPlaceRP(BtrPlaceRP.ExtractConfiguration(hostsToCheck).asInstanceOf[ConfigBtrPlace])
+        val scheduler: BtrPlaceRP = new BtrPlaceRP(hostsToCheck)
         val entropyRes: BtrPlaceRP#Btr_PlaceRPRes = scheduler.checkAndReconfigure(hostsToCheck)
     entropyRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())

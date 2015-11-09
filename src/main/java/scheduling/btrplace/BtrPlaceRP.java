@@ -42,13 +42,13 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
     private boolean abortRP;
 
-    public BtrPlaceRP(ConfigBtrPlace initialConfiguration) {
+    public BtrPlaceRP(Collection<XHost> xhosts) {
 
-        this(initialConfiguration,new Random().nextInt());
+        this(xhosts,new Random().nextInt());
     }
 
-    public BtrPlaceRP(ConfigBtrPlace initialConfiguration, int loopID) {
-        super(initialConfiguration);
+    public BtrPlaceRP(Collection<XHost> xhosts, int loopID) {
+        super(BtrPlaceRP.ExtractConfiguration(xhosts));
         //planner =  new DefaultChocoScheduler (new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
         planner =  new DefaultChocoScheduler();
         DurationEvaluators dev = planner.getDurationEvaluators();
@@ -366,7 +366,7 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
     }
 
     // Create configuration for Entropy
-    public static Object ExtractConfiguration(Collection<XHost> xhosts) {
+    public static ConfigBtrPlace ExtractConfiguration(Collection<XHost> xhosts) {
 
         Model model = new DefaultModel();
         Mapping map = model.getMapping();
