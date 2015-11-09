@@ -3,8 +3,8 @@ package simulation;
 
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.entropyBased.dvms2.*;
-import scheduling.entropyBased.dvms2.overlay.SimpleOverlay;
+import scheduling.distributed.dvms2.*;
+import scheduling.distributed.dvms2.overlay.SimpleOverlay;
 
 
 /** This class is in charge of launching the latest version of DVMs (currently DVMS V2 implemented in SCALA)

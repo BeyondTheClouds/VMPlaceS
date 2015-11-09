@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.Date;
 
-import scheduling.snooze.AUX;
+import scheduling.hierarchical.snooze.AUX;
 import trace.Trace;
 
 

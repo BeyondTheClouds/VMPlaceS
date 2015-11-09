@@ -168,7 +168,7 @@ public class SimulatorProperties extends Properties {
 	public final static String DEFAULT_SCRIPT_INJECT_LOAD = null;
 
 	private static final String DEFAULT_SIMU_ALGO = "centralized";
-    private static final String DEFAULT_SIMU_IMPL = "scheduling.entropyBased.entropy2.Entropy2RP";
+    private static final String DEFAULT_SIMU_IMPL = "scheduling.centralized.entropy2.Entropy2RP";
 	private static final boolean DEFAULT_STATIONARY_STATUS = false;
 
 

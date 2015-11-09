@@ -4,7 +4,7 @@ import configuration.SimulatorProperties;
 import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.CentralizedResolverProperties;
+import scheduling.centralized.CentralizedResolverProperties;
 import scheduling.Scheduler;
 import scheduling.SchedulerRes;
 import trace.Trace;

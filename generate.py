@@ -39,14 +39,14 @@ elif (sys.argv[1] == 'hierarchical'):
         % (nb_nodes + nb_servicenodes, nb_nodes + nb_servicenodes))
 
 #        for i in range(0, nb_nodes):
-#                line = "  <process host=\"node%d\" function=\"scheduling.snooze.LocalController\">\
+#                line = "  <process host=\"node%d\" function=\"scheduling.hierarchical.snooze.LocalController\">\
 #<argument value=\"node%d\" /><argument value=\"localController-%d\" />\
 #</process>\n" % (i, i, i)
 #                sys.stdout.write(line)
 
         for i in range(nb_nodes, nb_nodes+nb_servicenodes):
 
-            line = "  <process host=\"node%d\" function=\"scheduling.snooze.GroupManager\">\
+            line = "  <process host=\"node%d\" function=\"scheduling.hierarchical.snooze.GroupManager\">\
 <argument value=\"node%d\" /><argument value=\"groupManager-%d\" />\
 </process>\n" % (i, i, i)
             sys.stdout.write(line)

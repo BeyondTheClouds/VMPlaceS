@@ -18,12 +18,11 @@ import configuration.SimulatorProperties;
 import configuration.VMClasses;
 import configuration.XHost;
 import configuration.XVM;
-import injector.LoadEvent;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
-import scheduling.snooze.LocalController;
-import scheduling.snooze.Logger;
+import scheduling.hierarchical.snooze.LocalController;
+import scheduling.hierarchical.snooze.Logger;
 import trace.Trace;
 
 import java.io.*;

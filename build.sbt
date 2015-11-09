@@ -16,7 +16,7 @@ retrieveManaged := true
 // Excluding the following directories for compilation: scheduling/dvms
 excludeFilter in unmanagedSources := new sbt.FileFilter{
   //def accept(f: File): Boolean = "(?s).*scheduling/dvms/.*|.*scheduling/hubis/.*".r.pattern.matcher(f.getAbsolutePath).matches
-  def accept(f: File): Boolean = "(?s).*scheduling/entropyBased/dvms/.*".r.pattern.matcher(f.getAbsolutePath).matches
+  def accept(f: File): Boolean = "(?s).*scheduling/distributed/dvms/.*".r.pattern.matcher(f.getAbsolutePath).matches
 }
 
 seq(assemblySettings: _*)

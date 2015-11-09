@@ -4,7 +4,7 @@ package simulation;
 import configuration.SimulatorProperties;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import scheduling.snooze.*;
+import scheduling.hierarchical.snooze.*;
 
 /**
  * Created by sudholt on 25/05/2014.

@@ -8,10 +8,10 @@ import org.simgrid.msg.Msg;
 import org.simgrid.msg.MsgException;
 import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
-import scheduling.snooze.SnoozeProperties;
+import scheduling.hierarchical.snooze.SnoozeProperties;
 import trace.Trace;
 
-import scheduling.entropyBased.entropy2.EntropyProperties;
+import scheduling.centralized.entropy2.EntropyProperties;
 import simulation.*;
 
 import java.io.BufferedWriter;
