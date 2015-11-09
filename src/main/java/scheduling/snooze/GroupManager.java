@@ -59,7 +59,7 @@ public class GroupManager extends Process {
             boolean success = false;
             int n = 1;
 
-
+            // TODO Killian proof check the inputed class
             Class<?> schedulerClass = Class.forName(SimulatorProperties.getImplementation());
             schedulerConstructor = schedulerClass.getConstructor(Collection.class, Integer.class);
 
