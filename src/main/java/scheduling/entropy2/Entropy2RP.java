@@ -28,6 +28,7 @@ import entropy.plan.choco.ChocoCustomRP;
 import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
+import scheduling.SchedulerRes;
 import simulation.SimulatorManager;
 
 import trace.Trace;
@@ -264,7 +265,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
      * @param hostsToCheck
      * @return the duration of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
      */
-    public Entropy2RPRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
+    public SchedulerRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
 
         long beginTimeOfCompute;
         long endTimeOfCompute;
@@ -479,8 +480,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             System.exit(-1);
         }
     }
-
-    public class Entropy2RPRes {
+    public class Entropy2RPRes implements SchedulerRes {
 
 
 
@@ -508,5 +508,4 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             return res;
         }
     }
-
 }

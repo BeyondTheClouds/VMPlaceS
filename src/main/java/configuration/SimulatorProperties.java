@@ -120,6 +120,7 @@ public class SimulatorProperties extends Properties {
 	public final static String SCRIPT_INJECT_LOAD = "script.injectload";
 	
 	private static final String SIMU_ALGO = "simulator.algorithm";
+	private static final String SIMU_STRAT = "simulator.strategy";
 	private static final String STATIONARY_STATUS = "simulator.gotostationarystatus";
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -167,6 +168,7 @@ public class SimulatorProperties extends Properties {
 	public final static String DEFAULT_SCRIPT_INJECT_LOAD = null;
 
 	private static final String DEFAULT_SIMU_ALGO = "centralized";
+	private static final String DEFAULT_SIMU_STRAT = "btrplace";
 	private static final boolean DEFAULT_STATIONARY_STATUS = false;
 
 
@@ -339,19 +341,7 @@ public class SimulatorProperties extends Properties {
 	public static double getStandardDeviationLoad(){
 		return Double.parseDouble(INSTANCE.getProperty(STD_LOAD, DEFAULT_STD_LOAD));
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
 	public static String getVirtualNodesNamesFile(){
 		return INSTANCE.getProperty(VIRTUAL_NODES_NAMES_FILE, DEFAULT_VIRTUAL_NODES_NAMES_FILE);
 	}
@@ -393,7 +383,11 @@ public class SimulatorProperties extends Properties {
 	public static String getAlgo() {
 		return INSTANCE.getProperty(SIMU_ALGO, DEFAULT_SIMU_ALGO);
 	}
-	
+
+	public static String getStrategy() {
+		return INSTANCE.getProperty(SIMU_STRAT, DEFAULT_SIMU_STRAT);
+	}
+
 	public static void main(String[] args){
 		System.out.println(SimulatorProperties.INSTANCE);
 		System.out.println("configuration file: " + SimulatorProperties.getConfigurationFile());

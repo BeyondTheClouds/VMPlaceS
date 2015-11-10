@@ -28,4 +28,5 @@ public interface Scheduler {
     ComputingState computeReconfigurationPlan();
     int getReconfigurationPlanCost();
     void applyReconfigurationPlan();
+    SchedulerRes checkAndReconfigure(Collection<XHost> xHosts);
 }

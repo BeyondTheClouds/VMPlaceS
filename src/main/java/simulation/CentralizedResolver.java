@@ -1,10 +1,14 @@
 package simulation;
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.CentralizedResolverProperties;
+import scheduling.Scheduler;
+import scheduling.SchedulerFactory;
+import scheduling.SchedulerRes;
 import scheduling.btrplace.BtrPlaceRP;
 import scheduling.btrplace.ConfigBtrPlace;
 import scheduling.entropy2.Entropy2RP;
@@ -40,8 +44,10 @@ public class CentralizedResolver extends Process {
         long previousDuration = 0;
 //        Entropy2RP scheduler;
 //        Entropy2RP.Entropy2RPRes entropyRes;
-        BtrPlaceRP scheduler;
-        BtrPlaceRP.Btr_PlaceRPRes entropyRes;
+//        BtrPlaceRP scheduler;
+//        BtrPlaceRP.Btr_PlaceRPRes entropyRes;
+        Scheduler scheduler;
+        SchedulerRes entropyRes;
 
         try{
             while (!SimulatorManager.isEndOfInjection()) {
@@ -53,7 +59,8 @@ public class CentralizedResolver extends Process {
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
 //                scheduler = new Entropy2RP(hostsToCheck, loopID++);
-                scheduler = new BtrPlaceRP(hostsToCheck, loopID++);
+//                scheduler = new BtrPlaceRP(hostsToCheck, loopID++);
+                scheduler = SchedulerFactory.getScheduler(hostsToCheck, loopID++);
                 entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
                 previousDuration = entropyRes.getDuration();
                 if (entropyRes.getRes() == 0) {
@@ -74,7 +81,9 @@ public class CentralizedResolver extends Process {
             System.err.println(e);
             System.exit(-1);
         }
-        Msg.info("Entropy has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
+        String strat = SimulatorProperties.getStrategy();
+        strat = strat.substring(0, 1).toUpperCase() + strat.substring(1);
+        Msg.info(strat+" has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
 
     }
 

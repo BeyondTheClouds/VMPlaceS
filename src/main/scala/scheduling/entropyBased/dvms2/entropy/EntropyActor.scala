@@ -25,6 +25,7 @@ import org.btrplace.model.Mapping
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
 import entropy.configuration.Configuration
+import scheduling.{SchedulerFactory, SchedulerRes, Scheduler}
 import scheduling.btrplace.{ConfigBtrPlace, BtrPlaceRP}
 import scheduling.entropy2.Entropy2RP
 import scheduling.dvms2.{SGActor, SGNodeRef}
@@ -46,8 +47,10 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 // TODO : !!!!!!!
 //    val scheduler: Entropy2RP = new Entropy2RP(hostsToCheck)
 //    val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
-        val scheduler: BtrPlaceRP = new BtrPlaceRP(hostsToCheck)
-        val entropyRes: BtrPlaceRP#Btr_PlaceRPRes = scheduler.checkAndReconfigure(hostsToCheck)
+//        val scheduler: BtrPlaceRP = new BtrPlaceRP(hostsToCheck)
+//        val entropyRes: BtrPlaceRP#Btr_PlaceRPRes = scheduler.checkAndReconfigure(hostsToCheck)
+    val scheduler: Scheduler = SchedulerFactory.getScheduler(hostsToCheck)
+    val entropyRes: SchedulerRes = scheduler.checkAndReconfigure(hostsToCheck)
     entropyRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()

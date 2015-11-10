@@ -26,6 +26,7 @@ import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.Process;
 import scheduling.Scheduler;
+import scheduling.SchedulerRes;
 import simulation.SimulatorManager;
 import trace.Trace;
 
@@ -170,7 +171,7 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
 
 
             try {
-                File file = new File("logs/entropy/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
+                File file = new File("logs/btrplace/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
                 file.getParentFile().mkdirs();
                 PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
                 //pw.write(reconfigurationPlan.toString());
@@ -276,7 +277,7 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
      * @param hostsToCheck
      * @return the duration of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
      */
-    public Btr_PlaceRPRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
+    public SchedulerRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
 
         long beginTimeOfCompute;
         long endTimeOfCompute;
@@ -353,7 +354,7 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
 
             Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
         } else {
-            Msg.info("Entropy did not find any viable solution");
+            Msg.info("BtrPlace did not find any viable solution");
             enRes.setRes(-1);
         }
 
@@ -516,7 +517,7 @@ public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
         }
     }
 
-    public class Btr_PlaceRPRes {
+    public class Btr_PlaceRPRes implements SchedulerRes {
 
 
 
