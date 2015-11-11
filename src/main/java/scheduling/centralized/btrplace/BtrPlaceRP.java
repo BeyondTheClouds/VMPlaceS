@@ -262,7 +262,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
                 e.printStackTrace();
             }
 
-            // Shall we iterate over the actions
+            // TODO Shall we iterate over the actions, or mess with the BtrPlace API to adapt it to VmPlaces ?
         }
 
 
