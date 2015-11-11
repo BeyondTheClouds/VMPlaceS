@@ -3,7 +3,6 @@ package scheduling.centralized.btrplace;
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
-import entropy.plan.action.Action;
 import org.btrplace.model.DefaultModel;
 import org.btrplace.model.Mapping;
 import org.btrplace.model.Model;
@@ -12,6 +11,7 @@ import org.btrplace.model.Node;
 import org.btrplace.model.view.ShareableResource;
 import org.btrplace.plan.DependencyBasedPlanApplier;
 import org.btrplace.plan.ReconfigurationPlan;
+import org.btrplace.plan.event.*;
 import org.btrplace.scheduler.SchedulerException;
 import org.btrplace.scheduler.choco.ChocoScheduler;
 import org.btrplace.scheduler.choco.DefaultChocoScheduler;
@@ -20,6 +20,7 @@ import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
 import scheduling.AbstractScheduler;
 import scheduling.SchedulerRes;
+import simulation.SimulatorManager;
 import trace.Trace;
 
 import java.io.*;
@@ -144,7 +145,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
             if (!reconfigurationPlan.isApplyable())
                 res = ComputingState.RECONFIGURATION_FAILED;
 
-            reconfigurationPlanCost = reconfigurationPlan.getDuration();
+            planCost = reconfigurationPlan.getDuration();
             this.destination = reconfigurationPlan.getResult();
             // TODO Adrian : Compute graphDepth & nbMigrations - if it's meaningful
         }
@@ -263,9 +264,181 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
             }
 
             // TODO Shall we iterate over the actions, or mess with the BtrPlace API to adapt it to VmPlaces ?
+
+            // Those actions should be sorting regarding their start time
+            final Iterator<Action> it = reconfigurationPlan.iterator();
+
+            // We go through the whole plan
+            while (it.hasNext() && !this.isRPAborted) {
+                instantiateAndStartRecursively(it.next());
+            }
+
+            // If you reach that line, it means that either the execution of the plan has been completely launched or the
+            // plan has been aborted. In both cases, we should wait for the completion of on-going migrations
+
+            // Add a watch dog to determine infinite loop
+            int watchDog = 0;
+
+            while(this.ongoingMigration()){
+                try {
+                    org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
+                    watchDog ++;
+                    if (watchDog%100==0){
+                        Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
+                        if(SimulatorManager.isEndOfInjection()){
+                            Msg.info("Something wrong we are waiting too much, bye bye");
+                            System.exit(-1);
+                        }
+                    }
+                } catch (HostFailureException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
+    }
 
+    /**
+     * This is a prototype to test out the possibility to
+     * override BtrPlace EventListeners with the relocateVM behavior
+     */
+    public void applyRPWithBtrPlaceEvents() {
+        if (this.reconfigurationPlan != null && reconfigurationPlan.isApplyable()) {
+
+            // We log the reconfiguration plan
+            try {
+                File file = new File("logs/btrplace/reconfigurationplan/" + id + "-" + System.currentTimeMillis() + ".txt");
+                file.getParentFile().mkdirs();
+                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+                pw.write(reconfigurationPlan.toString());
+                pw.flush();
+                pw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            /**
+             * Adrian - We add a ActionCommitedListener for it to
+             * also execute business code for VMPlaces
+             */
+            reconfigurationPlan.getReconfigurationApplier().addEventCommittedListener(new EventCommittedListener() {
+                /*
+                 * Those methods will be called upon completion of an action.
+                 * It's just the right time for us to actually do the action in SimGrid !
+                 */
+
+                @Override
+                public void committed(Allocate allocate) {
+
+                }
+
+                @Override
+                public void committed(AllocateEvent allocateEvent) {
+
+                }
+
+                @Override
+                public void committed(SubstitutedVMEvent substitutedVMEvent) {
+
+                }
+
+                @Override
+                public void committed(BootNode bootNode) {
+
+                }
+
+                @Override
+                public void committed(BootVM bootVM) {
+
+                }
+
+                @Override
+                public void committed(ForgeVM forgeVM) {
+
+                }
+
+                @Override
+                public void committed(KillVM killVM) {
+
+                }
+
+                @Override
+                public void committed(MigrateVM migrateVM) {
+                    // Adrian - Naive implementation using the existing relocateVM method
+                    relocateVM(
+                            vmMap.get(migrateVM.getVM().id()),
+                            nodesMap.get(migrateVM.getSourceNode().id()),
+                            nodesMap.get(migrateVM.getDestinationNode().id())
+                    );
+                    // TODO Adrian : I'm unsure if this will block execution and/or induce launching migration without the proper dependencies.
+                }
+
+                @Override
+                public void committed(ResumeVM resumeVM) {
+
+                }
+
+                @Override
+                public void committed(ShutdownNode shutdownNode) {
+
+                }
+
+                @Override
+                public void committed(ShutdownVM shutdownVM) {
+
+                }
+
+                @Override
+                public void committed(SuspendVM suspendVM) {
+
+                }
+            });
+
+            // If you reach that line, it means that either the execution of the plan has been completely launched or the
+            // plan has been aborted. In both cases, we should wait for the completion of on-going migrations
+
+            // Add a watch dog to determine infinite loop
+            int watchDog = 0;
+
+            while(this.ongoingMigration()){
+                try {
+                    org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
+                    watchDog ++;
+                    if (watchDog%100==0){
+                        Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
+                        if(SimulatorManager.isEndOfInjection()){
+                            Msg.info("Something wrong we are waiting too much, bye bye");
+                            System.exit(-1);
+                        }
+                    }
+                } catch (HostFailureException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    private boolean instantiateAndStartRecursively(Action a) {
+
+        // Iterate over the dependencies
+        reconfigurationPlan.getDirectDependencies(a).forEach(this::instantiateAndStartRecursively);
+
+        // The dependencies have been rolled out - we can execute the action
+        if (a instanceof MigrateVM) {
+
+            MigrateVM migration = (MigrateVM) a;
+            // Adrian - Naive implementation using the existing relocateVM method
+            super.relocateVM(
+                    this.vmMap.get(migration.getVM().id()),
+                    this.nodesMap.get(migration.getSourceNode().id()),
+                    this.nodesMap.get(migration.getDestinationNode().id())
+            );
+            a.applyAction(reconfigurationPlan.getOrigin());
+            // TODO Adrian - How do we update the dependencies ?
+        } else {
+            System.err.println("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN : " + a.pretty());
+        }
+        return true;
     }
 
 }

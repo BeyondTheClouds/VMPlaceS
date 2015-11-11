@@ -55,13 +55,13 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
 	/**
 	 * 	The cost of the reconfiguration plan.
 	 */
-	protected int reconfigurationPlanCost;
+	protected int planCost;
 	
 	//The number of migrations inside the reconfiguration plan
 	protected int nbMigrations;
 	
 	//The depth of the graph of the reconfiguration actions
-	protected int reconfigurationGraphDepth;
+	protected int planGraphDepth;
 
     //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
     protected int id;
@@ -76,9 +76,9 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
 		timeToComputeVMPP = 0;
 		timeToComputeVMRP = 0;
 		timeToApplyReconfigurationPlan = 0;
-		reconfigurationPlanCost = 0;
+		planCost = 0;
 		nbMigrations = 0;
-		reconfigurationGraphDepth = 0;
+		planGraphDepth = 0;
         this.source = this.extractConfiguration(xHosts);
 	}
 

@@ -1,6 +1,5 @@
 package scheduling.centralized.entropy2;
 
-import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import entropy.configuration.*;
@@ -18,7 +17,6 @@ import entropy.vjob.VJob;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
-import org.simgrid.msg.Process;
 import scheduling.AbstractScheduler;
 import scheduling.SchedulerRes;
 import simulation.SimulatorManager;
@@ -99,10 +97,10 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 			if(reconfigurationPlan.getActions().isEmpty())
 				res = ComputingState.NO_RECONFIGURATION_NEEDED;
 			
-			reconfigurationPlanCost = reconfigurationPlan.getDuration();
+			planCost = reconfigurationPlan.getDuration();
 			destination = reconfigurationPlan.getDestination();
 			nbMigrations = computeNbMigrations();
-			reconfigurationGraphDepth = computeReconfigurationGraphDepth();
+			planGraphDepth = computeReconfigurationGraphDepth();
 		}
 		
 		return res; 
