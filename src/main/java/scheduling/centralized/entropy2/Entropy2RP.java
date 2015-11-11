@@ -8,6 +8,7 @@ import entropy.configuration.parser.FileConfigurationSerializerFactory;
 import entropy.execution.Dependencies;
 import entropy.execution.TimedExecutionGraph;
 import entropy.plan.PlanException;
+import entropy.plan.TimedReconfigurationPlan;
 import entropy.plan.action.Action;
 import entropy.plan.action.Migration;
 import entropy.plan.choco.ChocoCustomRP;
@@ -18,7 +19,7 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.Process;
-import scheduling.Scheduler;
+import scheduling.AbstractScheduler;
 import scheduling.SchedulerRes;
 import simulation.SimulatorManager;
 import trace.Trace;
@@ -26,70 +27,67 @@ import trace.Trace;
 import java.io.*;
 import java.util.*;
 
-public class Entropy2RP extends AbstractScheduler implements Scheduler {
+public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigurationPlan> {
 
-	private ChocoCustomRP planner;//Entropy2.1
-//	private ChocoCustomPowerRP planner;//Entropy2.0
-    private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
+    private ChocoCustomRP planner;
     private boolean abortRP;
 
     public Entropy2RP(Collection<XHost> xhosts) {
-        super();
-        this.loopID = new Random().nextInt();
-        this.initialConfiguration = this.extractConfiguration(xhosts);
+        super(xhosts);
+        this.id = new Random().nextInt();
+        this.source = this.extractConfiguration(xhosts);
     }
 
-    public Entropy2RP(Collection<XHost> xhosts, Integer loopID) {
-		super();
-        this.initialConfiguration = this.extractConfiguration(xhosts);
+    public Entropy2RP(Collection<XHost> xhosts, Integer id) {
+		super(xhosts);
+        this.source = this.extractConfiguration(xhosts);
 		planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
-        planner.setTimeLimit(initialConfiguration.getAllNodes().size()/8);
-        this.loopID = loopID;
+        planner.setTimeLimit(source.getAllNodes().size()/8);
+        this.id = id;
         this.abortRP = false;
         //Log the current Configuration
         try {
-            String fileName = "logs/entropy/configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt";
-            /*File file = new File("logs/entropy/configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt");
+            String fileName = "logs/entropy/configuration/" + id + "-"+ System.currentTimeMillis() + ".txt";
+            /*File file = new File("logs/entropy/configuration/" + id + "-"+ System.currentTimeMillis() + ".txt");
             file.getParentFile().mkdirs();
             PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-            pw.write(initialConfiguration.toString());
+            pw.write(source.toString());
             pw.flush();
             pw.close();*/
-            FileConfigurationSerializerFactory.getInstance().write(initialConfiguration, fileName);
+            FileConfigurationSerializerFactory.getInstance().write(source, fileName);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
 	}
-	
-	@Override
-	public ComputingState computeReconfigurationPlan() {
+
+    public ComputingState computeReconfigurationPlan() {
 		ComputingState res = ComputingState.SUCCESS;
 		
 		// All VMs are encapsulated into the same vjob for the moment - Adrien, Nov 18 2011
 		List<VJob> vjobs = new ArrayList<VJob>();
 		VJob v = new DefaultVJob("v1");//Entropy2.1
 //		VJob v = new BasicVJob("v1");//Entropy2.0
-		/*for(VirtualMachine vm : initialConfiguration.getRunnings()){
+		/*for(VirtualMachine vm : source.getRunnings()){
 			v.addVirtualMachine(vm);
 		}
 		
-		for(Node n : initialConfiguration.getAllNodes()){
+		for(Node n : source.getAllNodes()){
 			n.setPowerBase(100);
 			n.setPowerMax(200);
 		}*///Entropy2.0 Power
-		v.addVirtualMachines(initialConfiguration.getRunnings());//Entropy2.1
+		v.addVirtualMachines(source.getRunnings());//Entropy2.1
 		vjobs.add(v);
 		try {
 			timeToComputeVMRP = System.currentTimeMillis();
-			reconfigurationPlan = planner.compute(initialConfiguration, 
-					initialConfiguration.getRunnings(),
-					initialConfiguration.getWaitings(),
-					initialConfiguration.getSleepings(),
-					new SimpleManagedElementSet<VirtualMachine>(), 
-					initialConfiguration.getOnlines(), 
-					initialConfiguration.getOfflines(), vjobs);
+			reconfigurationPlan = planner.compute(source,
+                    source.getRunnings(),
+                    source.getWaitings(),
+                    source.getSleepings(),
+                    new SimpleManagedElementSet<VirtualMachine>(),
+                    source.getOnlines(),
+                    source.getOfflines(), vjobs);
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 		} catch (PlanException e) {
 			e.printStackTrace();
@@ -103,7 +101,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 				res = ComputingState.NO_RECONFIGURATION_NEEDED;
 			
 			reconfigurationPlanCost = reconfigurationPlan.getDuration();
-			newConfiguration = reconfigurationPlan.getDestination();
+			destination = reconfigurationPlan.getDestination();
 			nbMigrations = computeNbMigrations();
 			reconfigurationGraphDepth = computeReconfigurationGraphDepth();
 		}
@@ -167,7 +165,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 
 
             try {
-                File file = new File("logs/entropy/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
+                File file = new File("logs/entropy/reconfigurationplan/" + id + "-" + System.currentTimeMillis() + ".txt");
                 file.getParentFile().mkdirs();
                 PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
                 //pw.write(reconfigurationPlan.toString());
@@ -278,8 +276,8 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
             Trace.hostSetState(h.getName(), "SERVICE", "booked");
         }
 
-        Msg.info("Launching scheduler (loopId = " + loopID + ") - start to compute");
-        Msg.info("Nodes considered: "+initialConfiguration.getAllNodes().toString());
+        Msg.info("Launching scheduler (id = " + id + ") - start to compute");
+        Msg.info("Nodes considered: " + source.getAllNodes().toString());
 
         /** PLEASE NOTE THAT ALL COMPUTATIONS BELOW DOES NOT MOVE FORWARD THE MSG CLOCK ***/
         beginTimeOfCompute = System.currentTimeMillis();
@@ -351,7 +349,7 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
     }
 
     // Create configuration for Entropy
-    private Configuration extractConfiguration(Collection<XHost> xhosts) {
+    protected Configuration extractConfiguration(Collection<XHost> xhosts) {
         Configuration currConf = new SimpleConfiguration();
 
         // Add nodes

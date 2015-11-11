@@ -16,7 +16,7 @@ import org.btrplace.scheduler.choco.DefaultChocoScheduler;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
-import scheduling.Scheduler;
+import scheduling.AbstractScheduler;
 import scheduling.SchedulerRes;
 import trace.Trace;
 
@@ -27,43 +27,12 @@ import java.util.*;
  *
  * Implementation of the Scheduler interface using the BtrPlace API
  */
-public class BtrPlaceRP implements Scheduler {
-
-    // TODO Killian refactor this into an Abstract class
-    /**
-     * The time spent to compute VMPP
-     *  @deprecated Please consider that this value is currently deprecated and will be set to zero untill it will be fixed - Adrien, Nov 18 2011
-     */
-    protected long timeToComputeVMPP;
-
-    //The time spent to compute VMRP
-    protected long timeToComputeVMRP;
-
-    //The time spent to apply the reconfiguration plan
-    protected long timeToApplyReconfigurationPlan;
-
-    //The cost of the reconfiguration plan
-    protected int reconfigurationPlanCost;
+public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
 
     /**
      * Indicates if the reconfiguration plan has been aborted
      */
     public boolean isRPAborted;
-
-    /**
-     * The initial configuration
-     */
-    public Model sourceModel;
-
-    /**
-     * The resulting configuration
-     */
-    public Model destModel;
-
-    /**
-     * The computed reconfiguration plan
-     */
-    public ReconfigurationPlan reconfigurationPlan;
 
     /**
      * Map to link BtrPlace nodes ids to XHosts
@@ -79,15 +48,13 @@ public class BtrPlaceRP implements Scheduler {
      * The BtrPlace scheduler
      */
     private ChocoScheduler btrSolver;
-    private int loopID;
 
-    public BtrPlaceRP(Collection<XHost> xHosts, int loopID) {
-        this.loopID = loopID;
+    public BtrPlaceRP(Collection<XHost> xHosts, int id) {
+        super(xHosts);
+        this.id = id;
         this.btrSolver = new DefaultChocoScheduler();
         this.nodesMap = new HashMap<>();
         this.vmMap = new HashMap<>();
-        this.sourceModel = this.extractModel(xHosts);
-
     }
 
     public BtrPlaceRP(Collection<XHost> xHosts) {
@@ -99,7 +66,7 @@ public class BtrPlaceRP implements Scheduler {
      * @param xHosts Collection of Xhosts declared as hosting nodes and that are turned on
      * @return A model representing the infrastructure
      */
-    public Model extractModel(Collection<XHost> xHosts) {
+    protected Model extractConfiguration(Collection<XHost> xHosts) {
 
         Model model = new DefaultModel();
         Mapping mapping = model.getMapping();
@@ -150,7 +117,7 @@ public class BtrPlaceRP implements Scheduler {
         try {
             timeToComputeVMRP = System.currentTimeMillis();
             // As for now, constraints are not implemented - Adrian, Nov 5 2015
-            reconfigurationPlan = this.btrSolver.solve(sourceModel, null);
+            reconfigurationPlan = this.btrSolver.solve(source, null);
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
         } catch (SchedulerException e) {
             e.printStackTrace();
@@ -166,7 +133,7 @@ public class BtrPlaceRP implements Scheduler {
                 res = ComputingState.RECONFIGURATION_FAILED;
 
             reconfigurationPlanCost = reconfigurationPlan.getDuration();
-            destModel = reconfigurationPlan.getResult();
+            destination = reconfigurationPlan.getResult();
 
             // TODO Adrian : Compute graphDepth & nbMigrations - if it's meaningfull
         }
@@ -195,8 +162,8 @@ public class BtrPlaceRP implements Scheduler {
             Trace.hostSetState(h.getName(), "SERVICE", "booked");
         }
 
-        Msg.info("Launching scheduler (loopId = " + loopID + ") - start to compute");
-        Msg.info("Nodes considered: "+ sourceModel.getMapping().getAllNodes().toString());
+        Msg.info("Launching scheduler (id = " + id + ") - start to compute");
+        Msg.info("Nodes considered: " + source.getMapping().getAllNodes().toString());
 
         /** PLEASE NOTE THAT ALL COMPUTATIONS BELOW DOES NOT MOVE FORWARD THE MSG CLOCK ***/
         beginTimeOfCompute = System.currentTimeMillis();
