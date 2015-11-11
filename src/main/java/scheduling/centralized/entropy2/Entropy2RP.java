@@ -30,7 +30,6 @@ import java.util.*;
 public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigurationPlan> {
 
     private ChocoCustomRP planner;
-    private boolean abortRP;
 
     public Entropy2RP(Collection<XHost> xhosts) {
         super(xhosts);
@@ -45,7 +44,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
         planner.setTimeLimit(source.getAllNodes().size()/8);
         this.id = id;
-        this.abortRP = false;
+        super.isRPAborted = false;
         //Log the current Configuration
         try {
             String fileName = "logs/entropy/configuration/" + id + "-"+ System.currentTimeMillis() + ".txt";
@@ -66,7 +65,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 		ComputingState res = ComputingState.SUCCESS;
 		
 		// All VMs are encapsulated into the same vjob for the moment - Adrien, Nov 18 2011
-		List<VJob> vjobs = new ArrayList<VJob>();
+		List<VJob> vjobs = new ArrayList<>();
 		VJob v = new DefaultVJob("v1");//Entropy2.1
 //		VJob v = new BasicVJob("v1");//Entropy2.0
 		/*for(VirtualMachine vm : source.getRunnings()){
@@ -147,7 +146,6 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 		}
 	}
 	
-	@Override
 	public void applyReconfigurationPlan() {
 		if(reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()){
 			//Log the reconfiguration plan
@@ -205,7 +203,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
         //Start the feasible actions
         // ie, actions with a start moment equals to 0.
         for (Action a : sortedActions) {
-            if ((a.getStartMoment() == 0)  && !isReconfigurationPlanAborted()) {
+            if ((a.getStartMoment() == 0)  && !this.isRPAborted) {
                 instantiateAndStart(a);
             }
 
@@ -214,7 +212,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
                 for (Dependencies dep : revDependencies.get(a)) {
                     dep.removeDependency(a);
                     //Launch new feasible actions.
-                    if (dep.isFeasible() && !isReconfigurationPlanAborted()) {
+                    if (dep.isFeasible() && !this.isRPAborted) {
                         instantiateAndStart(dep.getAction());
                     }
                 }
@@ -329,7 +327,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
             Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
             enRes.setDuration(enRes.getDuration() + reconfigurationTime);
             Msg.info("Number of nodes used: " + hostsToCheck.size());
-            if (isReconfigurationPlanAborted())
+            if (this.isRPAborted)
                 enRes.setRes(-2);
             else
                 enRes.setRes(1);
@@ -374,105 +372,5 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
         return currConf;
     }
 
-    private int ongoingMigration = 0 ;
-
-    private void incMig(){
-        this.ongoingMigration++ ;
-        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);
-    }
-    private void decMig() {
-        this.ongoingMigration-- ;
-    }
-
-    private boolean ongoingMigration() {
-        return (this.ongoingMigration != 0);
-    }
-
-    private void abortReconfigurationPlan() {this.abortRP = true;}
-
-    private boolean isReconfigurationPlanAborted() {
-        return this.abortRP;
-    }
-
-    public void relocateVM(final String vmName, final String sourceName, final String destName) {
-        Random rand = new Random(SimulatorProperties.getSeed());
-
-        Msg.info("Relocate VM " + vmName + " (from " + sourceName + " to " + destName + ")");
-
-        if (destName != null) {
-            String[] args = new String[3];
-
-            args[0] = vmName;
-            args[1] = sourceName;
-            args[2] = destName;
-            // Asynchronous migration
-            // The process is launched on the source node
-            try {
-                new Process(Host.getByName(sourceName), "Migrate-" + rand.nextDouble(), args) {
-                    public void main(String[] args) {
-                        XHost destHost = null;
-                        XHost sourceHost = null;
-
-                        try {
-                            sourceHost = SimulatorManager.getXHostByName(args[1]);
-                            destHost = SimulatorManager.getXHostByName(args[2]);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            System.err.println("You are trying to migrate from/to a non existing node");
-                        }
-
-                        if (destHost != null) {
-                            if (!sourceHost.isOff() && !destHost.isOff()) {
-                                incMig();
-
-                                double timeStartingMigration = Msg.getClock();
-                                Trace.hostPushState(vmName, "SERVICE", "migrate", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", vmName, sourceName, destName));
-                                int res = sourceHost.migrate(args[0], destHost);
-                                // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
-                                // To this aim, please extend the hostPopState API to add meta data information
-                                Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", vmName, res));
-                                double migrationDuration = Msg.getClock() - timeStartingMigration;
-
-                                if (res == 0) {
-                                    Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
-
-                                    if (!destHost.isViable()) {
-                                        Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
-                                        // If Trace.hostGetState(destHost.getName(), "PM").equals("normal")
-                                        Trace.hostSetState(destHost.getName(), "PM", "violation-out");
-                                    }
-                                    if (sourceHost.isViable()) {
-                                        Msg.info("SOLVED VIOLATION ON " + sourceHost.getName() + "\n");
-                                        Trace.hostSetState(sourceHost.getName(), "PM", "normal");
-                                    }
-
-                                    /* Export that the migration has finished */
-                                    Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
-                                    Trace.hostPopState(vmName, "migration");
-                                } else {
-
-                                    Trace.hostSetState(vmName, "migration", "failed", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
-                                    Trace.hostPopState(vmName, "migration");
-
-                                    Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
-                                    Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                                    abortReconfigurationPlan();
-                                }
-                                decMig();
-                            }
-                        }
-
-                    }
-                }.start();
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        } else {
-            System.err.println("You are trying to relocate a VM on a non existing node");
-            System.exit(-1);
-        }
-    }
 
 }

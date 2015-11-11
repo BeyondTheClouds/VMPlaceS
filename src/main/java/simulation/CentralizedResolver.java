@@ -63,7 +63,6 @@ public class CentralizedResolver extends Process {
                 previousDuration = schedulerRes.getDuration();
                 if (schedulerRes.getRes() == 0) {
                     Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
-
                 } else if (schedulerRes.getRes() == -1) {
                     Msg.info("No viable solution (duration: " + previousDuration + ")");
                     numberOfCrash++;
@@ -80,7 +79,7 @@ public class CentralizedResolver extends Process {
             System.err.println(e);
             System.exit(-1);
         }
-        Msg.info("Entropy has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
+        Msg.info(SimulatorProperties.getImplementation() + " has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
 
     }
 

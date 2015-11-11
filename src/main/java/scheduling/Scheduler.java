@@ -19,6 +19,4 @@ public interface Scheduler {
 
     ComputingState computeReconfigurationPlan();
     SchedulerRes checkAndReconfigure(Collection<XHost> hostsToCheck);
-    void applyReconfigurationPlan();
-
 }

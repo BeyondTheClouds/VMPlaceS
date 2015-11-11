@@ -30,11 +30,6 @@ import java.util.*;
 public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
 
     /**
-     * Indicates if the reconfiguration plan has been aborted
-     */
-    public boolean isRPAborted;
-
-    /**
      * Map to link BtrPlace nodes ids to XHosts
      */
     private Map<Integer, String> nodesMap;
@@ -53,8 +48,6 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
         super(xHosts);
         this.id = id;
         this.btrSolver = new DefaultChocoScheduler();
-        this.nodesMap = new HashMap<>();
-        this.vmMap = new HashMap<>();
     }
 
     public BtrPlaceRP(Collection<XHost> xHosts) {
@@ -68,8 +61,12 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
      */
     protected Model extractConfiguration(Collection<XHost> xHosts) {
 
+        // Initialization
         Model model = new DefaultModel();
         Mapping mapping = model.getMapping();
+
+        this.nodesMap = new HashMap<>();
+        this.vmMap = new HashMap<>();
 
         // Creation of a view for defining CPU & Memory resources
         ShareableResource rcCPU = new ShareableResource("cpu", SimulatorProperties.DEFAULT_CPU_CAPACITY, 0);
@@ -135,7 +132,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
             reconfigurationPlanCost = reconfigurationPlan.getDuration();
             destination = reconfigurationPlan.getResult();
 
-            // TODO Adrian : Compute graphDepth & nbMigrations - if it's meaningfull
+            // TODO Adrian : Compute graphDepth & nbMigrations - if it's meaningful
         }
 
         return res;
