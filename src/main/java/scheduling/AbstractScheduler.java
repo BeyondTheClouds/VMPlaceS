@@ -89,6 +89,11 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
      */
 	protected abstract Conf extractConfiguration(Collection<XHost> xHosts);
 
+    /**
+     * Applies the reconfiguration plan from source model to dest model.
+     */
+    protected abstract void applyReconfigurationPlan();
+
 	private void incMig(){
         this.ongoingMigration++ ;
         Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);

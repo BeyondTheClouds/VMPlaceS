@@ -3,12 +3,14 @@ package scheduling.centralized.btrplace;
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
+import entropy.plan.action.Action;
 import org.btrplace.model.DefaultModel;
 import org.btrplace.model.Mapping;
 import org.btrplace.model.Model;
 import org.btrplace.model.VM;
 import org.btrplace.model.Node;
 import org.btrplace.model.view.ShareableResource;
+import org.btrplace.plan.DependencyBasedPlanApplier;
 import org.btrplace.plan.ReconfigurationPlan;
 import org.btrplace.scheduler.SchedulerException;
 import org.btrplace.scheduler.choco.ChocoScheduler;
@@ -20,6 +22,7 @@ import scheduling.AbstractScheduler;
 import scheduling.SchedulerRes;
 import trace.Trace;
 
+import java.io.*;
 import java.util.*;
 
 /**
@@ -44,7 +47,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
      */
     private ChocoScheduler btrSolver;
 
-    public BtrPlaceRP(Collection<XHost> xHosts, int id) {
+    public BtrPlaceRP(Collection<XHost> xHosts, Integer id) {
         super(xHosts);
         this.id = id;
         this.btrSolver = new DefaultChocoScheduler();
@@ -113,8 +116,17 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
 
         try {
             timeToComputeVMRP = System.currentTimeMillis();
+            /**
+             * Adrian - From BtrPlace doc :
+             * By default, BtrPlace considers every VMs when it solves a model.
+             * This may lead to a non-reasonnable solving process duration when
+             * a few number of constraints are violated.
+             * The repair approach addresses that problem by trying to reduce as possible
+             * the number of VMs to consider in the model.
+             */
+            this.btrSolver.doRepair();
             // As for now, constraints are not implemented - Adrian, Nov 5 2015
-            reconfigurationPlan = this.btrSolver.solve(source, null);
+            reconfigurationPlan = this.btrSolver.solve(source, new ArrayList<>());
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
         } catch (SchedulerException e) {
             e.printStackTrace();
@@ -124,14 +136,16 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
         }
 
         if(reconfigurationPlan != null){
+            // We use a dependency applier instead of the default time based applier
+            reconfigurationPlan.setReconfigurationApplier(new DependencyBasedPlanApplier());
+
             if(reconfigurationPlan.getActions().isEmpty())
                 res = ComputingState.NO_RECONFIGURATION_NEEDED;
             if (!reconfigurationPlan.isApplyable())
                 res = ComputingState.RECONFIGURATION_FAILED;
 
             reconfigurationPlanCost = reconfigurationPlan.getDuration();
-            destination = reconfigurationPlan.getResult();
-
+            this.destination = reconfigurationPlan.getResult();
             // TODO Adrian : Compute graphDepth & nbMigrations - if it's meaningful
         }
 
@@ -220,7 +234,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
 
             Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
         } else {
-            Msg.info("Entropy did not find any viable solution");
+            Msg.info("BtrPlace did not find any viable solution");
             enRes.setRes(-1);
         }
 
@@ -232,8 +246,26 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
         return enRes;
     }
 
+    @Override
     public void applyReconfigurationPlan() {
-        // TODO - Use the dependency applier
+        if (this.reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()) {
+
+            // We log the reconfiguration plan
+            try {
+                File file = new File("logs/btrplace/reconfigurationplan/" + id + "-" + System.currentTimeMillis() + ".txt");
+                file.getParentFile().mkdirs();
+                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+                pw.write(reconfigurationPlan.toString());
+                pw.flush();
+                pw.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Shall we iterate over the actions
+        }
+
+
     }
 
 }

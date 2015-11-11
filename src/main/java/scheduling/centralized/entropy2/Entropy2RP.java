@@ -150,7 +150,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 		if(reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()){
 			//Log the reconfiguration plan
             // Flavien / Adrien - In order to prevent random iterations due to the type of reconfiguration Plan (i.e. HashSet see Javadoc)
-            LinkedList<Action> sortedActions = new LinkedList<Action>(reconfigurationPlan.getActions());
+            LinkedList<Action> sortedActions = new LinkedList<>(reconfigurationPlan.getActions());
             Collections.sort(sortedActions, new Comparator<Action>() {
                 @Override
                 public int compare(Action a1, Action a2) {
@@ -187,7 +187,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 
     //Apply the reconfiguration plan logically (i.e. create/delete Java objects)
     private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException{
-        Map<Action, List<Dependencies>> revDependencies = new HashMap<Action, List<Dependencies>>();
+        Map<Action, List<Dependencies>> revDependencies = new HashMap<>();
         TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
 
         //Set the reverse dependencies map
@@ -247,7 +247,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
     private void instantiateAndStart(Action a) throws InterruptedException{
         if(a instanceof Migration){
             Migration migration = (Migration)a;
-            this.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
+            super.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
         } else{
             System.err.println("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
         }
