@@ -4,10 +4,7 @@ import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import org.btrplace.model.VM;
-import org.btrplace.model.constraint.Online;
-import org.btrplace.model.constraint.Preserve;
-import org.btrplace.model.constraint.Running;
-import org.btrplace.model.constraint.SatConstraint;
+import org.btrplace.model.constraint.*;
 import org.btrplace.model.view.ShareableResource;
 import org.btrplace.plan.Dependency;
 import org.btrplace.plan.ReconfigurationPlan;
@@ -55,11 +52,11 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
         super(BtrPlaceRP.ExtractConfiguration(xhosts));
         //planner =  new DefaultChocoScheduler (new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
         planner =  new DefaultChocoScheduler();
-        DurationEvaluators dev = planner.getDurationEvaluators();
+       /* DurationEvaluators dev = planner.getDurationEvaluators();
         dev.register(MigrateVM.class, new LinearToAResourceActionDuration<VM>("mem", 2, 3));
         dev.register(BootVM.class, new ConstantActionDuration(1));
         dev.register(ShutdownVM.class, new ConstantActionDuration(1));
-        //planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
+        *///planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
         planner.doRepair(true);
         planner.setTimeLimit(initialConfiguration.getModel().getMapping().getAllNodes().size()/8);
 
@@ -87,10 +84,13 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
 			timeToComputeVMRP = System.currentTimeMillis();
             reconfigurationPlan = planner.solve(initialConfiguration.getModel(), initialConfiguration.getCstrs());
 //            reconfigurationPlan = planner.solve(initialConfiguration.getModel(), new ArrayList<SatConstraint>());
-//            if(reconfigurationPlan == null){
-//                System.out.println("SOLVER NULL");
+            if(reconfigurationPlan == null){
+                System.out.println("SOLVER NULL");
 //                System.exit(1);
-//            }
+            }else{
+                System.out.println("SOLVER OK");
+                System.out.println("Actions : "+reconfigurationPlan.getActions().size());
+            }
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 		} catch (SchedulerException e) {
 			e.printStackTrace();
@@ -268,7 +268,7 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
         if(a instanceof MigrateVM){
             MigrateVM migration = (MigrateVM)a;
             String vmName = initialConfiguration.getVmNames().get(migration.getVM());
-            String nodeName = initialConfiguration.getNodeNames().get(migration.getVM());
+            String nodeName = initialConfiguration.getNodeNames().get(migration.getSourceNode());
             String destNodeName = initialConfiguration.getNodeNames().get(migration.getDestinationNode());
             this.relocateVM(vmName, nodeName, destNodeName);
         } else{
@@ -390,7 +390,7 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
             }
             Node n = model.newNode();
             map.addOnlineNode(n);
-            cstrs.add(new Online(n));
+//            cstrs.add(new Online(n));
 
             rcCPU.setCapacity(n, tmpH.getCPUCapacity());
             rcMem.setCapacity(n, tmpH.getMemSize());
@@ -404,17 +404,22 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
                 map.addRunningVM(v, n);
 //                map.addReadyVM(v);
                 vmNames.put(v,tmpVM.getName());
-                model.getAttributes().put(v, "uCpu", (int) tmpVM.getCoreNumber());
+//                model.getAttributes().put(v, "uCpu", (int) tmpVM.getCoreNumber());
 //                currConf.setRunOn(new SimpleVirtualMachine(tmpVM.getName(), (int) tmpVM.getCoreNumber(), 0,
 //                                tmpVM.getMemSize(), (int) tmpVM.getCPUDemand(), tmpVM.getMemSize()),
 //                        tmpENode
 //                );
-                cstrs.add(new Running(v));
+//                cstrs.add(new Running(v));
 //                cstrs.add(new Preserve(v, "cpu", (int) tmpVM.getCPUDemand()));
 //                cstrs.add(new Preserve(v, "mem", tmpVM.getMemSize()));
             }
             model.attach(rcCPU);
             model.attach(rcMem);
+//            Attributes attrs = model.getAttributes();
+//
+//            for (VM vm : model.getMapping().getAllVMs()) {
+//                attrs.put(vm, "clone", true);
+//            }
         }
         return new ConfigBtrPlace(model, cstrs, vmNames, nodeNames);
     }
