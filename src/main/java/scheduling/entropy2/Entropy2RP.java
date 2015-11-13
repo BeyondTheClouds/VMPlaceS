@@ -12,6 +12,7 @@ import configuration.XHost;
 import configuration.XVM;
 import entropy.configuration.*;
 import entropy.configuration.parser.FileConfigurationSerializerFactory;
+import entropy.plan.TimedReconfigurationPlan;
 import entropy.plan.TimedReconfigurationPlans;
 import entropy.plan.parser.PBTimedReconfigurationPlan;
 import org.simgrid.msg.*;
@@ -33,7 +34,7 @@ import simulation.SimulatorManager;
 
 import trace.Trace;
 
-public class Entropy2RP extends AbstractScheduler implements Scheduler {
+public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigurationPlan> implements Scheduler {
 
 	private ChocoCustomRP planner;//Entropy2.1
 //	private ChocoCustomPowerRP planner;//Entropy2.0
@@ -87,12 +88,12 @@ public class Entropy2RP extends AbstractScheduler implements Scheduler {
 		vjobs.add(v);
 		try {
 			timeToComputeVMRP = System.currentTimeMillis();
-			reconfigurationPlan = planner.compute(initialConfiguration, 
+			reconfigurationPlan = planner.compute(initialConfiguration,
 					initialConfiguration.getRunnings(),
 					initialConfiguration.getWaitings(),
 					initialConfiguration.getSleepings(),
-					new SimpleManagedElementSet<VirtualMachine>(), 
-					initialConfiguration.getOnlines(), 
+					new SimpleManagedElementSet<VirtualMachine>(),
+					initialConfiguration.getOnlines(),
 					initialConfiguration.getOfflines(), vjobs);
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 		} catch (PlanException e) {

@@ -10,6 +10,7 @@ import org.btrplace.model.constraint.Running;
 import org.btrplace.model.constraint.SatConstraint;
 import org.btrplace.model.view.ShareableResource;
 import org.btrplace.plan.Dependency;
+import org.btrplace.plan.ReconfigurationPlan;
 import org.btrplace.plan.event.Action;
 import org.btrplace.plan.event.BootVM;
 import org.btrplace.plan.event.MigrateVM;
@@ -25,6 +26,7 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.Process;
+import scheduling.AbstractScheduler;
 import scheduling.Scheduler;
 import scheduling.SchedulerRes;
 import simulation.SimulatorManager;
@@ -34,9 +36,10 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.Time;
 import java.util.*;
 
-public class BtrPlaceRP extends AbstractSchedulerBTR implements Scheduler {
+public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, ReconfigurationPlan> implements Scheduler {
 
 	private ChocoScheduler planner;//Entropy2.1
 //	private ChocoCustomPowerRP planner;//Entropy2.0

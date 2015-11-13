@@ -1,23 +1,20 @@
 package scheduling;
 
-import entropy.configuration.Configuration;
-import entropy.plan.TimedReconfigurationPlan;
-
 //An abstract scheduler
-public abstract class AbstractScheduler implements Scheduler {
+public abstract class AbstractScheduler<Config, ReConfigPlan> implements Scheduler {
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Instance variables
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	//The initial configuration
-	protected final Configuration initialConfiguration;
+	protected final Config initialConfiguration;
 	
 	//The new/final configuration
-	protected Configuration newConfiguration;
+	protected Config newConfiguration;
 	
 	//The reconfiguration plan
-	protected TimedReconfigurationPlan reconfigurationPlan;
+	protected ReConfigPlan reconfigurationPlan;
 	
 	/**
 	 * The time spent to compute VMPP
@@ -45,7 +42,7 @@ public abstract class AbstractScheduler implements Scheduler {
 	//Constructor
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	protected AbstractScheduler(Configuration initialConfiguration){
+	protected AbstractScheduler(Config initialConfiguration){
 		this.initialConfiguration = initialConfiguration;
 		timeToComputeVMPP = 0;
 		timeToComputeVMRP = 0;
@@ -59,7 +56,7 @@ public abstract class AbstractScheduler implements Scheduler {
 	//Accessors
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
-	public Configuration getNewConfiguration() {
+	public Config getNewConfiguration() {
 		return newConfiguration;
 	}
 
