@@ -13,9 +13,10 @@
 
 package configuration;
 
-import org.simgrid.msg.*;
-
-import java.sql.Timestamp;
+import org.simgrid.msg.HostFailureException;
+import org.simgrid.msg.HostNotFoundException;
+import org.simgrid.msg.Msg;
+import org.simgrid.msg.VM;
 
 public class XVM {
 
@@ -211,6 +212,59 @@ public class XVM {
             throw new DoubleMigrationException();
         }
         this.isMigrating = false;
+    }
+
+    /**
+     * TODO Adrian - Error management & documentation
+     * @return 0 if success, -1 if failure, 1 if already suspended
+     */
+    public int suspend() {
+        // Todo check if 0 means false & if CPU load should be 0 when vm is suspended
+        if (this.vm.isSuspended() == 0) {
+            try {
+                Msg.info("Start suspension of VM " + this.getName() + " on " + this.host.getName());
+                Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
+                this.vm.suspend();
+                // VM is suspended - we suspend the daemon simulating CPU demand
+                this.daemon.suspend();
+                Msg.info("End of suspension of VM " + this.getName() + " on " + this.host.getName());
+                return 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+                Msg.info("An error occurred during the suspension");
+                // todo throw exc ?
+                return -1;
+            }
+        } else {
+            Msg.info("You are trying to suspend an already suspended VM.");
+            return 1;
+        }
+    }
+
+    /**
+     * TODO Adrian - improve implementation & documentation
+     * @return 0 if success, -1 if failure, 1 if already running
+     */
+    public int resume() {
+        if (this.vm.isRunning() == 0) {
+            try {
+                Msg.info("Start resuming VM " + this.getName() + " on " + this.host.getName());
+                this.vm.resume();
+                // VM is resumed - we resume the daemon simulating CPU demand
+                this.daemon.resume();
+                Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
+                Msg.info("End of suspension of VM " + this.getName() + " on " + this.host.getName());
+                return 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+                Msg.info("An error occurred during resuming");
+                // todo throw exc ?
+                return -1;
+            }
+        } else {
+            Msg.info("You are trying to resume an already running VM.");
+            return 1;
+        }
     }
 
     /**
