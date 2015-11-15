@@ -58,7 +58,7 @@ public class CentralizedResolver extends Process {
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
 
-                scheduler = (Scheduler) schedulerConstructor.newInstance(hostsToCheck, loopID++);
+                scheduler = (Scheduler) schedulerConstructor.newInstance(hostsToCheck, ++loopID);
                 schedulerRes = scheduler.checkAndReconfigure(hostsToCheck);
                 previousDuration = schedulerRes.getDuration();
                 if (schedulerRes.getRes() == 0) {

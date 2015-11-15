@@ -52,6 +52,19 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
         super(xHosts);
         this.id = id;
         this.btrSolver = new DefaultChocoScheduler();
+
+        // log the model
+        try {
+            File file = new File("logs/btrplace/configuration/" + id + "-" + System.currentTimeMillis() + ".txt");
+            file.getParentFile().mkdirs();
+            PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+            pw.write(this.source.toString());
+            pw.flush();
+            pw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public BtrPlaceRP(Collection<XHost> xHosts) {
@@ -125,7 +138,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
              * The repair approach addresses that problem by trying to reduce as possible
              * the number of VMs to consider in the model.
              */
-            this.btrSolver.doRepair();
+            //this.btrSolver.doRepair();
             // As for now, constraints are not implemented - Adrian, Nov 5 2015
             reconfigurationPlan = this.btrSolver.solve(source, new ArrayList<>());
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
@@ -137,17 +150,15 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
         }
 
         if(reconfigurationPlan != null){
-            // We use a dependency applier instead of the default time based applier
-            reconfigurationPlan.setReconfigurationApplier(new DependencyBasedPlanApplier());
-
             if(reconfigurationPlan.getActions().isEmpty())
                 res = ComputingState.NO_RECONFIGURATION_NEEDED;
             if (!reconfigurationPlan.isApplyable())
                 res = ComputingState.RECONFIGURATION_FAILED;
 
             planCost = reconfigurationPlan.getDuration();
-            this.destination = reconfigurationPlan.getResult();
             // TODO Adrian : Compute graphDepth & nbMigrations - if it's meaningful
+        } else {
+            res = ComputingState.RECONFIGURATION_FAILED;
         }
 
         return res;
@@ -247,62 +258,11 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
         return enRes;
     }
 
-    @Override
-    public void applyReconfigurationPlan() {
-        if (this.reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()) {
-
-            // We log the reconfiguration plan
-            try {
-                File file = new File("logs/btrplace/reconfigurationplan/" + id + "-" + System.currentTimeMillis() + ".txt");
-                file.getParentFile().mkdirs();
-                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-                pw.write(reconfigurationPlan.toString());
-                pw.flush();
-                pw.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            // TODO Shall we iterate over the actions, or mess with the BtrPlace API to adapt it to VmPlaces ?
-
-            // Those actions should be sorting regarding their start time
-            final Iterator<Action> it = reconfigurationPlan.iterator();
-
-            // We go through the whole plan
-            while (it.hasNext() && !this.isRPAborted) {
-                instantiateAndStartRecursively(it.next());
-            }
-
-            // If you reach that line, it means that either the execution of the plan has been completely launched or the
-            // plan has been aborted. In both cases, we should wait for the completion of on-going migrations
-
-            // Add a watch dog to determine infinite loop
-            int watchDog = 0;
-
-            while(this.ongoingMigration()){
-                try {
-                    org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
-                    watchDog ++;
-                    if (watchDog%100==0){
-                        Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
-                        if(SimulatorManager.isEndOfInjection()){
-                            Msg.info("Something wrong we are waiting too much, bye bye");
-                            System.exit(-1);
-                        }
-                    }
-                } catch (HostFailureException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-    }
-
     /**
      * This is a prototype to test out the possibility to
      * override BtrPlace EventListeners with the relocateVM behavior
      */
-    public void applyRPWithBtrPlaceEvents() {
+    public void applyReconfigurationPlan() {
         if (this.reconfigurationPlan != null && reconfigurationPlan.isApplyable()) {
 
             // We log the reconfiguration plan
@@ -310,7 +270,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
                 File file = new File("logs/btrplace/reconfigurationplan/" + id + "-" + System.currentTimeMillis() + ".txt");
                 file.getParentFile().mkdirs();
                 PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-                pw.write(reconfigurationPlan.toString());
+                pw.write(this.reconfigurationPlan.toString());
                 pw.flush();
                 pw.close();
             } catch (IOException e) {
@@ -320,6 +280,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
             /**
              * Adrian - We add a ActionCommitedListener for it to
              * also execute business code for VMPlaces
+             * Todo refactor the Listener into a non-anonymous class
              */
             reconfigurationPlan.getReconfigurationApplier().addEventCommittedListener(new EventCommittedListener() {
                 /*
@@ -329,37 +290,37 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
 
                 @Override
                 public void committed(Allocate allocate) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override
                 public void committed(AllocateEvent allocateEvent) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override
                 public void committed(SubstitutedVMEvent substitutedVMEvent) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override
                 public void committed(BootNode bootNode) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override
                 public void committed(BootVM bootVM) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override
                 public void committed(ForgeVM forgeVM) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override
                 public void committed(KillVM killVM) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override
@@ -384,12 +345,12 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
 
                 @Override
                 public void committed(ShutdownNode shutdownNode) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override
                 public void committed(ShutdownVM shutdownVM) {
-
+                    // Todo - is that necessary ?
                 }
 
                 @Override

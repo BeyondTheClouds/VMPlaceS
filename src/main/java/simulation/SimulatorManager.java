@@ -358,6 +358,8 @@ public class SimulatorManager {
             Runtime.getRuntime().exec("rm -rf ./logs/simulatorManager");
             Runtime.getRuntime().exec("rm -rf ./logs/entropy");
             Runtime.getRuntime().exec("rm -rf ./logs/entropy.log");
+            Runtime.getRuntime().exec("rm -rf ./logs/btrplace");
+            Runtime.getRuntime().exec("rm -rf ./logs/btrplace.log");
         } catch (IOException e) {
             e.printStackTrace();
         }
