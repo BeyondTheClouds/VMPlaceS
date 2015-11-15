@@ -370,11 +370,15 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
                             nodesMap.get(migrateVM.getSourceNode().id()),
                             nodesMap.get(migrateVM.getDestinationNode().id())
                     );
-                    // TODO Adrian : I'm unsure if this will block execution and/or induce launching migration without the proper dependencies.
+                    // TODO Adrian : I'm unsure if this will block execution and/or induce launching migrations without the proper dependencies.
                 }
 
                 @Override
                 public void committed(ResumeVM resumeVM) {
+                    resumeVM(
+                            vmMap.get(resumeVM.getVM().id()),
+                            nodesMap.get(resumeVM.getSourceNode().id())
+                    );
 
                 }
 
@@ -390,9 +394,16 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
 
                 @Override
                 public void committed(SuspendVM suspendVM) {
+                    suspendVM(
+                            vmMap.get(suspendVM.getVM().id()),
+                            nodesMap.get(suspendVM.getSourceNode().id())
+                    );
 
                 }
             });
+
+            // We now roll out the reconfiguration plan
+            this.destination = reconfigurationPlan.getResult();
 
             // If you reach that line, it means that either the execution of the plan has been completely launched or the
             // plan has been aborted. In both cases, we should wait for the completion of on-going migrations

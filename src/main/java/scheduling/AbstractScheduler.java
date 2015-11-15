@@ -2,6 +2,7 @@ package scheduling;
 
 import configuration.SimulatorProperties;
 import configuration.XHost;
+import configuration.XVM;
 import org.simgrid.msg.*;
 import simulation.SimulatorManager;
 import trace.Trace;
@@ -107,6 +108,14 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
         return (this.ongoingMigration != 0);
     }
 
+
+    /**
+     * TODO Javadoc
+     * @param vmName
+     * @param sourceName
+     * @param destName
+     */
+    // TODO Killian - refactor this into delegation ?
 	public void relocateVM(final String vmName, final String sourceName, final String destName) {
         Random rand = new Random(SimulatorProperties.getSeed());
 
@@ -185,6 +194,148 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
 
         } else {
             System.err.println("You are trying to relocate a VM on a non existing node");
+            System.exit(-1);
+        }
+    }
+
+    public void suspendVM(final String vmName, final String hostName) {
+        Msg.info("Suspending VM " + vmName + " on " + hostName);
+
+        if (vmName != null) {
+            Random rand = new Random(SimulatorProperties.getSeed());
+
+            String[] args = new String[2];
+            args[0] = vmName;
+            args[1] = hostName;
+
+            // Todo Killian - Why am I doing this rand.nextDouble() thing ?
+            try {
+                new org.simgrid.msg.Process(Host.getByName(hostName), "Suspend-" + rand.nextDouble(), args) {
+
+                    @Override
+                    public void main(String[] args) throws MsgException {
+                        XVM vm =  SimulatorManager.getXVMByName(args[0]);
+                        XHost host = SimulatorManager.getXHostByName(args[1]);
+
+                        if (vm != null) {
+                            double timeStartingSuspension = Msg.getClock();
+                            Trace.hostPushState(args[0], "SERVICE", "suspend", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\"}", args[0], args[1]));
+                            int res = vm.suspend();
+                            Trace.hostPopState(args[0], "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", args[0], res));
+                            double suspensionDuration = Msg.getClock() - timeStartingSuspension;
+
+                            switch (res) {
+                                case 0:
+                                    Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
+
+                                    if (host.isViable()) {
+                                        Msg.info("SOLVED VIOLATION ON " + host.getName() + "\n");
+                                        Trace.hostSetState(host.getName(), "PM", "normal");
+                                    } else {
+                                        Msg.info("ARTIFICIAL VIOLATION ON " + host.getName() + "\n");
+                                        Trace.hostSetState(host.getName(), "PM", "violation-out");
+                                    }
+
+                                    /* Export that the suspension has finished */
+                                    Trace.hostSetState(args[0], "suspension", "finished", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
+                                    Trace.hostPopState(args[0], "suspension");
+                                case 1:
+                                    Trace.hostSetState(args[0], "suspension", "cancelled", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
+                                    Trace.hostPopState(args[0], "suspension");
+
+                                    Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
+                                    // Todo : no need to abort the RP here ?
+                                case -1:
+                                    Trace.hostSetState(args[0], "suspension", "failed", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
+                                    Trace.hostPopState(args[0], "suspension");
+
+                                    Msg.info("Something went wrong during the suspension of  " + args[0] + " on " + args[1]);
+                                    Msg.info("Reconfiguration plan cannot be completely applied so abort it");
+                                    isRPAborted = true;
+                                default:
+                                    System.err.println("Unexpected result from XVM.suspend()");
+                                    System.exit(-1);
+                            }
+                        }
+                    }
+                }.start();
+            } catch (HostNotFoundException e) {
+                e.printStackTrace();
+                // Todo better exc handling
+            }
+        } else {
+            System.err.println("You are trying to suspend a non-existing VM");
+            System.exit(-1);
+        }
+    }
+
+    public void resumeVM(final String vmName, final String hostName) {
+        Msg.info("Resuming VM " + vmName + " on " + hostName);
+
+        if (vmName != null) {
+            Random rand = new Random(SimulatorProperties.getSeed());
+
+            String[] args = new String[2];
+            args[0] = vmName;
+            args[1] = hostName;
+
+            // Todo Killian - Why am I doing this rand.nextDouble() thing ?
+            try {
+                new org.simgrid.msg.Process(Host.getByName(hostName), "Resume-" + rand.nextDouble(), args) {
+
+                    @Override
+                    public void main(String[] args) throws MsgException {
+                        XVM vm =  SimulatorManager.getXVMByName(args[0]);
+                        XHost host = SimulatorManager.getXHostByName(args[1]);
+
+                        if (vm != null) {
+                            double timeStartingResumption = Msg.getClock();
+                            Trace.hostPushState(args[0], "SERVICE", "resume", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\"}", args[0], args[1]));
+                            int res = vm.resume();
+                            Trace.hostPopState(args[0], "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", args[0], res));
+                            double resumptionDuration = Msg.getClock() - timeStartingResumption;
+
+                            switch (res) {
+                                case 0:
+                                    Msg.info("End of resumption of VM " + args[0] + " from " + args[1] + " to " + args[2]);
+
+                                    if (host.isViable()) {
+                                        Msg.info("SOLVED VIOLATION ON " + host.getName() + "\n");
+                                        Trace.hostSetState(host.getName(), "PM", "normal");
+                                    } else {
+                                        Msg.info("ARTIFICIAL VIOLATION ON " + host.getName() + "\n");
+                                        Trace.hostSetState(host.getName(), "PM", "violation-out");
+                                    }
+
+                                    /* Export that the suspension has finished */
+                                    Trace.hostSetState(args[0], "resumption", "finished", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
+                                    Trace.hostPopState(args[0], "resumption");
+                                case 1:
+                                    Trace.hostSetState(args[0], "resumption", "cancelled", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
+                                    Trace.hostPopState(args[0], "resumption");
+
+                                    Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
+                                    // Todo : no need to abort the RP here ?
+                                case -1:
+                                    Trace.hostSetState(args[0], "resumption", "failed", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
+                                    Trace.hostPopState(args[0], "resumption");
+
+                                    Msg.info("Something went wrong during the resumption of  " + args[0] + " on " + args[1]);
+                                    Msg.info("Reconfiguration plan cannot be completely applied so abort it");
+                                    isRPAborted = true;
+                                default:
+                                    System.err.println("Unexpected result from XVM.resume()");
+                                    System.exit(-1);
+                            }
+                        }
+                    }
+                }.start();
+            } catch (HostNotFoundException e) {
+                e.printStackTrace();
+                // Todo better exc handling
+            }
+        } else {
+            System.err.println("You are trying to resume a non-existing VM");
             System.exit(-1);
         }
     }
