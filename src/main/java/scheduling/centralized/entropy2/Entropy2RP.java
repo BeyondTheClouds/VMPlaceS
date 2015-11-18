@@ -18,16 +18,13 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
 import scheduling.AbstractScheduler;
-import scheduling.SchedulerRes;
 import simulation.SimulatorManager;
 import trace.Trace;
 
 import java.io.*;
 import java.util.*;
 
-public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigurationPlan> {
-
-    private ChocoCustomRP planner;
+public class Entropy2RP extends AbstractScheduler<ChocoCustomRP, Configuration, TimedReconfigurationPlan> {
 
     public Entropy2RP(Collection<XHost> xhosts) {
         super(xhosts);
@@ -42,7 +39,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
         planner.setTimeLimit(source.getAllNodes().size()/8);
         this.id = id;
-        super.isRPAborted = false;
+        super.rpAborted = false;
         //Log the current Configuration
         try {
             String fileName = "logs/entropy/configuration/" + id + "-"+ System.currentTimeMillis() + ".txt";
@@ -201,7 +198,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
         //Start the feasible actions
         // ie, actions with a start moment equals to 0.
         for (Action a : sortedActions) {
-            if ((a.getStartMoment() == 0)  && !this.isRPAborted) {
+            if ((a.getStartMoment() == 0)  && !this.rpAborted) {
                 instantiateAndStart(a);
             }
 
@@ -210,7 +207,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
                 for (Dependencies dep : revDependencies.get(a)) {
                     dep.removeDependency(a);
                     //Launch new feasible actions.
-                    if (dep.isFeasible() && !this.isRPAborted) {
+                    if (dep.isFeasible() && !this.rpAborted) {
                         instantiateAndStart(dep.getAction());
                     }
                 }
@@ -223,8 +220,8 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
         // Add a watch dog to determine infinite loop
         int watchDog = 0;
 
-        while(this.ongoingMigration()){
-        //while(this.ongoingMigration() && !SimulatorManager.isEndOfInjection()){
+        while(this.ongoingMigrations()){
+        //while(this.ongoingMigrations() && !SimulatorManager.isEndOfInjection()){
             try {
                 org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
@@ -255,14 +252,14 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
      * @param hostsToCheck
      * @return the duration of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
      */
-    public SchedulerRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
+    public SchedulerResult checkAndReconfigure(Collection<XHost> hostsToCheck) {
 
         long beginTimeOfCompute;
         long endTimeOfCompute;
         long computationTime;
         ComputingState computingState;
         long reconfigurationTime = 0;
-        SchedulerRes enRes = new SchedulerRes();
+        SchedulerResult enRes = new SchedulerResult();
 
 		/* Tracing code */
         int i;
@@ -325,15 +322,15 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
             Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
             enRes.setDuration(enRes.getDuration() + reconfigurationTime);
             Msg.info("Number of nodes used: " + hostsToCheck.size());
-            if (this.isRPAborted)
-                enRes.setRes(-2);
+            if (this.rpAborted)
+                enRes.setResult(SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED);
             else
-                enRes.setRes(1);
+                enRes.setResult(SchedulerResult.State.SUCCESS);
 
             Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
         } else {
             Msg.info("Entropy did not find any viable solution");
-            enRes.setRes(-1);
+            enRes.setResult(SchedulerResult.State.NO_VIABLE_CONFIGURATION);
         }
 
 		/* Tracing code */

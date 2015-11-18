@@ -6,7 +6,7 @@ import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.centralized.CentralizedResolverProperties;
 import scheduling.Scheduler;
-import scheduling.SchedulerRes;
+import scheduling.Scheduler.SchedulerResult;
 import trace.Trace;
 
 import java.lang.reflect.Constructor;
@@ -40,7 +40,7 @@ public class CentralizedResolver extends Process {
 
         long previousDuration = 0;
         Scheduler scheduler;
-        SchedulerRes schedulerRes;
+        SchedulerResult schedulerResult;
         Class<?> schedulerClass;
         Constructor<?> schedulerConstructor;
 
@@ -59,14 +59,14 @@ public class CentralizedResolver extends Process {
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
 
                 scheduler = (Scheduler) schedulerConstructor.newInstance(hostsToCheck, ++loopID);
-                schedulerRes = scheduler.checkAndReconfigure(hostsToCheck);
-                previousDuration = schedulerRes.getDuration();
-                if (schedulerRes.getRes() == 0) {
+                schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
+                previousDuration = schedulerResult.getDuration();
+                if (schedulerResult.getResult() == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
                     Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
-                } else if (schedulerRes.getRes() == -1) {
+                } else if (schedulerResult.getResult() == SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
                     Msg.info("No viable solution (duration: " + previousDuration + ")");
                     numberOfCrash++;
-                } else if (schedulerRes.getRes() == -2) {
+                } else if (schedulerResult.getResult() == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
                     Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
                     numberOfBrokenPlan++;
                 } else { // entropyRes.getRes() == 1

@@ -9,7 +9,6 @@ import org.btrplace.model.Model;
 import org.btrplace.model.VM;
 import org.btrplace.model.Node;
 import org.btrplace.model.view.ShareableResource;
-import org.btrplace.plan.DependencyBasedPlanApplier;
 import org.btrplace.plan.ReconfigurationPlan;
 import org.btrplace.plan.event.*;
 import org.btrplace.scheduler.SchedulerException;
@@ -19,7 +18,6 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
 import scheduling.AbstractScheduler;
-import scheduling.SchedulerRes;
 import simulation.SimulatorManager;
 import trace.Trace;
 
@@ -31,7 +29,7 @@ import java.util.*;
  *
  * Implementation of the Scheduler interface using the BtrPlace API
  */
-public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
+public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, ReconfigurationPlan> {
 
     /**
      * Map to link BtrPlace nodes ids to XHosts
@@ -43,15 +41,10 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
      */
     private Map<Integer, String> vmMap;
 
-    /**
-     * The BtrPlace scheduler
-     */
-    private ChocoScheduler btrSolver;
-
     public BtrPlaceRP(Collection<XHost> xHosts, Integer id) {
         super(xHosts);
         this.id = id;
-        this.btrSolver = new DefaultChocoScheduler();
+        this.planner = new DefaultChocoScheduler();
 
         // log the model
         try {
@@ -138,9 +131,9 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
              * The repair approach addresses that problem by trying to reduce as possible
              * the number of VMs to consider in the model.
              */
-            //this.btrSolver.doRepair();
+            //this.planner.doRepair();
             // As for now, constraints are not implemented - Adrian, Nov 5 2015
-            reconfigurationPlan = this.btrSolver.solve(source, new ArrayList<>());
+            reconfigurationPlan = this.planner.solve(source, new ArrayList<>());
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
         } catch (SchedulerException e) {
             e.printStackTrace();
@@ -169,14 +162,14 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
      * @param hostsToCheck
      * @return the duration of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
      */
-    public SchedulerRes checkAndReconfigure(Collection<XHost> hostsToCheck) {
+    public SchedulerResult checkAndReconfigure(Collection<XHost> hostsToCheck) {
 
         long beginTimeOfCompute;
         long endTimeOfCompute;
         long computationTime;
         ComputingState computingState;
         long reconfigurationTime;
-        SchedulerRes enRes = new SchedulerRes();
+        SchedulerResult enRes = new SchedulerResult();
 
 		/* Tracing code */
         for (XHost h : hostsToCheck) {
@@ -239,15 +232,15 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
             enRes.setDuration(enRes.getDuration() + reconfigurationTime);
             Msg.info("Number of nodes used: " + hostsToCheck.size());
 
-            if (isRPAborted)
-                enRes.setRes(-2);
+            if (this.rpAborted)
+                enRes.setResult(SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED);
             else
-                enRes.setRes(1);
+                enRes.setResult(SchedulerResult.State.SUCCESS);
 
             Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
         } else {
             Msg.info("BtrPlace did not find any viable solution");
-            enRes.setRes(-1);
+            enRes.setResult(SchedulerResult.State.NO_VIABLE_CONFIGURATION);
         }
 
 		/* Tracing code */
@@ -372,7 +365,7 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
             // Add a watch dog to determine infinite loop
             int watchDog = 0;
 
-            while(this.ongoingMigration()){
+            while(this.ongoingMigrations()){
                 try {
                     org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                     watchDog ++;
