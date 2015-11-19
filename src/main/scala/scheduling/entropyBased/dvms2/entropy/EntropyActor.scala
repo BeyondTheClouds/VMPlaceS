@@ -23,9 +23,8 @@ import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
-import entropy.configuration.Configuration
+import scheduling.entropyBased.common.{SchedulerSelector, EntropyBasedScheduler, SchedulerResult}
 import scheduling.entropyBased.dvms2.{SGActor, SGNodeRef}
-import scheduling.entropyBased.entropy2.Entropy2RP
 import java.util
 import configuration.XHost
 import simulation.SimulatorManager
@@ -42,8 +41,9 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
       hostsToCheck.add(SimulatorManager.getXHostByName(node.getName))
     }
 
-    val scheduler: Entropy2RP = new Entropy2RP(Entropy2RP.ExtractConfiguration(hostsToCheck).asInstanceOf[Configuration])
-    val entropyRes: Entropy2RP#Entropy2RPRes = scheduler.checkAndReconfigure(hostsToCheck)
+    val scheduler: EntropyBasedScheduler = SchedulerSelector.createAndInitScheduler(hostsToCheck)
+    val entropyRes: SchedulerResult = scheduler.checkAndReconfigure(hostsToCheck)
+
     entropyRes.getRes match {
       case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()

@@ -5,6 +5,11 @@ import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.CentralizedResolverProperties;
+import scheduling.Scheduler;
+import scheduling.entropyBased.btrplace.BtrPlace;
+import scheduling.entropyBased.common.EntropyBasedScheduler;
+import scheduling.entropyBased.common.SchedulerResult;
+import scheduling.entropyBased.common.SchedulerSelector;
 import trace.Trace;
 import scheduling.entropyBased.entropy2.EntropyProperties;
 import scheduling.entropyBased.entropy2.Entropy2RP;
@@ -37,8 +42,9 @@ public class CentralizedResolver extends Process {
         Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
         long previousDuration = 0;
-        Entropy2RP scheduler;
-        Entropy2RP.Entropy2RPRes entropyRes;
+
+        EntropyBasedScheduler scheduler;
+        SchedulerResult entropyRes;
 
         try{
             while (!SimulatorManager.isEndOfInjection()) {
@@ -49,8 +55,10 @@ public class CentralizedResolver extends Process {
 
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
-                scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck), loopID++);
+
+                scheduler = SchedulerSelector.createAndInitScheduler(hostsToCheck, loopID++);
                 entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
+
                 previousDuration = entropyRes.getDuration();
                 if (entropyRes.getRes() == 0) {
                     Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");

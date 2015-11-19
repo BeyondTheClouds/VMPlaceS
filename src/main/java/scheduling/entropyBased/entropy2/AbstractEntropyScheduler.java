@@ -1,0 +1,32 @@
+package scheduling.entropyBased.entropy2;
+
+import entropy.configuration.Configuration;
+import entropy.plan.TimedReconfigurationPlan;
+import scheduling.entropyBased.common.AbstractScheduler;
+
+//An abstract scheduler
+public abstract class AbstractEntropyScheduler extends AbstractScheduler {
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//Instance variables
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	//The initial configuration
+	protected /*final*/ Configuration initialConfiguration;
+	
+	//The new/final configuration
+	protected Configuration newConfiguration;
+	
+	//The reconfiguration plan
+	protected TimedReconfigurationPlan reconfigurationPlan;
+
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//Accessors
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	public Configuration getNewConfiguration() {
+		return newConfiguration;
+	}
+
+}

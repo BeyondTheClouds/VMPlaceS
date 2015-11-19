@@ -4,6 +4,7 @@ import configuration.XHost;
 import entropy.configuration.Configuration;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import scheduling.entropyBased.common.SchedulerResult;
 import scheduling.entropyBased.entropy2.Entropy2RP;
 import scheduling.snooze.msg.*;
 import simulation.SimulatorManager;
@@ -442,7 +443,7 @@ public class GroupManager extends Process {
         /* Compute and apply the plan */
         Collection<XHost> hostsToCheck = this.getManagedXHosts();
         Entropy2RP scheduler = new Entropy2RP((Configuration) Entropy2RP.ExtractConfiguration(hostsToCheck));
-        Entropy2RP.Entropy2RPRes entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
+        SchedulerResult entropyRes = scheduler.checkAndReconfigure(hostsToCheck);
         long previousDuration = entropyRes.getDuration();
         if (entropyRes.getRes() == 0) {
             Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");

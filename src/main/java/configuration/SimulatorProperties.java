@@ -121,6 +121,7 @@ public class SimulatorProperties extends Properties {
 	
 	private static final String SIMU_ALGO = "simulator.algorithm";
 	private static final String STATIONARY_STATUS = "simulator.gotostationarystatus";
+	private static final String SIMU_SCHEDULER = "simulator.scheduler";
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Property default values
@@ -168,7 +169,7 @@ public class SimulatorProperties extends Properties {
 
 	private static final String DEFAULT_SIMU_ALGO = "centralized";
 	private static final boolean DEFAULT_STATIONARY_STATUS = false;
-
+	private static final String DEFAULT_SIMU_SCHEDULER = "scheduling.entropyBased.entropy2.Entropy2RP";
 
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -392,6 +393,10 @@ public class SimulatorProperties extends Properties {
 	}
 	public static String getAlgo() {
 		return INSTANCE.getProperty(SIMU_ALGO, DEFAULT_SIMU_ALGO);
+	}
+
+	public static String getScheduler() {
+		return INSTANCE.getProperty(SIMU_SCHEDULER, DEFAULT_SIMU_SCHEDULER);
 	}
 	
 	public static void main(String[] args){

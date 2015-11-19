@@ -40,3 +40,12 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
   case x => MergeStrategy.first
 }
 }
+
+libraryDependencies ++= Seq(
+  "org.btrplace" % "scheduler-api" % "0.41",
+  "org.btrplace" % "scheduler-choco" % "0.41",
+  "org.btrplace" % "scheduler-json" % "0.41",
+  "org.btrplace" % "btrpsl" % "0.41",
+  "org.btrplace" % "scheduler" % "0.41",
+  "org.btrplace" % "bench" % "0.41"
+)

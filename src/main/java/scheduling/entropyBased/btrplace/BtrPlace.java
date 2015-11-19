@@ -1,247 +1,180 @@
-package scheduling.entropyBased.entropy2;
-
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.*;
+package scheduling.entropyBased.btrplace;
 
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
-import entropy.configuration.*;
-import entropy.configuration.parser.FileConfigurationSerializerFactory;
-import org.simgrid.msg.*;
+import org.btrplace.model.Mapping;
+import org.btrplace.model.Model;
+import org.btrplace.model.Node;
+import org.btrplace.model.VM;
+import org.btrplace.model.view.ShareableResource;
+import org.btrplace.plan.ReconfigurationPlan;
+import org.btrplace.plan.event.MigrateVM;
+import org.btrplace.scheduler.SchedulerException;
+import org.btrplace.scheduler.choco.DefaultChocoScheduler;
+import org.btrplace.scheduler.choco.DefaultParameters;
+import org.btrplace.scheduler.choco.duration.DurationEvaluators;
+import org.simgrid.msg.Host;
+import org.simgrid.msg.HostFailureException;
+import org.simgrid.msg.Msg;
 import org.simgrid.msg.Process;
-import scheduling.Scheduler;
-
-import entropy.execution.Dependencies;
-import entropy.execution.TimedExecutionGraph;
-import entropy.plan.PlanException;
-import entropy.plan.action.Action;
-import entropy.plan.action.Migration;
-import entropy.plan.choco.ChocoCustomRP;
-import entropy.plan.durationEvaluator.MockDurationEvaluator;
-import entropy.vjob.DefaultVJob;
-import entropy.vjob.VJob;
+import scheduling.entropyBased.btrplace.comparators.VmNamesBasedActionComparator;
+import scheduling.entropyBased.btrplace.configuration.Configuration;
+import scheduling.entropyBased.common.AbstractScheduler;
 import scheduling.entropyBased.common.SchedulerResult;
 import simulation.SimulatorManager;
-
 import trace.Trace;
 
-public class Entropy2RP extends AbstractEntropyScheduler {
+import java.io.*;
+import java.util.*;
 
-	private ChocoCustomRP planner;//Entropy2.1
-    //	private ChocoCustomPowerRP planner;//Entropy2.0
+
+/**
+ * Scheduler reposant sur BtrPlace
+ *
+ * @author Hadrien Gerard
+ * @version 1.0
+ */
+public class BtrPlace extends AbstractScheduler {
+
+    private DefaultChocoScheduler scheduler;
+    private Configuration configuration; // L'ensemble Modele + contraintes pour BtrPlace
+    private ReconfigurationPlan reconfigurationPlan;
     private boolean abortRP;
 
-    // Constructeurs gardes pour une eventuelle retro-compatibilite ---------------
 
-    public Entropy2RP(Configuration initialConfiguration) {
-        this.initialize(initialConfiguration);
-    }
-
-    public Entropy2RP(Configuration initialConfiguration, int loopID) {
-		this(initialConfiguration);
-        this.loopID = loopID;
-	}
-
-    // -----------------------------------------------------------------------------
-
-    public Entropy2RP() { }
-
-    public void initialize(Collection<XHost> hostsToCheck) {
-        Configuration configuration = (Configuration) ExtractConfiguration(hostsToCheck);
-        this.initialize(configuration);
-    }
 
     public void initialize(Collection<XHost> hostsToCheck, int loopID) {
         this.initialize(hostsToCheck);
         this.loopID = loopID;
     }
 
-    protected void initialize(Configuration initialConfiguration) {
-        this.initialConfiguration = initialConfiguration;
-        planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
-        planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
-        planner.setTimeLimit(initialConfiguration.getAllNodes().size()/8);
+    public void initialize(Collection<XHost> hostsToCheck) {
+        this.configuration = ExtractConfiguration(hostsToCheck);
+        DefaultParameters ps = new DefaultParameters(); //TODO: permettre de passer les paramètres en paramètre
+        this.scheduler = new DefaultChocoScheduler(ps);
+        this.scheduler.doOptimize(true); // TODO: Voir si nous cherchons la meilleur solution possible (Voire passer la valeur en paramètre ?)
+        this.scheduler.doRepair(true);
+        this.scheduler.setTimeLimit(configuration.getModel().getMapping().getNbNodes() / 8); //TODO: Hadrien, 8 -> nombre de coeurs dispos ?
+        this.scheduler.setDurationEvaluators(DurationEvaluators.newBundle()); //TODO: Hadrien, Vérifier cohérence
         this.abortRP = false;
         //Log the current Configuration
-        try {
+        //TODO Hadrien : Implementer la serialisation de la configuration BtrPlace
+        /*try {
             String fileName = "logs/entropy/configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt";
-            /*File file = new File("logs/entropy/configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt");
-            file.getParentFile().mkdirs();
-            PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-            pw.write(initialConfiguration.toString());
-            pw.flush();
-            pw.close();*/
-            FileConfigurationSerializerFactory.getInstance().write(initialConfiguration, fileName);
+            FileConfigurationSerializerFactory.getInstance().write(configuration, fileName);
         } catch (IOException e) {
             e.printStackTrace();
+        }*/
+    }
+
+    @Override
+    public ComputingState computeReconfigurationPlan() {
+        ComputingState res = ComputingState.NO_RECONFIGURATION_NEEDED;
+        reconfigurationPlan = null;
+
+        try {
+            timeToComputeVMRP = System.currentTimeMillis();
+
+            reconfigurationPlan = scheduler.solve(configuration.getModel(), configuration.getSatConstraints());//configuration.asInstance());
+
+            timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
+            /*System.out.println("Time-based plan:");
+            System.out.println(new TimeBasedPlanApplier().toString(reconfigurationPlan));
+            System.out.println("\nDependency based plan:");
+            System.out.println(new DependencyBasedPlanApplier().toString(reconfigurationPlan));*/
+        } catch (SchedulerException ex) {
+            System.err.println(ex.getMessage());
+            res = ComputingState.RECONFIGURATION_FAILED;
+        }
+
+        if (reconfigurationPlan != null) {
+            if (reconfigurationPlan.getActions().isEmpty()) {
+                res = ComputingState.NO_RECONFIGURATION_NEEDED;
+            }
+            reconfigurationPlanCost = reconfigurationPlan.getDuration();
+            //configuration = new Instance(plan.getResult(), configuration.getSatConstraints(), configuration.getOptConstraint());
+            //newModel = reconfigurationPlan.getResult();
+            nbMigrations = computeNbMigrations();
+            reconfigurationGraphDepth = computeReconfigurationGraphDepth();
+            res = ComputingState.SUCCESS;
+        }
+
+        return res;
+    }
+
+    //Get the number of migrations
+    private int computeNbMigrations(){
+        int nbMigrations = 0;
+
+        for (org.btrplace.plan.event.Action a : reconfigurationPlan.getActions()){
+            if(a instanceof MigrateVM){
+                nbMigrations++;
+            }
+        }
+
+        return nbMigrations;
+    }
+
+    //Get the depth of the reconfiguration graph
+    //May be compared to the number of steps in Entropy 1.1.1
+    //Return 0 if there is no action, and (1 + maximum number of dependencies) otherwise
+    private int computeReconfigurationGraphDepth(){
+        if (reconfigurationPlan.getActions().isEmpty()) {
+            return 0;
+
+        } else {
+            int maxNbDeps = 0;
+            int nbDeps;
+            Collection<org.btrplace.plan.event.Action> actions = reconfigurationPlan.getActions();
+            for (org.btrplace.plan.event.Action action : actions) {
+                nbDeps = reconfigurationPlan.getDirectDependencies(action).size(); //TODO: Hadrien, vérifier correspondance getDirectDependencies() <-> getUnsatisfiedDependencies()
+                if (nbDeps > maxNbDeps) {
+                    maxNbDeps = nbDeps;
+                }
+            }
+
+            return 1 + maxNbDeps;
         }
     }
 
-
-
-	@Override
-	public ComputingState computeReconfigurationPlan() {
-		ComputingState res = ComputingState.SUCCESS;
-		
-		// All VMs are encapsulated into the same vjob for the moment - Adrien, Nov 18 2011
-		List<VJob> vjobs = new ArrayList<VJob>();
-		VJob v = new DefaultVJob("v1");//Entropy2.1
-//		VJob v = new BasicVJob("v1");//Entropy2.0
-		/*for(VirtualMachine vm : initialConfiguration.getRunnings()){
-			v.addVirtualMachine(vm);
-		}
-		
-		for(Node n : initialConfiguration.getAllNodes()){
-			n.setPowerBase(100);
-			n.setPowerMax(200);
-		}*///Entropy2.0 Power
-		v.addVirtualMachines(initialConfiguration.getRunnings());//Entropy2.1
-		vjobs.add(v);
-		try {
-			timeToComputeVMRP = System.currentTimeMillis();
-			reconfigurationPlan = planner.compute(initialConfiguration, 
-					initialConfiguration.getRunnings(),
-					initialConfiguration.getWaitings(),
-					initialConfiguration.getSleepings(),
-					new SimpleManagedElementSet<VirtualMachine>(), 
-					initialConfiguration.getOnlines(), 
-					initialConfiguration.getOfflines(), vjobs);
-			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
-		} catch (PlanException e) {
-			e.printStackTrace();
-			res = ComputingState.RECONFIGURATION_FAILED ;
-			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
-			reconfigurationPlan = null;
-		}
-		
-		if(reconfigurationPlan != null){
-			if(reconfigurationPlan.getActions().isEmpty())
-				res = ComputingState.NO_RECONFIGURATION_NEEDED;
-			
-			reconfigurationPlanCost = reconfigurationPlan.getDuration();
-			newConfiguration = reconfigurationPlan.getDestination();
-			nbMigrations = computeNbMigrations();
-			reconfigurationGraphDepth = computeReconfigurationGraphDepth();
-		}
-		
-		return res; 
-	}
-		
-	//Get the number of migrations
-	private int computeNbMigrations(){
-		int nbMigrations = 0;
-
-		for (Action a : reconfigurationPlan.getActions()){
-			if(a instanceof Migration){
-				nbMigrations++;
-			}
-		}
-		
-		return nbMigrations;
-	}
-	
-	//Get the depth of the reconfiguration graph
-	//May be compared to the number of steps in Entropy 1.1.1
-	//Return 0 if there is no action, and (1 + maximum number of dependencies) otherwise
-	private int computeReconfigurationGraphDepth(){
-		if(reconfigurationPlan.getActions().isEmpty()){
-			return 0;
-		}
-		
-		else{
-			int maxNbDeps = 0;
-			TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
-			int nbDeps;
-	
-			//Set the reverse dependencies map
-			for (Dependencies dep : g.extractDependencies()) {
-				nbDeps = dep.getUnsatisfiedDependencies().size();
-				
-				if (nbDeps > maxNbDeps)
-					maxNbDeps = nbDeps;
-			}
-	
-			return 1 + maxNbDeps;
-		}
-	}
-	
-	@Override
-	public void applyReconfigurationPlan() {
-		if(reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()){
-			//Log the reconfiguration plan
-            // Flavien / Adrien - In order to prevent random iterations due to the type of reconfiguration Plan (i.e. HashSet see Javadoc)
-            LinkedList<Action> sortedActions = new LinkedList<Action>(reconfigurationPlan.getActions());
-            Collections.sort(sortedActions, new Comparator<Action>() {
-                @Override
-                public int compare(Action a1, Action a2) {
-                    if ((a1 instanceof Migration) && (a2 instanceof Migration)){
-                        return ((Migration)a1).getVirtualMachine().getName().compareTo(((Migration)a2).getVirtualMachine().getName());
-                    }
-                    return 0;  //To change body of implemented methods use File | Settings | File Templates.
-                }
-            });
-
+    @Override
+    public void applyReconfigurationPlan() {
+        if(reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()) {
+            //Model model = plan.getReconfigurationApplier().apply(plan);
+            //configuration = new Instance(model, configuration.getSatConstraints(), configuration.getOptConstraint());
+            Comparator<org.btrplace.plan.event.Action> startFirstComparator = new VmNamesBasedActionComparator(configuration.getVmNames());
+            LinkedList<org.btrplace.plan.event.Action> sortedActions = new LinkedList<>(reconfigurationPlan.getActions());
+            Collections.sort(sortedActions, startFirstComparator);
 
             try {
                 File file = new File("logs/entropy/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
                 file.getParentFile().mkdirs();
                 PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-                //pw.write(reconfigurationPlan.toString());
-                for (Action a : sortedActions) {
+                pw.write(reconfigurationPlan.toString());
+                /*for (org.btrplace.plan.event.Action a : sortedActions) {
                     pw.write(a.toString()+"\n");
-                }
+                }*/
                 pw.flush();
                 pw.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
             // Apply the reconfiguration plan.
-			try {
-				applyReconfigurationPlanLogically(sortedActions);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			} 
-		}
-	}
+            try {
+                applyReconfigurationPlanLogically(sortedActions);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
 
+        }
+    }
 
     //Apply the reconfiguration plan logically (i.e. create/delete Java objects)
-    private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException{
-        Map<Action, List<Dependencies>> revDependencies = new HashMap<Action, List<Dependencies>>();
-        TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
+    private void applyReconfigurationPlanLogically(LinkedList<org.btrplace.plan.event.Action> sortedActions) throws InterruptedException{
 
-        //Set the reverse dependencies map
-        for (Dependencies dep : g.extractDependencies()) {
-            for (Action a : dep.getUnsatisfiedDependencies()) {
-                if (!revDependencies.containsKey(a)) {
-                    revDependencies.put(a, new LinkedList<Dependencies>());
-                }
-                revDependencies.get(a).add(dep);
-            }
-        }
-
-        //Start the feasible actions
-        // ie, actions with a start moment equals to 0.
-        for (Action a : sortedActions) {
-            if ((a.getStartMoment() == 0)  && !isReconfigurationPlanAborted()) {
-                instantiateAndStart(a);
-            }
-
-            if (revDependencies.containsKey(a)) {
-                //Get the associated depenencies and update it
-                for (Dependencies dep : revDependencies.get(a)) {
-                    dep.removeDependency(a);
-                    //Launch new feasible actions.
-                    if (dep.isFeasible() && !isReconfigurationPlanAborted()) {
-                        instantiateAndStart(dep.getAction());
-                    }
-                }
-            }
+        for (org.btrplace.plan.event.Action a : sortedActions) {
+            applyReconfigurationPlanForAction(a);
         }
 
         // If you reach that line, it means that either the execution of the plan has been completely launched or the
@@ -251,12 +184,12 @@ public class Entropy2RP extends AbstractEntropyScheduler {
         int watchDog = 0;
 
         while(this.ongoingMigration()){
-        //while(this.ongoingMigration() && !SimulatorManager.isEndOfInjection()){
+            //while(this.ongoingMigration() && !SimulatorManager.isEndOfInjection()){
             try {
-                org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
+                Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
                 if (watchDog%100==0){
-                  Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
+                    Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
                         System.exit(-1);
@@ -268,15 +201,32 @@ public class Entropy2RP extends AbstractEntropyScheduler {
         }
     }
 
+    private void applyReconfigurationPlanForAction(org.btrplace.plan.event.Action a) throws InterruptedException {
+        //Start the feasible actions
+        // ie, actions with a start moment equals to 0.
+        if ((a.getStart() == 0)  && !isReconfigurationPlanAborted()) {
+            Set<org.btrplace.plan.event.Action> depedencies = reconfigurationPlan.getDirectDependencies(a);
+            for(org.btrplace.plan.event.Action dep : depedencies) {
+                applyReconfigurationPlanForAction(dep);
+            }
+            instantiateAndStart(a);
+            a.apply(configuration.getModel());
+        }
+    }
 
-    private void instantiateAndStart(Action a) throws InterruptedException{
-        if(a instanceof Migration){
-            Migration migration = (Migration)a;
-            this.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
+
+    private void instantiateAndStart(org.btrplace.plan.event.Action a) throws InterruptedException{
+        if(a instanceof MigrateVM){
+            MigrateVM migration = (MigrateVM) a;
+            this.relocateVM(configuration.getVmName(migration.getVM().id()),
+                    configuration.getNodeName(migration.getSourceNode().id()),
+                    configuration.getNodeName(migration.getDestinationNode().id()));
         } else{
             System.err.println("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
         }
     }
+
+
 
     /**
      * @param hostsToCheck
@@ -300,7 +250,7 @@ public class Entropy2RP extends AbstractEntropyScheduler {
         }
 
         Msg.info("Launching scheduler (loopId = " + loopID + ") - start to compute");
-        Msg.info("Nodes considered: "+initialConfiguration.getAllNodes().toString());
+        Msg.info("Nodes considered: " + configuration.getModel().getMapping().getAllNodes().toString());
 
         /** PLEASE NOTE THAT ALL COMPUTATIONS BELOW DOES NOT MOVE FORWARD THE MSG CLOCK ***/
         beginTimeOfCompute = System.currentTimeMillis();
@@ -313,7 +263,7 @@ public class Entropy2RP extends AbstractEntropyScheduler {
 
         int migrationCount = 0;
         if(computingState.equals(ComputingState.SUCCESS)) {
-            migrationCount = this.reconfigurationPlan.size();
+            migrationCount = this.reconfigurationPlan.getSize();
         }
 
         int partitionSize = hostsToCheck.size();
@@ -324,7 +274,7 @@ public class Entropy2RP extends AbstractEntropyScheduler {
 
 
         try {
-            org.simgrid.msg.Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
+            Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
         } catch (HostFailureException e) {
             e.printStackTrace();
         }
@@ -372,8 +322,16 @@ public class Entropy2RP extends AbstractEntropyScheduler {
     }
 
     // Create configuration for Entropy
-    public static Object ExtractConfiguration(Collection<XHost> xhosts) {
-        Configuration currConf = new SimpleConfiguration();
+    public static Configuration ExtractConfiguration(Collection<XHost> xhosts) {
+        Configuration currConf = new Configuration();
+        Model model = currConf.getModel();
+        Mapping map = model.getMapping();
+        ShareableResource rcMem = new ShareableResource("mem", SimulatorProperties.DEFAULT_MEMORY_TOTAL,
+                SimulatorProperties.DEFAULT_VM_MEMORY_CONSUMPTION);
+        ShareableResource rcCPU = new ShareableResource("cpu", SimulatorProperties.DEFAULT_CPU_CAPACITY,
+                SimulatorProperties.DEFAULT_VMMAX_CPU_CONSUMPTION);
+        model.attach(rcCPU);
+        model.attach(rcMem);
 
         // Add nodes
         for (XHost tmpH:xhosts){
@@ -383,13 +341,18 @@ public class Entropy2RP extends AbstractEntropyScheduler {
                 //System.exit(-1);
             }
 
-            Node tmpENode = new SimpleNode(tmpH.getName(), tmpH.getNbCores(), tmpH.getCPUCapacity(), tmpH.getMemSize());
-            currConf.addOnline(tmpENode);
+            Node n = model.newNode();
+            currConf.setNodeName(n.id(), tmpH.getName());
+            rcCPU.setCapacity(n,tmpH.getCPUCapacity());
+            rcMem.setCapacity(n,tmpH.getMemSize());
+            map.addOnlineNode(n);
+
             for (XVM tmpVM : tmpH.getRunnings()) {
-                currConf.setRunOn(new SimpleVirtualMachine(tmpVM.getName(), (int) tmpVM.getCoreNumber(), 0,
-                                tmpVM.getMemSize(), (int) tmpVM.getCPUDemand(), tmpVM.getMemSize()),
-                        tmpENode
-                );
+                VM vm = model.newVM();
+                currConf.setVmName(vm.id(), tmpVM.getName());
+                rcCPU.setConsumption(vm, (int) tmpVM.getCPUDemand());
+                rcMem.setConsumption(vm, tmpVM.getMemSize());
+                map.addRunningVM(vm, n);
             }
 
         }
