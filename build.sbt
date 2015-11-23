@@ -13,6 +13,15 @@ crossPaths := false
 
 retrieveManaged := true
 
+resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
+libraryDependencies ++= Seq(
+  "org.btrplace" % "scheduler-api" % "0.42-SNAPSHOT",
+  "org.btrplace" % "scheduler-choco" % "0.42-SNAPSHOT",
+  "org.btrplace" % "scheduler" % "0.42-SNAPSHOT",
+  "org.btrplace" % "bench" % "0.42-SNAPSHOT"
+)
+
 // Excluding the following directories for compilation: scheduling/dvms
 excludeFilter in unmanagedSources := new sbt.FileFilter{
   //def accept(f: File): Boolean = "(?s).*scheduling/dvms/.*|.*scheduling/hubis/.*".r.pattern.matcher(f.getAbsolutePath).matches
@@ -40,3 +49,4 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
   case x => MergeStrategy.first
 }
 }
+
