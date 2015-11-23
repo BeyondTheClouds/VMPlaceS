@@ -3,13 +3,13 @@ package scheduling.centralized.btrplace;
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
-import org.btrplace.model.DefaultModel;
-import org.btrplace.model.Mapping;
-import org.btrplace.model.Model;
-import org.btrplace.model.VM;
-import org.btrplace.model.Node;
+import org.btrplace.json.JSONConverterException;
+import org.btrplace.json.model.InstanceConverter;
+import org.btrplace.model.*;
+import org.btrplace.model.constraint.MinMTTR;
+import org.btrplace.model.constraint.Preserve;
+import org.btrplace.model.constraint.SatConstraint;
 import org.btrplace.model.view.ShareableResource;
-import org.btrplace.plan.DependencyBasedPlanApplier;
 import org.btrplace.plan.ReconfigurationPlan;
 import org.btrplace.plan.event.*;
 import org.btrplace.scheduler.SchedulerException;
@@ -43,6 +43,8 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
      */
     private Map<Integer, String> vmMap;
 
+    private Set<SatConstraint> constraints;
+
     /**
      * The BtrPlace scheduler
      */
@@ -52,16 +54,23 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
         super(xHosts);
         this.id = id;
         this.btrSolver = new DefaultChocoScheduler();
+        this.btrSolver.doRepair(true);
+        this.btrSolver.setTimeLimit(15);
 
         // log the model
         try {
             File file = new File("logs/btrplace/configuration/" + id + "-" + System.currentTimeMillis() + ".txt");
             file.getParentFile().mkdirs();
+
             PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-            pw.write(this.source.toString());
+            Instance i = new Instance(source, new ArrayList<>(), new MinMTTR());
+            InstanceConverter conv = new InstanceConverter();
+            pw.write(conv.toJSON(i).toJSONString());
             pw.flush();
             pw.close();
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (JSONConverterException e) {
             e.printStackTrace();
         }
 
@@ -89,6 +98,8 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
         ShareableResource rcCPU = new ShareableResource("cpu", SimulatorProperties.DEFAULT_CPU_CAPACITY, 0);
         ShareableResource rcMem = new ShareableResource("mem", SimulatorProperties.DEFAULT_MEMORY_TOTAL, 0);
 
+        this.constraints = new HashSet<>();
+
         // Add nodes
         for (XHost tmpH : xHosts) {
             // Consider only hosts that are turned on
@@ -107,14 +118,39 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
             rcCPU.setCapacity(n, tmpH.getCPUCapacity());
             rcMem.setCapacity(n, tmpH.getMemSize());
 
+            if (tmpH.isViable()) {
+                // If the host if viable, the model is exactly has the VM demand regarding cpu and memory usage
+                // Declare running VMs mapping
+                for (XVM tmpVM : tmpH.getRunnings()) {
+                    VM v = model.newVM();
+                    mapping.addRunningVM(v, n);
+                    this.vmMap.put(v.id(), tmpVM.getName());
+                    rcCPU.setConsumption(v, (int) tmpVM.getCPUDemand());
+                    rcMem.setConsumption(v, tmpVM.getMemSize());
 
-            // Declare running VMs mapping
-            for (XVM tmpVM : tmpH.getRunnings()) {
-                VM v = model.newVM();
-                mapping.addRunningVM(v, n);
-                this.vmMap.put(v.id(), tmpVM.getName());
-                rcCPU.setConsumption(v, (int) tmpVM.getCPUDemand());
-                rcMem.setConsumption(v, tmpVM.getMemSize());
+                }
+            } else {
+                // The host is not viable : we create a model based on a fair share of the host resources
+                int cpuDemand = (int) tmpH.computeCPUDemand();
+
+                if (cpuDemand > tmpH.getCPUCapacity()) {
+                    // Violation CPU capacity
+                    int cpuFairShare = tmpH.getCPUCapacity() / tmpH.getNbVMs();
+                    for (XVM tmpVM : tmpH.getRunnings()) {
+                        VM v = model.newVM();
+                        mapping.addRunningVM(v, n);
+                        this.vmMap.put(v.id(), tmpVM.getName());
+
+                        rcCPU.setConsumption(v, cpuFairShare);
+                        rcMem.setConsumption(v, tmpVM.getMemSize());
+
+                        this.constraints.add(new Preserve(v, "cpu", (int) tmpVM.getCPUDemand()));
+                    }
+                } else {
+                    // TODO Adrian - Handle memory violation
+                    Msg.critical("Model violate the memory constraints");
+                }
+
             }
 
         }
@@ -126,8 +162,6 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
     }
 
     public ComputingState computeReconfigurationPlan() {
-        ComputingState res = ComputingState.SUCCESS;
-
         try {
             timeToComputeVMRP = System.currentTimeMillis();
             /**
@@ -140,28 +174,22 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
              */
             //this.btrSolver.doRepair();
             // As for now, constraints are not implemented - Adrian, Nov 5 2015
-            reconfigurationPlan = this.btrSolver.solve(source, new ArrayList<>());
+            reconfigurationPlan = this.btrSolver.solve(source, constraints);
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
         } catch (SchedulerException e) {
-            e.printStackTrace();
-            res = ComputingState.RECONFIGURATION_FAILED ;
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
             reconfigurationPlan = null;
+            Msg.critical("An error occured while solving the model : " + e.getCause());
+            return ComputingState.RECONFIGURATION_FAILED;
         }
 
-        if(reconfigurationPlan != null){
-            if(reconfigurationPlan.getActions().isEmpty())
-                res = ComputingState.NO_RECONFIGURATION_NEEDED;
-            if (!reconfigurationPlan.isApplyable())
-                res = ComputingState.RECONFIGURATION_FAILED;
+        if (reconfigurationPlan == null)
+            return ComputingState.RECONFIGURATION_FAILED;
+        else if (reconfigurationPlan.getActions().isEmpty())
+            return ComputingState.NO_RECONFIGURATION_NEEDED;
+        else
+            return ComputingState.SUCCESS;
 
-            planCost = reconfigurationPlan.getDuration();
-            // TODO Adrian : Compute graphDepth & nbMigrations - if it's meaningful
-        } else {
-            res = ComputingState.RECONFIGURATION_FAILED;
-        }
-
-        return res;
     }
 
 
@@ -331,7 +359,6 @@ public class BtrPlaceRP extends AbstractScheduler<Model, ReconfigurationPlan> {
                             nodesMap.get(migrateVM.getSourceNode().id()),
                             nodesMap.get(migrateVM.getDestinationNode().id())
                     );
-                    // TODO Adrian : I'm unsure if this will block execution and/or induce launching migrations without the proper dependencies.
                 }
 
                 @Override
