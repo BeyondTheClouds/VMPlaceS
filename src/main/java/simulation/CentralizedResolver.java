@@ -4,6 +4,7 @@ import configuration.SimulatorProperties;
 import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
+import scheduling.SchedulerBuilder;
 import scheduling.centralized.CentralizedResolverProperties;
 import scheduling.Scheduler;
 import scheduling.Scheduler.SchedulerResult;
@@ -41,13 +42,8 @@ public class CentralizedResolver extends Process {
         long previousDuration = 0;
         Scheduler scheduler;
         SchedulerResult schedulerResult;
-        Class<?> schedulerClass;
-        Constructor<?> schedulerConstructor;
 
         try{
-
-            schedulerClass = Class.forName(SimulatorProperties.getImplementation());
-            schedulerConstructor = schedulerClass.getConstructor(Collection.class, Integer.class);
 
             while (!SimulatorManager.isEndOfInjection()) {
 
@@ -58,7 +54,7 @@ public class CentralizedResolver extends Process {
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
 
-                scheduler = (Scheduler) schedulerConstructor.newInstance(hostsToCheck, ++loopID);
+                scheduler = SchedulerBuilder.getInstance().build(hostsToCheck, ++loopID);
                 schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
                 previousDuration = schedulerResult.getDuration();
                 if (schedulerResult.getResult() == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
@@ -74,8 +70,7 @@ public class CentralizedResolver extends Process {
                     numberOfSucess++;
                 }
             }
-        } catch(HostFailureException | ClassNotFoundException | NoSuchMethodException
-                | InvocationTargetException | InstantiationException | IllegalAccessException e){
+        } catch(HostFailureException e){
             System.err.println(e);
             System.exit(-1);
         }

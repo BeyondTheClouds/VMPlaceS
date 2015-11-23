@@ -6,6 +6,7 @@ import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.Scheduler;
 import scheduling.Scheduler.SchedulerResult;
+import scheduling.SchedulerBuilder;
 import scheduling.hierarchical.snooze.msg.*;
 import simulation.SimulatorManager;
 
@@ -41,8 +42,6 @@ public class GroupManager extends Process {
     private Collection<XHost> managedLCs;
     private ThreadPool newLCPool;
 
-    private Constructor<?> schedulerConstructor;
-
     public GroupManager(Host host, String name, String[] args) {
         super(host, name, args);
         this.host = host;
@@ -57,10 +56,6 @@ public class GroupManager extends Process {
             SnoozeMsg m = null;
             boolean success = false;
             int n = 1;
-
-            // TODO Killian proof check the inputed class
-            Class<?> schedulerClass = Class.forName(SimulatorProperties.getImplementation());
-            schedulerConstructor = schedulerClass.getConstructor(Collection.class, Integer.class);
 
             Logger.imp("[GM.main] GM started: " + host.getName());
             Test.gmsCreated.remove(this);
@@ -455,26 +450,20 @@ public class GroupManager extends Process {
         Collection<XHost> hostsToCheck = this.getManagedXHosts();
         Scheduler scheduler;
         long previousDuration = 0;
-        try {
-            scheduler = (Scheduler) schedulerConstructor.newInstance(hostsToCheck);
-            SchedulerResult schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
-            previousDuration = schedulerResult.getDuration();
-            if (schedulerResult.getResult() == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
-                Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
-            } else if (schedulerResult.getResult() == SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
-                Msg.info("No viable solution (duration: " + previousDuration + ")");
-                // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
-            } else if (schedulerResult.getResult() == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
-                Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
-                // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
-            } else {
-                // TODO Mario, please check where/how do you want to store numberOfSuccess
-                Msg.info("Reconfiguration succeed (duration: " + previousDuration + ")");
-            }
-        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
-            // We should never go here, "newInstance" method should exist
-            System.err.println(e);
-            System.exit(-1);
+        scheduler = SchedulerBuilder.getInstance().build(hostsToCheck);
+        SchedulerResult schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
+        previousDuration = schedulerResult.getDuration();
+        if (schedulerResult.getResult() == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
+            Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
+        } else if (schedulerResult.getResult() == SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
+            Msg.info("No viable solution (duration: " + previousDuration + ")");
+            // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
+        } else if (schedulerResult.getResult() == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
+            Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
+            // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
+        } else {
+            // TODO Mario, please check where/how do you want to store numberOfSuccess
+            Msg.info("Reconfiguration succeed (duration: " + previousDuration + ")");
         }
         return previousDuration;
     }
