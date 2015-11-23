@@ -88,6 +88,15 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 		vjobs.add(v);
 		try {
 			timeToComputeVMRP = System.currentTimeMillis();
+            String path = "logs/LOG-Entropy" + ".txt";
+            FileWriter fw = new FileWriter(path, true);
+            BufferedWriter bufWriter = new BufferedWriter(fw);
+            bufWriter.newLine();
+            for(int i=0; i < initialConfiguration.getRunnings().size(); i++) {
+                bufWriter.write(initialConfiguration.getRunnings().get(i).toString() + " " + initialConfiguration.getRunnings().get(i).getCPUConsumption() + " " + initialConfiguration.getOnlines().toString());
+            }
+            bufWriter.close();
+            fw.close();
 			reconfigurationPlan = planner.compute(initialConfiguration,
 					initialConfiguration.getRunnings(),
 					initialConfiguration.getWaitings(),
@@ -101,9 +110,11 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
 			res = ComputingState.RECONFIGURATION_FAILED ;
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 			reconfigurationPlan = null;
-		}
-		
-		if(reconfigurationPlan != null){
+		} catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if(reconfigurationPlan != null){
 			if(reconfigurationPlan.getActions().isEmpty())
 				res = ComputingState.NO_RECONFIGURATION_NEEDED;
 			
