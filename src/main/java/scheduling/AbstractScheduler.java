@@ -13,29 +13,39 @@ import java.util.Random;
 /**
  * Abstract scheduler that must be extended by implemented algorithms.
  *
- * @param <Conf> Class representing the configuration of the implemented algorithm
- * @param <RP> Class representing the reconfiguration plan of the implemented algorithm
+ * @param <Configuration> Class representing the configuration of the implemented algorithm
+ * @param <ReconfigurationPlan> Class representing the reconfiguration plan of the implemented algorithm
  */
-public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
+public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationPlan> implements Scheduler {
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Fields //////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Planner.
+     */
+    protected Planner planner;
 
 	/**
 	 * The initial configuration.
 	 */
-	public Conf source;
+	protected Configuration source;
 
 	/**
 	 * The resulting configuration.
 	 */
-	public Conf destination;
+	protected Configuration destination;
 
 	/**
 	 * The computed reconfiguration plan
 	 */
-	public RP reconfigurationPlan;
+	protected ReconfigurationPlan reconfigurationPlan;
+
 	/**
      * Indicates if the reconfiguration plan has been aborted
      */
-    public boolean isRPAborted;
+    protected boolean rpAborted;
 
 	/**
 	 * The time spent to compute VMPP
@@ -57,20 +67,32 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
 	 * 	The cost of the reconfiguration plan.
 	 */
 	protected int planCost;
-	
-	//The number of migrations inside the reconfiguration plan
+
+    /**
+     * The number of migrations inside the reconfiguration plan.
+     */
 	protected int nbMigrations;
 	
-	//The depth of the graph of the reconfiguration actions
+    /**
+     * The depth of the graph of the reconfiguration actions.
+     */
 	protected int planGraphDepth;
 
-    //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
+    /**
+     * Id to serialize configuration and reconfiguration into a particular file name.
+     */
     protected int id;
 
-    // Indicates if a migration is ongoing.
-	private int ongoingMigration = 0 ;
+    /**
+     * Number of ongoing migrations.
+     */
+	private int ongoingMigrations = 0 ;
 
-	/**
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Constructors ////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
 	 * Constructor initializing fields and creating the source configuration regarding xHosts.
 	 */
 	protected AbstractScheduler(Collection<XHost> xHosts){
@@ -83,40 +105,59 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
         this.source = this.extractConfiguration(xHosts);
 	}
 
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Abstract methods ////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     /**
      * Method used in the constructor to map the VMPlaceS configuration to the implemented algorithm configuration.
      * @param xHosts xHosts
      * @return the created configuration
      */
-	protected abstract Conf extractConfiguration(Collection<XHost> xHosts);
+	protected abstract Configuration extractConfiguration(Collection<XHost> xHosts);
 
     /**
      * Applies the reconfiguration plan from source model to dest model.
      */
     protected abstract void applyReconfigurationPlan();
 
-	private void incMig(){
-        this.ongoingMigration++ ;
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Implemented methods /////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Incs the number of ongoing migrations.
+     */
+	private void incOngoingMigrations(){
+        this.ongoingMigrations++ ;
         Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_MIG", 1);
     }
 
-	private void decMig() {
-        this.ongoingMigration-- ;
+    /**
+     * Decs the number of ongoing migrations.
+     */
+	private void decOngoingMigrations() {
+        this.ongoingMigrations-- ;
     }
 
-	protected boolean ongoingMigration() {
-        return (this.ongoingMigration != 0);
+    /**
+     * Indicates if there are still some ongoing migrations.
+     * @return true or false
+     */
+	protected boolean ongoingMigrations() {
+        return (this.ongoingMigrations != 0);
     }
 
 
     /**
-     * TODO Javadoc
-     * @param vmName
-     * @param sourceName
-     * @param destName
+     * Relocated a VM according to a reconfiguration plan.
+     * @param vmName vm name
+     * @param sourceName source configuration name
+     * @param destName destination configuration name
      */
-    // TODO Killian - refactor this into delegation ?
 	public void relocateVM(final String vmName, final String sourceName, final String destName) {
+
         Random rand = new Random(SimulatorProperties.getSeed());
 
         Msg.info("Relocate VM " + vmName + " (from " + sourceName + " to " + destName + ")");
@@ -145,7 +186,7 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
 
                         if (destHost != null) {
                             if (!sourceHost.isOff() && !destHost.isOff()) {
-                                incMig();
+                                incOngoingMigrations();
 
                                 double timeStartingMigration = Msg.getClock();
                                 Trace.hostPushState(vmName, "SERVICE", "migrate", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", vmName, sourceName, destName));
@@ -178,10 +219,10 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
 
                                     Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
                                     Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                                    isRPAborted = true;
+                                    rpAborted = true;
 
                                 }
-                                decMig();
+                                decOngoingMigrations();
                             }
                         }
 
@@ -198,7 +239,13 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
         }
     }
 
+    /**
+     * Suspends a VM.
+     * @param vmName vm name
+     * @param hostName host name
+     */
     public void suspendVM(final String vmName, final String hostName) {
+
         Msg.info("Suspending VM " + vmName + " on " + hostName);
 
         if (vmName != null) {
@@ -244,14 +291,14 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
                                     Trace.hostPopState(args[0], "suspension");
 
                                     Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
-                                    // Todo : no need to abort the RP here ?
+                                    // Todo : no need to abort the ReconfigurationPlan here ?
                                 case -1:
                                     Trace.hostSetState(args[0], "suspension", "failed", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
                                     Trace.hostPopState(args[0], "suspension");
 
                                     Msg.info("Something went wrong during the suspension of  " + args[0] + " on " + args[1]);
                                     Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                                    isRPAborted = true;
+                                    rpAborted = true;
                                 default:
                                     System.err.println("Unexpected result from XVM.suspend()");
                                     System.exit(-1);
@@ -269,6 +316,11 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
         }
     }
 
+    /**
+     * Resumes a VM.
+     * @param vmName vm name
+     * @param hostName host name
+     */
     public void resumeVM(final String vmName, final String hostName) {
         Msg.info("Resuming VM " + vmName + " on " + hostName);
 
@@ -315,14 +367,14 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
                                     Trace.hostPopState(args[0], "resumption");
 
                                     Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
-                                    // Todo : no need to abort the RP here ?
+                                    // Todo : no need to abort the ReconfigurationPlan here ?
                                 case -1:
                                     Trace.hostSetState(args[0], "resumption", "failed", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
                                     Trace.hostPopState(args[0], "resumption");
 
                                     Msg.info("Something went wrong during the resumption of  " + args[0] + " on " + args[1]);
                                     Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                                    isRPAborted = true;
+                                    rpAborted = true;
                                 default:
                                     System.err.println("Unexpected result from XVM.resume()");
                                     System.exit(-1);
@@ -339,4 +391,5 @@ public abstract class AbstractScheduler<Conf, RP> implements Scheduler {
             System.exit(-1);
         }
     }
+
 }

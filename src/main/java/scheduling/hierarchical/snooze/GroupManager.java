@@ -5,7 +5,7 @@ import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import scheduling.Scheduler;
-import scheduling.SchedulerRes;
+import scheduling.Scheduler.SchedulerResult;
 import scheduling.hierarchical.snooze.msg.*;
 import simulation.SimulatorManager;
 
@@ -457,14 +457,14 @@ public class GroupManager extends Process {
         long previousDuration = 0;
         try {
             scheduler = (Scheduler) schedulerConstructor.newInstance(hostsToCheck);
-            SchedulerRes schedulerRes = scheduler.checkAndReconfigure(hostsToCheck);
-            previousDuration = schedulerRes.getDuration();
-            if (schedulerRes.getRes() == 0) {
+            SchedulerResult schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
+            previousDuration = schedulerResult.getDuration();
+            if (schedulerResult.getResult() == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
                 Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
-            } else if (schedulerRes.getRes() == -1) {
+            } else if (schedulerResult.getResult() == SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
                 Msg.info("No viable solution (duration: " + previousDuration + ")");
                 // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
-            } else if (schedulerRes.getRes() == -2) {
+            } else if (schedulerResult.getResult() == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
                 Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
                 // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
             } else {

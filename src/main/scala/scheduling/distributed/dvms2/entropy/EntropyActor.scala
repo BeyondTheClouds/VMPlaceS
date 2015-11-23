@@ -25,7 +25,8 @@ import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
-import scheduling.{Scheduler, SchedulerRes}
+import scheduling.Scheduler
+import scheduling.Scheduler.SchedulerResult
 import scheduling.distributed.dvms2.{SGActor, SGNodeRef}
 import java.util
 import configuration.{SimulatorProperties, XHost}
@@ -47,9 +48,9 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
     val schedulerConstructor: Constructor[_] = schedulerClass.getConstructor(classOf[util.Collection[XHost]])
 
     val scheduler: Scheduler = schedulerConstructor.newInstance(hostsToCheck).asInstanceOf[Scheduler]
-    val schedulerRes: SchedulerRes = scheduler.checkAndReconfigure(hostsToCheck)
-    schedulerRes.getRes match {
-      case 0 => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
+    val schedulerRes: SchedulerResult = scheduler.checkAndReconfigure(hostsToCheck)
+    schedulerRes.getResult match {
+      case SchedulerResult.State.SUCCESS => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()
       // TODO How did you manage the three cases ?
     }
