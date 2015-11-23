@@ -3,22 +3,17 @@ package scheduling.btrplace;
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
+import org.btrplace.json.JSONConverterException;
+import org.btrplace.json.model.InstanceConverter;
 import org.btrplace.model.VM;
 import org.btrplace.model.constraint.*;
 import org.btrplace.model.view.ShareableResource;
-import org.btrplace.plan.Dependency;
 import org.btrplace.plan.ReconfigurationPlan;
-import org.btrplace.plan.event.Action;
-import org.btrplace.plan.event.BootVM;
-import org.btrplace.plan.event.MigrateVM;
-import org.btrplace.plan.event.ShutdownVM;
+import org.btrplace.plan.event.*;
 import org.btrplace.scheduler.SchedulerException;
 import org.btrplace.scheduler.choco.ChocoScheduler;
 import org.btrplace.scheduler.choco.DefaultChocoScheduler;
-import org.btrplace.scheduler.choco.duration.ConstantActionDuration;
-import org.btrplace.scheduler.choco.duration.DurationEvaluators;
 import org.btrplace.model.*;
-import org.btrplace.scheduler.choco.duration.LinearToAResourceActionDuration;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
@@ -33,15 +28,14 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Time;
 import java.util.*;
 
 public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, ReconfigurationPlan> implements Scheduler {
 
-	private ChocoScheduler planner;//Entropy2.1
-//	private ChocoCustomPowerRP planner;//Entropy2.0
+	private ChocoScheduler planner;
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
     private boolean abortRP;
+    private int timeLimit = 300;
 
     public BtrPlaceRP(Collection<XHost> xhosts) {
 
@@ -50,16 +44,11 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
 
     public BtrPlaceRP(Collection<XHost> xhosts, int loopID) {
         super(BtrPlaceRP.ExtractConfiguration(xhosts));
-        //planner =  new DefaultChocoScheduler (new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
         planner =  new DefaultChocoScheduler();
-       /* DurationEvaluators dev = planner.getDurationEvaluators();
-        dev.register(MigrateVM.class, new LinearToAResourceActionDuration<VM>("mem", 2, 3));
-        dev.register(BootVM.class, new ConstantActionDuration(1));
-        dev.register(ShutdownVM.class, new ConstantActionDuration(1));
-        *///planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
         planner.doRepair(true);
-        planner.setTimeLimit(initialConfiguration.getModel().getMapping().getAllNodes().size()/8);
-
+        int time = initialConfiguration.getModel().getMapping().getAllNodes().size()/8;
+        int limit = (time < 300) ? timeLimit : time;
+        planner.setTimeLimit(limit);
         this.loopID = loopID;
         this.abortRP = false;
         
@@ -71,6 +60,8 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
             Files.createFile(pathToFile);
             FileWriter fw = new FileWriter(path);
             fw.write(initialConfiguration.getModel().toString());
+            fw.flush();
+            fw.close();
         } catch ( Exception e) {
             e.printStackTrace();
         }
@@ -82,26 +73,29 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
 
 		try {
 			timeToComputeVMRP = System.currentTimeMillis();
+            Instance i = new Instance(initialConfiguration.getModel(), new ArrayList<>(), new MinMTTR());
+            InstanceConverter conv = new InstanceConverter();
+            String path = "logs/JSON-BtrPlace" + ".txt";
+            FileWriter fw = new FileWriter(path, true);
+            BufferedWriter bufWriter = new BufferedWriter(fw);
+            bufWriter.newLine();
+            bufWriter.write(conv.toJSON(i).toString());
+            bufWriter.close();
+            fw.close();
             reconfigurationPlan = planner.solve(initialConfiguration.getModel(), initialConfiguration.getCstrs());
-//            reconfigurationPlan = planner.solve(initialConfiguration.getModel(), new ArrayList<SatConstraint>());
-            if(reconfigurationPlan == null){
-                System.out.println("SOLVER NULL");
-//                System.exit(1);
-            }else{
-                System.out.println("SOLVER OK");
-                System.out.println("Actions : "+reconfigurationPlan.getActions().size());
-            }
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 		} catch (SchedulerException e) {
 			e.printStackTrace();
             Msg.error("Scheduler has failed to compute !");
-            System.out.println(e.getMessage());
-//			res = ComputingState.RECONFIGURATION_FAILED ;
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 			reconfigurationPlan = null;
-		}
+		} catch (JSONConverterException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-		if(reconfigurationPlan != null){
+        if(reconfigurationPlan != null){
 			if(reconfigurationPlan.getActions().isEmpty())
 				res = ComputingState.NO_RECONFIGURATION_NEEDED;
 
@@ -159,6 +153,7 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
 	@Override
 	public void applyReconfigurationPlan() {
 		if(reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()){
+
 			//Log the reconfiguration plan
             // Flavien / Adrien - In order to prevent random iterations due to the type of reconfiguration Plan (i.e. HashSet see Javadoc)
             LinkedList<Action> sortedActions = new LinkedList<Action>(reconfigurationPlan.getActions());
@@ -171,7 +166,6 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.
                 }
             });
-
 
             try {
                 File file = new File("logs/btrplace/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
@@ -198,44 +192,11 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
 
     //Apply the reconfiguration plan logically (i.e. create/delete Java objects)
     private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException{
-//        Map<Action, List<Dependencies>> revDependencies = new HashMap<Action, List<Dependencies>>();
-        Map<Action, List<Dependency>> revDependencies = new HashMap<Action, List<Dependency>>();
-//        TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
-        List<Dependency> deps = new ArrayList<Dependency>();
-        for (Action a : reconfigurationPlan.getActions()) {
-            Dependency dep = new Dependency(a, reconfigurationPlan.getDirectDependencies(a));
-            deps.add(dep);
-        }
-        //Set the reverse dependencies map
-//        for (Dependencies dep : g.extractDependencies()) {
-        for (Dependency dep : deps) {
-//            for (Action a : dep.getUnsatisfiedDependencies()) {
-            for (Action a : reconfigurationPlan.getActions()) {
-                if (!revDependencies.containsKey(a)) {
-                    revDependencies.put(a, new LinkedList<Dependency>());
-                }
-                revDependencies.get(a).add(dep);
-            }
-        }
-
         //Start the feasible actions
         // ie, actions with a start moment equals to 0.
         for (Action a : sortedActions) {
             if ((a.getStart() == 0)  && !isReconfigurationPlanAborted()) {
                 instantiateAndStart(a);
-            }
-
-            if (revDependencies.containsKey(a)) {
-                //Get the associated depenencies and update it
-                for (Dependency dep : revDependencies.get(a)) {
-//                    dep.removeDependency(a);
-                    //Launch new feasible actions.
-//                    if (dep.isFeasible() && !isReconfigurationPlanAborted()) {
-                    if (!isReconfigurationPlanAborted()) {
-                        Dependency depTmp = new Dependency(a, new HashSet<Action>());
-                        instantiateAndStart(depTmp.getAction());
-                    }
-                }
             }
         }
 
@@ -246,7 +207,6 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
         int watchDog = 0;
 
         while(this.ongoingMigration()){
-        //while(this.ongoingMigration() && !SimulatorManager.isEndOfInjection()){
             try {
                 Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
@@ -271,7 +231,9 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
             String nodeName = initialConfiguration.getNodeNames().get(migration.getSourceNode());
             String destNodeName = initialConfiguration.getNodeNames().get(migration.getDestinationNode());
             this.relocateVM(vmName, nodeName, destNodeName);
-        } else{
+        } else if (a instanceof Allocate){
+//            Msg.info("ALLOCATION");
+        }else {
             System.err.println("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
         }
     }
@@ -390,36 +352,29 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
             }
             Node n = model.newNode();
             map.addOnlineNode(n);
-//            cstrs.add(new Online(n));
-
             rcCPU.setCapacity(n, tmpH.getCPUCapacity());
             rcMem.setCapacity(n, tmpH.getMemSize());
-            nodeNames.put(n,tmpH.getName());
-//            Node tmpENode = new SimpleNode(tmpH.getName(), tmpH.getNbCores(), tmpH.getCPUCapacity(), tmpH.getMemSize());
-//            currConf.addOnline(tmpENode);
+            nodeNames.put(n, tmpH.getName());
+            int cpu = (int)tmpH.computeCPUDemand();
+
             for (XVM tmpVM : tmpH.getRunnings()) {
                 VM v = model.newVM();
-                rcCPU.setConsumption(v, (int) tmpVM.getCPUDemand());
+                if(cpu > tmpH.getCPUCapacity()){
+                    int arbitraryCpu = tmpH.getCPUCapacity()/tmpH.getRunnings().size();
+                    rcCPU.setConsumption(v, arbitraryCpu);
+                    cstrs.add(new Online(n));
+                    cstrs.add(new Running(v));
+                    cstrs.add(new Preserve(v, "cpu", (int) tmpVM.getCPUDemand()));
+                    cstrs.add(new Preserve(v, "mem", tmpVM.getMemSize()));
+                } else {
+                    rcCPU.setConsumption(v, (int) tmpVM.getCPUDemand());
+                }
                 rcMem.setConsumption(v,tmpVM.getMemSize());
                 map.addRunningVM(v, n);
-//                map.addReadyVM(v);
                 vmNames.put(v,tmpVM.getName());
-//                model.getAttributes().put(v, "uCpu", (int) tmpVM.getCoreNumber());
-//                currConf.setRunOn(new SimpleVirtualMachine(tmpVM.getName(), (int) tmpVM.getCoreNumber(), 0,
-//                                tmpVM.getMemSize(), (int) tmpVM.getCPUDemand(), tmpVM.getMemSize()),
-//                        tmpENode
-//                );
-//                cstrs.add(new Running(v));
-//                cstrs.add(new Preserve(v, "cpu", (int) tmpVM.getCPUDemand()));
-//                cstrs.add(new Preserve(v, "mem", tmpVM.getMemSize()));
             }
             model.attach(rcCPU);
             model.attach(rcMem);
-//            Attributes attrs = model.getAttributes();
-//
-//            for (VM vm : model.getMapping().getAllVMs()) {
-//                attrs.put(vm, "clone", true);
-//            }
         }
         return new ConfigBtrPlace(model, cstrs, vmNames, nodeNames);
     }
