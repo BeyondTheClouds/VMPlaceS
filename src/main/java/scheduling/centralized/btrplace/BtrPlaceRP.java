@@ -130,24 +130,20 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
                 }
             } else {
                 // The host is not viable : we create a model based on a fair share of the host resources
-                int cpuDemand = (int) tmpH.computeCPUDemand();
 
-                if (cpuDemand > tmpH.getCPUCapacity()) {
-                    // Violation CPU capacity
-                    int cpuFairShare = tmpH.getCPUCapacity() / tmpH.getNbVMs();
-                    for (XVM tmpVM : tmpH.getRunnings()) {
-                        VM v = model.newVM();
-                        mapping.addRunningVM(v, n);
-                        this.vmMap.put(v.id(), tmpVM.getName());
+                int cpuFairShare = tmpH.getCPUCapacity() / tmpH.getNbVMs();
+                int memFairShare = tmpH.getMemSize() / tmpH.getNbVMs();
 
-                        rcCPU.setConsumption(v, cpuFairShare);
-                        rcMem.setConsumption(v, tmpVM.getMemSize());
+                for (XVM tmpVM : tmpH.getRunnings()) {
+                    VM v = model.newVM();
+                    mapping.addRunningVM(v, n);
+                    this.vmMap.put(v.id(), tmpVM.getName());
 
-                        this.constraints.add(new Preserve(v, "cpu", (int) tmpVM.getCPUDemand()));
-                    }
-                } else {
-                    // TODO Adrian - Handle memory violation
-                    Msg.critical("Model violate the memory constraints");
+                    rcCPU.setConsumption(v, cpuFairShare);
+                    rcMem.setConsumption(v, memFairShare);
+
+                    this.constraints.add(new Preserve(v, "cpu", (int) tmpVM.getCPUDemand()));
+                    this.constraints.add(new Preserve(v, "mem", tmpVM.getMemSize()));
                 }
 
             }
@@ -251,6 +247,7 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
 
 			/* Tracing code */
             // TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
+            // Note Adrian : it is difficult with BtrPlace to isolate the impacted XHosts
             for (XHost h : hostsToCheck)
                 Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
 
@@ -307,7 +304,6 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
             /**
              * Adrian - We add a ActionCommitedListener for it to
              * also execute business code for VMPlaces
-             * Todo refactor the Listener into a non-anonymous class
              */
             reconfigurationPlan.getReconfigurationApplier().addEventCommittedListener(new EventCommittedListener() {
                 /*
@@ -316,39 +312,26 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
                  */
 
                 @Override
-                public void committed(Allocate allocate) {
-                    // Todo - is that necessary ?
-                }
+                public void committed(Allocate allocate) {}
 
                 @Override
-                public void committed(AllocateEvent allocateEvent) {
-                    // Todo - is that necessary ?
-                }
+                public void committed(AllocateEvent allocateEvent) {}
 
                 @Override
-                public void committed(SubstitutedVMEvent substitutedVMEvent) {
-                    // Todo - is that necessary ?
-                }
+                public void committed(SubstitutedVMEvent substitutedVMEvent) {}
 
                 @Override
-                public void committed(BootNode bootNode) {
-                    // Todo - is that necessary ?
-                }
+                public void committed(BootNode bootNode) {}
 
                 @Override
-                public void committed(BootVM bootVM) {
-                    // Todo - is that necessary ?
-                }
+                public void committed(BootVM bootVM) {}
 
                 @Override
                 public void committed(ForgeVM forgeVM) {
-                    // Todo - is that necessary ?
                 }
 
                 @Override
-                public void committed(KillVM killVM) {
-                    // Todo - is that necessary ?
-                }
+                public void committed(KillVM killVM) {}
 
                 @Override
                 public void committed(MigrateVM migrateVM) {
@@ -370,14 +353,10 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
                 }
 
                 @Override
-                public void committed(ShutdownNode shutdownNode) {
-                    // Todo - is that necessary ?
-                }
+                public void committed(ShutdownNode shutdownNode) {}
 
                 @Override
-                public void committed(ShutdownVM shutdownVM) {
-                    // Todo - is that necessary ?
-                }
+                public void committed(ShutdownVM shutdownVM) {}
 
                 @Override
                 public void committed(SuspendVM suspendVM) {
@@ -414,29 +393,6 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
                 }
             }
         }
-    }
-
-    private boolean instantiateAndStartRecursively(Action a) {
-
-        // Iterate over the dependencies
-        reconfigurationPlan.getDirectDependencies(a).forEach(this::instantiateAndStartRecursively);
-
-        // The dependencies have been rolled out - we can execute the action
-        if (a instanceof MigrateVM) {
-
-            MigrateVM migration = (MigrateVM) a;
-            // Adrian - Naive implementation using the existing relocateVM method
-            super.relocateVM(
-                    this.vmMap.get(migration.getVM().id()),
-                    this.nodesMap.get(migration.getSourceNode().id()),
-                    this.nodesMap.get(migration.getDestinationNode().id())
-            );
-            a.applyAction(reconfigurationPlan.getOrigin());
-            // TODO Adrian - How do we update the dependencies ?
-        } else {
-            System.err.println("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN : " + a.pretty());
-        }
-        return true;
     }
 
 }
