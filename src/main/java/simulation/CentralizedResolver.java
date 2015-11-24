@@ -65,7 +65,7 @@ public class CentralizedResolver extends Process {
                 } else if (schedulerResult.getResult() == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
                     Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
                     numberOfBrokenPlan++;
-                } else { // entropyRes.getRes() == 1
+                } else {
                     Msg.info("Reconfiguration OK (duration: " + previousDuration + ")");
                     numberOfSucess++;
                 }

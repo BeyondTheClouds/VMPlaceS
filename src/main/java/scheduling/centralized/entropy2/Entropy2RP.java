@@ -24,16 +24,22 @@ import trace.Trace;
 import java.io.*;
 import java.util.*;
 
-public class Entropy2RP extends AbstractScheduler<ChocoCustomRP, Configuration, TimedReconfigurationPlan> {
+public class Entropy2RP extends AbstractScheduler {
+
+    private ChocoCustomRP planner;
+
+    private Configuration source;
+
+    private Configuration destination;
+
+    private TimedReconfigurationPlan reconfigurationPlan;
 
     public Entropy2RP(Collection<XHost> xhosts) {
-        super(xhosts);
-        this.id = new Random().nextInt();
-        this.source = this.extractConfiguration(xhosts);
+        this(xhosts, new Random().nextInt());
     }
 
     public Entropy2RP(Collection<XHost> xhosts, Integer id) {
-		super(xhosts);
+		super();
         this.source = this.extractConfiguration(xhosts);
 		planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
@@ -303,7 +309,8 @@ public class Entropy2RP extends AbstractScheduler<ChocoCustomRP, Configuration, 
         enRes.setDuration(computationTime);
 
         if (computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)) {
-            Msg.info("Configuration remains unchanged"); //res is already set to 0.
+            Msg.info("Configuration remains unchanged");
+            enRes.setResult(SchedulerResult.State.NO_RECONFIGURATION_NEEDED);
         } else if (computingState.equals(ComputingState.SUCCESS)) {
 
 			/* Tracing code */

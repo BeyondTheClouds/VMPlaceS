@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
 /**
+ * @author Killian Saint Cricq
  * Singleton used to build the scheduler given in simulator.properties.
  */
 public enum SchedulerBuilder {

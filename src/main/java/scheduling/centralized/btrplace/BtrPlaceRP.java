@@ -30,7 +30,12 @@ import java.util.*;
  *
  * Implementation of the Scheduler interface using the BtrPlace API
  */
-public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, ReconfigurationPlan> {
+public class BtrPlaceRP extends AbstractScheduler {
+
+    /**
+     * The BtrPlace scheduler
+     */
+    private ChocoScheduler btrSolver;
 
     /**
      * Map to link BtrPlace nodes ids to XHosts
@@ -42,19 +47,41 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
      */
     private Map<Integer, String> vmMap;
 
+    /**
+     * The initial configuration.
+     */
+    private Model source;
+
+    /**
+     * The configuration's constraints
+     */
     private Set<SatConstraint> constraints;
 
     /**
-     * The BtrPlace scheduler
+     * The computed reconfiguration plan
      */
-    private ChocoScheduler btrSolver;
+    private ReconfigurationPlan reconfigurationPlan;
+
 
     public BtrPlaceRP(Collection<XHost> xHosts, Integer id) {
-        super(xHosts);
+        super();
         this.id = id;
         this.btrSolver = new DefaultChocoScheduler();
+
+        /**
+         * Adrian - From BtrPlace doc :
+         * By default, BtrPlace considers every VMs when it solves a model.
+         * This may lead to a non-reasonable solving process duration when
+         * a few number of constraints are violated.
+         * The repair approach addresses that problem by trying to reduce as possible
+         * the number of VMs to consider in the model.
+         */
+
         this.btrSolver.doRepair(true);
+        this.btrSolver.doOptimize(true);
         this.btrSolver.setTimeLimit(15);
+
+        this.extractConfiguration(xHosts);
 
         // log the model
         try {
@@ -67,10 +94,8 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
             pw.write(conv.toJSON(i).toJSONString());
             pw.flush();
             pw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (JSONConverterException e) {
-            e.printStackTrace();
+        } catch (IOException | JSONConverterException e) {
+            Msg.critical("BtrPlace : could not log the source model");
         }
 
     }
@@ -80,15 +105,15 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
     }
 
     /**
-     * Creates a Model for BtrPlace
+     * Creates a Model and constraints for BtrPlace
+     *
      * @param xHosts Collection of Xhosts declared as hosting nodes and that are turned on
-     * @return A model representing the infrastructure
      */
-    protected Model extractConfiguration(Collection<XHost> xHosts) {
+    private void extractConfiguration(Collection<XHost> xHosts) {
 
         // Initialization
-        Model model = new DefaultModel();
-        Mapping mapping = model.getMapping();
+        this.source = new DefaultModel();
+        Mapping mapping = this.source.getMapping();
 
         this.nodesMap = new HashMap<>();
         this.vmMap = new HashMap<>();
@@ -103,14 +128,14 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
         for (XHost tmpH : xHosts) {
             // Consider only hosts that are turned on
             if (tmpH.isOff()) {
-                System.err.println("WTF, you are asking me to analyze a dead node (" + tmpH.getName() + ")");
+                 Msg.critical("Trying to analyze a dead node (" + tmpH.getName() + ")");
             }
 
             // Creates a physical node
-            Node n = model.newNode();
+            Node n = this.source.newNode();
             this.nodesMap.put(n.id(), tmpH.getName());
 
-            // Ajout de la machine physique au mapping
+            // Add physical node to mapping
             mapping.addOnlineNode(n);
 
             // Node's resources are explicitly set
@@ -121,7 +146,7 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
                 // If the host if viable, the model is exactly has the VM demand regarding cpu and memory usage
                 // Declare running VMs mapping
                 for (XVM tmpVM : tmpH.getRunnings()) {
-                    VM v = model.newVM();
+                    VM v = this.source.newVM();
                     mapping.addRunningVM(v, n);
                     this.vmMap.put(v.id(), tmpVM.getName());
                     rcCPU.setConsumption(v, (int) tmpVM.getCPUDemand());
@@ -135,7 +160,7 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
                 int memFairShare = tmpH.getMemSize() / tmpH.getNbVMs();
 
                 for (XVM tmpVM : tmpH.getRunnings()) {
-                    VM v = model.newVM();
+                    VM v = this.source.newVM();
                     mapping.addRunningVM(v, n);
                     this.vmMap.put(v.id(), tmpVM.getName());
 
@@ -150,31 +175,24 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
 
         }
 
-        model.attach(rcCPU);
-        model.attach(rcMem);
+        this.source.attach(rcCPU);
+        this.source.attach(rcMem);
 
-        return model;
     }
 
+    /**
+     * Computes the reconfiguration plan and measure the duration of the computation.
+     * @return the result of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
+     */
     public ComputingState computeReconfigurationPlan() {
         try {
             timeToComputeVMRP = System.currentTimeMillis();
-            /**
-             * Adrian - From BtrPlace doc :
-             * By default, BtrPlace considers every VMs when it solves a model.
-             * This may lead to a non-reasonnable solving process duration when
-             * a few number of constraints are violated.
-             * The repair approach addresses that problem by trying to reduce as possible
-             * the number of VMs to consider in the model.
-             */
-            //this.planner.doRepair();
-            // As for now, constraints are not implemented - Adrian, Nov 5 2015
             reconfigurationPlan = this.btrSolver.solve(source, constraints);
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
         } catch (SchedulerException e) {
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
             reconfigurationPlan = null;
-            Msg.critical("An error occured while solving the model : " + e.getCause());
+            Msg.critical("An error occurred while solving the model : " + e.getCause());
             return ComputingState.RECONFIGURATION_FAILED;
         }
 
@@ -187,10 +205,9 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
 
     }
 
-
     /**
-     * @param hostsToCheck
-     * @return the duration of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
+     * @param hostsToCheck The XHost to check for violations
+     * @return A SchedulerResult representing the success or failure of the algorithm loop
      */
     public SchedulerResult checkAndReconfigure(Collection<XHost> hostsToCheck) {
 
@@ -242,11 +259,11 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
         enRes.setDuration(computationTime);
 
         if (computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)) {
-            Msg.info("Configuration remains unchanged"); //res is already set to 0.
+            Msg.info("Configuration remains unchanged");
+            enRes.setResult(SchedulerResult.State.NO_RECONFIGURATION_NEEDED);
         } else if (computingState.equals(ComputingState.SUCCESS)) {
 
 			/* Tracing code */
-            // TODO Adrien -> Adrien, try to consider only the nodes that are impacted by the reconfiguration plan
             // Note Adrian : it is difficult with BtrPlace to isolate the impacted XHosts
             for (XHost h : hostsToCheck)
                 Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
@@ -283,10 +300,9 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
     }
 
     /**
-     * This is a prototype to test out the possibility to
-     * override BtrPlace EventListeners with the relocateVM behavior
+     * Apply the reconfiguration plan using BtrPlace EventListeners
      */
-    public void applyReconfigurationPlan() {
+    protected void applyReconfigurationPlan() {
         if (this.reconfigurationPlan != null && reconfigurationPlan.isApplyable()) {
 
             // We log the reconfiguration plan
@@ -302,8 +318,7 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
             }
 
             /**
-             * Adrian - We add a ActionCommitedListener for it to
-             * also execute business code for VMPlaces
+             * Adrian - We add a Action Committed Listener for it to also execute business code for VMPlaces
              */
             reconfigurationPlan.getReconfigurationApplier().addEventCommittedListener(new EventCommittedListener() {
                 /*
@@ -369,7 +384,7 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
             });
 
             // We now roll out the reconfiguration plan
-            this.destination = reconfigurationPlan.getResult();
+            reconfigurationPlan.getResult();
 
             // If you reach that line, it means that either the execution of the plan has been completely launched or the
             // plan has been aborted. In both cases, we should wait for the completion of on-going migrations
@@ -384,12 +399,12 @@ public class BtrPlaceRP extends AbstractScheduler<ChocoScheduler, Model, Reconfi
                     if (watchDog%100==0){
                         Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
                         if(SimulatorManager.isEndOfInjection()){
-                            Msg.info("Something wrong we are waiting too much, bye bye");
+                            Msg.critical("The reconfiguration is taking too long - Forcing termination...");
                             System.exit(-1);
                         }
                     }
                 } catch (HostFailureException e) {
-                    e.printStackTrace();
+                    Msg.critical("Host crashed while reconfiguring : " + e.getLocalizedMessage());
                 }
             }
         }

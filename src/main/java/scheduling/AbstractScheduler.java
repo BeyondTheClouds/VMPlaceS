@@ -12,35 +12,13 @@ import java.util.Random;
 
 /**
  * Abstract scheduler that must be extended by implemented algorithms.
- *
- * @param <Configuration> Class representing the configuration of the implemented algorithm
- * @param <ReconfigurationPlan> Class representing the reconfiguration plan of the implemented algorithm
  */
-public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationPlan> implements Scheduler {
+public abstract class AbstractScheduler implements Scheduler {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Fields //////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Planner.
-     */
-    protected Planner planner;
-
-	/**
-	 * The initial configuration.
-	 */
-	protected Configuration source;
-
-	/**
-	 * The resulting configuration.
-	 */
-	protected Configuration destination;
-
-	/**
-	 * The computed reconfiguration plan
-	 */
-	protected ReconfigurationPlan reconfigurationPlan;
 
 	/**
      * Indicates if the reconfiguration plan has been aborted
@@ -95,27 +73,19 @@ public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationP
     /**
 	 * Constructor initializing fields and creating the source configuration regarding xHosts.
 	 */
-	protected AbstractScheduler(Collection<XHost> xHosts){
+	protected AbstractScheduler() {
 		timeToComputeVMPP = 0;
 		timeToComputeVMRP = 0;
 		timeToApplyReconfigurationPlan = 0;
 		planCost = 0;
 		nbMigrations = 0;
 		planGraphDepth = 0;
-        this.source = this.extractConfiguration(xHosts);
 	}
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Abstract methods ////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Method used in the constructor to map the VMPlaceS configuration to the implemented algorithm configuration.
-     * @param xHosts xHosts
-     * @return the created configuration
-     */
-	protected abstract Configuration extractConfiguration(Collection<XHost> xHosts);
 
     /**
      * Applies the reconfiguration plan from source model to dest model.
@@ -150,8 +120,13 @@ public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationP
     }
 
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // Common VM management methods ////////////////////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     /**
-     * Relocated a VM according to a reconfiguration plan.
+     * Relocates a VM.
      * @param vmName vm name
      * @param sourceName source configuration name
      * @param destName destination configuration name
@@ -255,7 +230,6 @@ public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationP
             args[0] = vmName;
             args[1] = hostName;
 
-            // Todo Killian - Why am I doing this rand.nextDouble() thing ?
             try {
                 new org.simgrid.msg.Process(Host.getByName(hostName), "Suspend-" + rand.nextDouble(), args) {
 
@@ -307,8 +281,7 @@ public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationP
                     }
                 }.start();
             } catch (HostNotFoundException e) {
-                e.printStackTrace();
-                // Todo better exc handling
+                Msg.critical("Host : " + hostName + " not found in Simgrid");
             }
         } else {
             System.err.println("You are trying to suspend a non-existing VM");
@@ -331,7 +304,6 @@ public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationP
             args[0] = vmName;
             args[1] = hostName;
 
-            // Todo Killian - Why am I doing this rand.nextDouble() thing ?
             try {
                 new org.simgrid.msg.Process(Host.getByName(hostName), "Resume-" + rand.nextDouble(), args) {
 
@@ -367,7 +339,6 @@ public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationP
                                     Trace.hostPopState(args[0], "resumption");
 
                                     Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
-                                    // Todo : no need to abort the ReconfigurationPlan here ?
                                 case -1:
                                     Trace.hostSetState(args[0], "resumption", "failed", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
                                     Trace.hostPopState(args[0], "resumption");
@@ -383,8 +354,7 @@ public abstract class AbstractScheduler<Planner, Configuration, ReconfigurationP
                     }
                 }.start();
             } catch (HostNotFoundException e) {
-                e.printStackTrace();
-                // Todo better exc handling
+                Msg.critical("Host : " + hostName + " not found in Simgrid");
             }
         } else {
             System.err.println("You are trying to resume a non-existing VM");
