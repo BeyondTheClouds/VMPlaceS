@@ -72,7 +72,6 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
 		ComputingState res = ComputingState.SUCCESS;
 
 		try {
-			timeToComputeVMRP = System.currentTimeMillis();
             Instance i = new Instance(initialConfiguration.getModel(), new ArrayList<>(), new MinMTTR());
             InstanceConverter conv = new InstanceConverter();
             String path = "logs/JSON-BtrPlace" + ".txt";
@@ -82,12 +81,16 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
             bufWriter.write(conv.toJSON(i).toString());
             bufWriter.close();
             fw.close();
+            timeToComputeVMRP = System.currentTimeMillis();
             reconfigurationPlan = planner.solve(initialConfiguration.getModel(), initialConfiguration.getCstrs());
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
+            if(reconfigurationPlan == null)
+                res = ComputingState.NO_RECONFIGURATION_NEEDED;
 		} catch (SchedulerException e) {
 			e.printStackTrace();
             Msg.error("Scheduler has failed to compute !");
-			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
+            res = ComputingState.RECONFIGURATION_FAILED ;
+            timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 			reconfigurationPlan = null;
 		} catch (JSONConverterException e) {
             e.printStackTrace();
@@ -106,9 +109,7 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
                     initialConfiguration.getNodeNames());
 			nbMigrations = computeNbMigrations();
 			reconfigurationGraphDepth = computeReconfigurationGraphDepth();
-		} else {
-            res = ComputingState.RECONFIGURATION_FAILED ;
-        }
+		}
 
 		return res;
 	}
