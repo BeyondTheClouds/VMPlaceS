@@ -56,7 +56,7 @@ object LoggingActor {
       writer.write( s"""{"event": "start_experiment", "origin": "$origin", "time": "$time", "server_count": $serverCount, "service_node_count": $serviceNodeCount, "vm_count": $vmCount, "algo": "$algo"}\n""")
 
     case ComputingSomeReconfigurationPlan(time: Double, origin: String, duration: Double, psize: Int, result: String) =>
-      writer.write( s"""{"event": "computing_reconfiguration_plan", "origin": "$origin", "time": "$time", "psize": $psize, "duration": $duration, "result": "$result"}\n""")
+      writer.write( s"""{"event": "computing_reconfiguration_plan", "origin": "$origin", "time": "$time", "psize": $psize, "duration": $duration, "state": "$result"}\n""")
 //      writer.flush()
 
     case ApplyingSomeReconfigurationPlan(time: Double, origin: String) =>

@@ -443,7 +443,7 @@ public class SimulatorManager {
     /**
      * Change the load of a VM.
      * Please note that we do not detect violations on off hosts (i.e. if the nodes that hosts the VM is off, we change
-     * the load of the vm for consistency reasons but we do not consider the violation that may result from this change).
+     * the load of the vm for consistency reasons but we do not consider the violation that may state from this change).
      * @param sgVM the VM that should be updated
      * @param load the new expected load
      */

@@ -188,7 +188,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
 
                         if data["event"] == "trace_event" and data["value"] == "compute":
                             compute_time = data["duration"]
-                            compute_result = data["data"]["result"]
+                            compute_result = data["data"]["state"]
                             computes += [[compute_result, compute_time]]
 
                     except Exception as e:

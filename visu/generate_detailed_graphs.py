@@ -206,7 +206,7 @@ for dirname, dirnames, filenames in os.walk('./events'):
 
                         if data["event"] == "trace_event" and data["value"] == "compute":
                             compute_duration = data["duration"]
-                            compute_result = data["data"]["result"]
+                            compute_result = data["data"]["state"]
                             computes += [compute_duration]
 
                         if data["event"] == "trace_event" and data["value"] == "violation":

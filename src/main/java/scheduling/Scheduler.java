@@ -9,30 +9,55 @@ import java.util.Collection;
  */
 public interface Scheduler {
 
-    ComputingState computeReconfigurationPlan();
+    ComputingResult computeReconfigurationPlan();
     SchedulerResult checkAndReconfigure(Collection<XHost> hostsToCheck);
 
     /**
      * Result of the reconfiguration plan computation.
      */
-    enum ComputingState {
+    class ComputingResult {
 
-        NO_RECONFIGURATION_NEEDED("NO_RECONFIGURATION_NEEDED"),
-        PLACEMENT_FAILED("PLACEMENT_FAILED"),
-        RECONFIGURATION_FAILED("RECONFIGURATION_FAILED"),
-        SUCCESS("SUCCESS");
+        public enum State {
 
-        private String name;
+            NO_RECONFIGURATION_NEEDED("NO_RECONFIGURATION_NEEDED"),
+            PLACEMENT_FAILED("PLACEMENT_FAILED"),
+            RECONFIGURATION_FAILED("RECONFIGURATION_FAILED"),
+            SUCCESS("SUCCESS");
 
-        private ComputingState(String name){
-            this.name = name;
+            private String name;
+
+            State(String name){
+                this.name = name;
+            }
+
+            public String toString(){
+                return name;
+            }
+
         }
 
-        public String toString(){
-            return name;
+        public State state;
+
+        public int actionCount;
+
+        public long duration;
+
+        public ComputingResult(State state, long duration, int actionCount) {
+            this.state = state;
+            this.duration = duration;
+            this.actionCount = actionCount;
+        }
+
+        public ComputingResult(State state, long duration) {
+            this(state, duration, 0);
+        }
+
+        public ComputingResult() {
+            this.state = State.SUCCESS;
         }
 
     }
+
 
     /**
      * Result of the reconfiguration.
@@ -41,14 +66,14 @@ public interface Scheduler {
 
         public enum State {
 
+            SUCCESS("SUCCESS"),
             RECONFIGURATION_PLAN_ABORTED("RECONFIGURATION_PLAN_ABORTED"),
             NO_VIABLE_CONFIGURATION("NO_VIABLE_CONFIGURATION"),
-            NO_RECONFIGURATION_NEEDED("NO_RECONFIGURATION_NEEDED"),
-            SUCCESS("SUCCESS");
+            NO_RECONFIGURATION_NEEDED("NO_RECONFIGURATION_NEEDED");
 
             private String name;
 
-            private State(String name){
+            State(String name){
                 this.name = name;
             }
 
@@ -61,33 +86,12 @@ public interface Scheduler {
         /**
          * Result of the reconfiguration.
          */
-        private State result;
+        public State state;
 
         /**
          * Duration in ms of the reconfiguration.
          */
-        private long duration;
-
-        public SchedulerResult(){
-            this.result = State.SUCCESS;
-            this.duration = 0;
-        }
-
-        public void setResult(State result) {
-            this.result = result;
-        }
-
-        public long getDuration() {
-            return duration;
-        }
-
-        public void setDuration(long duration) {
-            this.duration = duration;
-        }
-
-        public State getResult() {
-            return result;
-        }
+        public long duration;
 
     }
 

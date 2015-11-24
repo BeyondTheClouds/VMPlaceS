@@ -212,9 +212,9 @@ for dirname, dirnames, filenames in os.walk('./events'):
                         if data["event"] == "trace_event" and data["value"] == "compute":
                             compute_time += data["duration"]
 
-                            if data["data"]["result"] == "NO_RECONFIGURATION_NEEDED":
+                            if data["data"]["state"] == "NO_RECONFIGURATION_NEEDED":
                                 reconfigure_noreconf_count += 1
-                            elif data["data"]["result"] ==  "SUCCESS":
+                            elif data["data"]["state"] ==  "SUCCESS":
                                 reconfigure_success_count += 1
                                 servers_involved += data["data"]["psize"]
                                 success_psize += data["data"]["psize"]

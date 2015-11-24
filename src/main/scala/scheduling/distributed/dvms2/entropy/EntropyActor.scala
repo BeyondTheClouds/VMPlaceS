@@ -19,8 +19,6 @@ package org.discovery.dvms.entropy
  * limitations under the License.
  * ============================================================ */
 
-import java.lang.reflect.Constructor
-
 import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
@@ -29,7 +27,7 @@ import scheduling.{SchedulerBuilder, Scheduler}
 import scheduling.Scheduler.SchedulerResult
 import scheduling.distributed.dvms2.{SGActor, SGNodeRef}
 import java.util
-import configuration.{SimulatorProperties, XHost}
+import configuration.XHost
 import simulation.SimulatorManager
 
 class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
@@ -46,7 +44,7 @@ class EntropyActor(applicationRef: SGNodeRef) extends SGActor(applicationRef) {
 
     val scheduler: Scheduler = SchedulerBuilder.getInstance().build(hostsToCheck)
     val schedulerRes: SchedulerResult = scheduler.checkAndReconfigure(hostsToCheck)
-    schedulerRes.getResult match {
+    schedulerRes.state match {
       case SchedulerResult.State.SUCCESS => ReconfigurationSolution(new java.util.HashMap[String, java.util.List[ReconfigurationAction]]())
       case _ => ReconfigurationlNoSolution()
       // TODO How did you manage the three cases ?

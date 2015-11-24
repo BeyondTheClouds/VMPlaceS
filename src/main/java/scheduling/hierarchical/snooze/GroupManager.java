@@ -1,6 +1,5 @@
 package scheduling.hierarchical.snooze;
 
-import configuration.SimulatorProperties;
 import configuration.XHost;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
@@ -10,8 +9,6 @@ import scheduling.SchedulerBuilder;
 import scheduling.hierarchical.snooze.msg.*;
 import simulation.SimulatorManager;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -452,13 +449,13 @@ public class GroupManager extends Process {
         long previousDuration = 0;
         scheduler = SchedulerBuilder.getInstance().build(hostsToCheck);
         SchedulerResult schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
-        previousDuration = schedulerResult.getDuration();
-        if (schedulerResult.getResult() == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
+        previousDuration = schedulerResult.duration;
+        if (schedulerResult.state == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
             Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
-        } else if (schedulerResult.getResult() == SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
+        } else if (schedulerResult.state == SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
             Msg.info("No viable solution (duration: " + previousDuration + ")");
             // TODO Mario, Please check where/how do you want to store numberOfCrash (i.e. when Entropy did not found a solution)
-        } else if (schedulerResult.getResult() == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
+        } else if (schedulerResult.state == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
             Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
             // TODO Mario, please check where/how do you want to store numberOfBrokenPlan (i.e. when some nodes failures prevent to complete tha reconfiguration plan)
         } else {

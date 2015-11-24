@@ -13,13 +13,11 @@ crossPaths := false
 
 retrieveManaged := true
 
-resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
-
 libraryDependencies ++= Seq(
-  "org.btrplace" % "scheduler-api" % "0.42-SNAPSHOT",
-  "org.btrplace" % "scheduler-choco" % "0.42-SNAPSHOT",
-  "org.btrplace" % "scheduler" % "0.42-SNAPSHOT",
-  "org.btrplace" % "bench" % "0.42-SNAPSHOT"
+  "org.btrplace" % "scheduler-api" % "0.42",
+  "org.btrplace" % "scheduler-choco" % "0.42",
+  "org.btrplace" % "scheduler" % "0.42",
+  "org.btrplace" % "bench" % "0.42"
 )
 
 // Excluding the following directories for compilation: scheduling/dvms

@@ -10,8 +10,6 @@ import scheduling.Scheduler;
 import scheduling.Scheduler.SchedulerResult;
 import trace.Trace;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 
 
@@ -56,13 +54,13 @@ public class CentralizedResolver extends Process {
 
                 scheduler = SchedulerBuilder.getInstance().build(hostsToCheck, ++loopID);
                 schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
-                previousDuration = schedulerResult.getDuration();
-                if (schedulerResult.getResult() == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
+                previousDuration = schedulerResult.duration;
+                if (schedulerResult.state == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
                     Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
-                } else if (schedulerResult.getResult() == SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
+                } else if (schedulerResult.state== SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
                     Msg.info("No viable solution (duration: " + previousDuration + ")");
                     numberOfCrash++;
-                } else if (schedulerResult.getResult() == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
+                } else if (schedulerResult.state == SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED) {
                     Msg.info("Reconfiguration plan has been broken (duration: " + previousDuration + ")");
                     numberOfBrokenPlan++;
                 } else {

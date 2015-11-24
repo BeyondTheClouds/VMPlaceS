@@ -26,31 +26,10 @@ public abstract class AbstractScheduler implements Scheduler {
     protected boolean rpAborted;
 
 	/**
-	 * The time spent to compute VMPP
-	 * @deprecated Please consider that this value is currently deprecated and will be set to zero until it will be fixed - Adrien, Nov 18 2011
-	 */
-	protected long timeToComputeVMPP;
-
-	/**
-	 * The time spent to compute the reconfiguration plan.
-	 */
-	protected long timeToComputeVMRP;
-
-	/**
-	 * 	The time spent to apply the reconfiguration plan.
-	 */
-	protected long timeToApplyReconfigurationPlan;
-
-	/**
 	 * 	The cost of the reconfiguration plan.
 	 */
 	protected int planCost;
 
-    /**
-     * The number of migrations inside the reconfiguration plan.
-     */
-	protected int nbMigrations;
-	
     /**
      * The depth of the graph of the reconfiguration actions.
      */
@@ -74,11 +53,7 @@ public abstract class AbstractScheduler implements Scheduler {
 	 * Constructor initializing fields and creating the source configuration regarding xHosts.
 	 */
 	protected AbstractScheduler() {
-		timeToComputeVMPP = 0;
-		timeToComputeVMRP = 0;
-		timeToApplyReconfigurationPlan = 0;
 		planCost = 0;
-		nbMigrations = 0;
 		planGraphDepth = 0;
 	}
 
@@ -117,6 +92,87 @@ public abstract class AbstractScheduler implements Scheduler {
      */
 	protected boolean ongoingMigrations() {
         return (this.ongoingMigrations != 0);
+    }
+
+    /**
+     * Core implementation
+     *
+     * @param hostsToCheck The XHost to check for violations
+     * @return A SchedulerResult representing the success or failure of the algorithm loop
+     */
+    public SchedulerResult checkAndReconfigure(Collection<XHost> hostsToCheck) {
+        Msg.info("Launching scheduler (id = " + id + ") - start to compute");
+
+        ComputingResult computingResult;
+        long reconfigurationTime;
+        SchedulerResult enRes = new SchedulerResult();
+
+		/* Tracing code */
+        for (XHost h : hostsToCheck) {
+            if (!h.isViable())
+                Trace.hostPushState(h.getName(), "PM", "violation-det");
+            Trace.hostSetState(h.getName(), "SERVICE", "booked");
+        }
+
+        /** PLEASE NOTE THAT ALL COMPUTATIONS BELOW DOES NOT MOVE FORWARD THE MSG CLOCK ***/
+        computingResult = this.computeReconfigurationPlan();
+
+        /* Tracing code */
+        double computationTimeAsDouble = ((double) computingResult.duration) / 1000;
+
+        int partitionSize = hostsToCheck.size();
+
+        /** **** NOW LET'S GO BACK TO THE SIMGRID WORLD **** */
+
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"state\" : \"%s\", \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingResult.state, computingResult.actionCount, partitionSize));
+
+
+        try {
+            org.simgrid.msg.Process.sleep(computingResult.duration); // instead of waitFor that takes into account only seconds
+        } catch (HostFailureException e) {
+            e.printStackTrace();
+        }
+
+        Msg.info("Computation time (in ms):" + computingResult.duration);
+        enRes.duration = computingResult.duration;
+
+        if (computingResult.state.equals(ComputingResult.State.NO_RECONFIGURATION_NEEDED)) {
+            Msg.info("Configuration remains unchanged");
+            enRes.state = SchedulerResult.State.NO_RECONFIGURATION_NEEDED;
+        } else if (computingResult.state.equals(ComputingResult.State.SUCCESS)) {
+
+			/* Tracing code */
+            // Note Adrian : it is difficult with BtrPlace to isolate the impacted XHosts
+            for (XHost h : hostsToCheck)
+                Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
+
+            Trace.hostPushState(Host.currentHost().getName(), "SERVICE", "reconfigure");
+
+            // Applying reconfiguration plan
+            Msg.info("Starting reconfiguration");
+            double startReconfigurationTime = Msg.getClock();
+            this.applyReconfigurationPlan();
+            double endReconfigurationTime = Msg.getClock();
+            reconfigurationTime = ((long) (endReconfigurationTime - startReconfigurationTime) * 1000);
+            Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
+            enRes.duration += reconfigurationTime;
+            Msg.info("Number of nodes used: " + hostsToCheck.size());
+
+            enRes.state = this.rpAborted ?
+                    SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED : SchedulerResult.State.SUCCESS;
+
+            Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
+        } else {
+            Msg.info("BtrPlace did not find any viable solution");
+            enRes.state = SchedulerResult.State.NO_VIABLE_CONFIGURATION;
+        }
+
+		/* Tracing code */
+        for (XHost h : hostsToCheck)
+            Trace.hostSetState(h.getName(), "SERVICE", "free");
+
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
+        return enRes;
     }
 
 
@@ -168,7 +224,7 @@ public abstract class AbstractScheduler implements Scheduler {
                                 int res = sourceHost.migrate(args[0], destHost);
                                 // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
                                 // To this aim, please extend the hostPopState API to add meta data information
-                                Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", vmName, res));
+                                Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", vmName, res));
                                 double migrationDuration = Msg.getClock() - timeStartingMigration;
 
                                 if (res == 0) {
@@ -242,7 +298,7 @@ public abstract class AbstractScheduler implements Scheduler {
                             double timeStartingSuspension = Msg.getClock();
                             Trace.hostPushState(args[0], "SERVICE", "suspend", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\"}", args[0], args[1]));
                             int res = vm.suspend();
-                            Trace.hostPopState(args[0], "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", args[0], res));
+                            Trace.hostPopState(args[0], "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", args[0], res));
                             double suspensionDuration = Msg.getClock() - timeStartingSuspension;
 
                             switch (res) {
@@ -274,7 +330,7 @@ public abstract class AbstractScheduler implements Scheduler {
                                     Msg.info("Reconfiguration plan cannot be completely applied so abort it");
                                     rpAborted = true;
                                 default:
-                                    System.err.println("Unexpected result from XVM.suspend()");
+                                    System.err.println("Unexpected state from XVM.suspend()");
                                     System.exit(-1);
                             }
                         }
@@ -316,7 +372,7 @@ public abstract class AbstractScheduler implements Scheduler {
                             double timeStartingResumption = Msg.getClock();
                             Trace.hostPushState(args[0], "SERVICE", "resume", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\"}", args[0], args[1]));
                             int res = vm.resume();
-                            Trace.hostPopState(args[0], "SERVICE", String.format("{\"vm_name\": \"%s\", \"result\": %d}", args[0], res));
+                            Trace.hostPopState(args[0], "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", args[0], res));
                             double resumptionDuration = Msg.getClock() - timeStartingResumption;
 
                             switch (res) {
@@ -347,7 +403,7 @@ public abstract class AbstractScheduler implements Scheduler {
                                     Msg.info("Reconfiguration plan cannot be completely applied so abort it");
                                     rpAborted = true;
                                 default:
-                                    System.err.println("Unexpected result from XVM.resume()");
+                                    System.err.println("Unexpected state from XVM.resume()");
                                     System.exit(-1);
                             }
                         }

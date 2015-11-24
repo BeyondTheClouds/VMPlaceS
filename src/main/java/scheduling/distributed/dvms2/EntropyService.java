@@ -20,7 +20,6 @@ package scheduling.distributed.dvms2;
  * ============================================================ */
 
 //import akka.actor.ActorRef;
-import scheduling.Scheduler.*;
 import entropy.configuration.Configuration;
 import entropy.configuration.SimpleManagedElementSet;
 import entropy.execution.Dependencies;
@@ -34,6 +33,7 @@ import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
 import org.discovery.DiscoveryModel.model.ReconfigurationModel.*;
+import scheduling.Scheduler.*;
 import scheduling.distributed.dvms2.dvms.dvms2.DvmsModel.*;
 import java.util.*;
 
@@ -104,7 +104,7 @@ public class EntropyService {
         }
 
 
-        ComputingState res = ComputingState.SUCCESS;
+        ComputingResult res = new ComputingResult();
 
         List<VJob> vjobs = new ArrayList<VJob>();
         DefaultVJob v = new DefaultVJob("v1");
@@ -129,16 +129,14 @@ public class EntropyService {
             e.printStackTrace(System.out);
             System.out.println("Entropy: No solution :(");
             System.err.println("Entropy: No solution :(");
-            res = ComputingState.PLACEMENT_FAILED;
+            res.state = ComputingResult.State.PLACEMENT_FAILED;
         }
-
-        int nbMigrations = 0;
 
         if (reconfigurationPlan != null) {
             if (reconfigurationPlan.getActions().isEmpty())
-                res = ComputingState.NO_RECONFIGURATION_NEEDED;
+                res.state = ComputingResult.State.NO_RECONFIGURATION_NEEDED;
 
-            nbMigrations = computeNbMigrations(reconfigurationPlan, machines);
+            res.actionCount = computeNbMigrations(reconfigurationPlan, machines);
 
 
             try {
@@ -172,7 +170,7 @@ public class EntropyService {
 
         }
 
-        if(res != ComputingState.PLACEMENT_FAILED) {
+        if(res.state != ComputingResult.State.PLACEMENT_FAILED) {
             return new ReconfigurationSolution(actions);
         } else {
             return new ReconfigurationlNoSolution();

@@ -182,121 +182,29 @@ public class BtrPlaceRP extends AbstractScheduler {
 
     /**
      * Computes the reconfiguration plan and measure the duration of the computation.
-     * @return the result of the reconfiguration (i.e. > 0), -1 there is no viable reconfiguration, -2 the reconfiguration crash
+     * @return The result of the computation
      */
-    public ComputingState computeReconfigurationPlan() {
+    public ComputingResult computeReconfigurationPlan() {
+        Msg.info("Nodes considered: " + source.getMapping().getAllNodes().toString());
+
+        long timeToComputeVMRP = System.currentTimeMillis();
         try {
-            timeToComputeVMRP = System.currentTimeMillis();
             reconfigurationPlan = this.btrSolver.solve(source, constraints);
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
         } catch (SchedulerException e) {
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
             reconfigurationPlan = null;
             Msg.critical("An error occurred while solving the model : " + e.getCause());
-            return ComputingState.RECONFIGURATION_FAILED;
+            return new ComputingResult(ComputingResult.State.RECONFIGURATION_FAILED, timeToComputeVMRP);
         }
 
         if (reconfigurationPlan == null)
-            return ComputingState.RECONFIGURATION_FAILED;
+            return new ComputingResult(ComputingResult.State.RECONFIGURATION_FAILED, timeToComputeVMRP);
         else if (reconfigurationPlan.getActions().isEmpty())
-            return ComputingState.NO_RECONFIGURATION_NEEDED;
+            return new ComputingResult(ComputingResult.State.NO_RECONFIGURATION_NEEDED, timeToComputeVMRP);
         else
-            return ComputingState.SUCCESS;
+            return new ComputingResult(ComputingResult.State.SUCCESS, timeToComputeVMRP, reconfigurationPlan.getSize());
 
-    }
-
-    /**
-     * @param hostsToCheck The XHost to check for violations
-     * @return A SchedulerResult representing the success or failure of the algorithm loop
-     */
-    public SchedulerResult checkAndReconfigure(Collection<XHost> hostsToCheck) {
-
-        long beginTimeOfCompute;
-        long endTimeOfCompute;
-        long computationTime;
-        ComputingState computingState;
-        long reconfigurationTime;
-        SchedulerResult enRes = new SchedulerResult();
-
-		/* Tracing code */
-        for (XHost h : hostsToCheck) {
-            if (!h.isViable())
-                Trace.hostPushState(h.getName(), "PM", "violation-det");
-            Trace.hostSetState(h.getName(), "SERVICE", "booked");
-        }
-
-        Msg.info("Launching scheduler (id = " + id + ") - start to compute");
-        Msg.info("Nodes considered: " + source.getMapping().getAllNodes().toString());
-
-        /** PLEASE NOTE THAT ALL COMPUTATIONS BELOW DOES NOT MOVE FORWARD THE MSG CLOCK ***/
-        beginTimeOfCompute = System.currentTimeMillis();
-        computingState = this.computeReconfigurationPlan();
-        endTimeOfCompute = System.currentTimeMillis();
-        computationTime = (endTimeOfCompute - beginTimeOfCompute);
-
-        /* Tracing code */
-        double computationTimeAsDouble = ((double) computationTime) / 1000;
-
-        int migrationCount = 0;
-        if (computingState.equals(ComputingState.SUCCESS)) {
-            migrationCount = this.reconfigurationPlan.getSize();
-        }
-
-        int partitionSize = hostsToCheck.size();
-
-        /** **** NOW LET'S GO BACK TO THE SIMGRID WORLD **** */
-
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"result\" : \"%s\", \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingState, migrationCount, partitionSize));
-
-
-        try {
-            org.simgrid.msg.Process.sleep(computationTime); // instead of waitFor that takes into account only seconds
-        } catch (HostFailureException e) {
-            e.printStackTrace();
-        }
-
-        Msg.info("Computation time (in ms):" + computationTime);
-        enRes.setDuration(computationTime);
-
-        if (computingState.equals(ComputingState.NO_RECONFIGURATION_NEEDED)) {
-            Msg.info("Configuration remains unchanged");
-            enRes.setResult(SchedulerResult.State.NO_RECONFIGURATION_NEEDED);
-        } else if (computingState.equals(ComputingState.SUCCESS)) {
-
-			/* Tracing code */
-            // Note Adrian : it is difficult with BtrPlace to isolate the impacted XHosts
-            for (XHost h : hostsToCheck)
-                Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
-
-            Trace.hostPushState(Host.currentHost().getName(), "SERVICE", "reconfigure");
-
-            // Applying reconfiguration plan
-            Msg.info("Starting reconfiguration");
-            double startReconfigurationTime = Msg.getClock();
-            this.applyReconfigurationPlan();
-            double endReconfigurationTime = Msg.getClock();
-            reconfigurationTime = ((long) (endReconfigurationTime - startReconfigurationTime) * 1000);
-            Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
-            enRes.setDuration(enRes.getDuration() + reconfigurationTime);
-            Msg.info("Number of nodes used: " + hostsToCheck.size());
-
-            if (this.rpAborted)
-                enRes.setResult(SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED);
-            else
-                enRes.setResult(SchedulerResult.State.SUCCESS);
-
-            Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
-        } else {
-            Msg.info("BtrPlace did not find any viable solution");
-            enRes.setResult(SchedulerResult.State.NO_VIABLE_CONFIGURATION);
-        }
-
-		/* Tracing code */
-        for (XHost h : hostsToCheck)
-            Trace.hostSetState(h.getName(), "SERVICE", "free");
-
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "free");
-        return enRes;
     }
 
     /**
