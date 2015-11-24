@@ -84,27 +84,19 @@ public enum SchedulerBuilder {
      * @param e thrown exception
      */
     private void handleExceptions(Exception e) {
-       if (e instanceof NoSuchMethodException) {
+        System.err.println(e);
+        if (e instanceof NoSuchMethodException) {
             Msg.critical("Scheduler constructor not found. This should never happen!!");
-            System.err.println(e);
-            System.exit(-1);
-       } else if (e instanceof InstantiationException) {
+        } else if (e instanceof InstantiationException) {
             Msg.critical("Scheduler instantiation issue");
-            System.err.println(e);
-            System.exit(-1);
-       } else if (e instanceof IllegalAccessException) {
+        } else if (e instanceof IllegalAccessException) {
             Msg.critical("Scheduler constructor could not be accessed");
-            System.err.println(e);
-            System.exit(-1);
-       } else if (e instanceof InvocationTargetException) {
+        } else if (e instanceof InvocationTargetException) {
             Msg.critical("Invocation target exception while instantiating the scheduler");
-            System.err.println(e);
-            System.exit(-1);
         } else {
             Msg.critical("Unhandled exception");
-            System.err.println(e);
-            System.exit(-1);
         }
+        System.exit(-1);
     }
     
 }
