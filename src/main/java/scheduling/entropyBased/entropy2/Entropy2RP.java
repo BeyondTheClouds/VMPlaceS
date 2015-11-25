@@ -39,7 +39,7 @@ public class Entropy2RP extends AbstractEntropyScheduler {
     // Constructeurs gardes pour une eventuelle retro-compatibilite ---------------
 
     public Entropy2RP(Configuration initialConfiguration) {
-        this.initialize(initialConfiguration);
+        this.initialise(initialConfiguration);
     }
 
     public Entropy2RP(Configuration initialConfiguration, int loopID) {
@@ -51,17 +51,17 @@ public class Entropy2RP extends AbstractEntropyScheduler {
 
     public Entropy2RP() { }
 
-    public void initialize(Collection<XHost> hostsToCheck) {
+    public void initialise(Collection<XHost> hostsToCheck) {
         Configuration configuration = (Configuration) ExtractConfiguration(hostsToCheck);
-        this.initialize(configuration);
+        this.initialise(configuration);
     }
 
-    public void initialize(Collection<XHost> hostsToCheck, int loopID) {
-        this.initialize(hostsToCheck);
+    public void initialise(Collection<XHost> hostsToCheck, int loopID) {
+        this.initialise(hostsToCheck);
         this.loopID = loopID;
     }
 
-    protected void initialize(Configuration initialConfiguration) {
+    protected void initialise(Configuration initialConfiguration) {
         this.initialConfiguration = initialConfiguration;
         planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
         planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0

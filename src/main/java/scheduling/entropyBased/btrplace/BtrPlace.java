@@ -7,8 +7,12 @@ import org.btrplace.model.Mapping;
 import org.btrplace.model.Model;
 import org.btrplace.model.Node;
 import org.btrplace.model.VM;
+import org.btrplace.model.constraint.*;
 import org.btrplace.model.view.ShareableResource;
+import org.btrplace.plan.DependencyBasedPlanApplier;
 import org.btrplace.plan.ReconfigurationPlan;
+import org.btrplace.plan.TimeBasedPlanApplier;
+import org.btrplace.plan.event.Action;
 import org.btrplace.plan.event.MigrateVM;
 import org.btrplace.scheduler.SchedulerException;
 import org.btrplace.scheduler.choco.DefaultChocoScheduler;
@@ -42,30 +46,25 @@ public class BtrPlace extends AbstractScheduler {
     private ReconfigurationPlan reconfigurationPlan;
     private boolean abortRP;
 
-
-
-    public void initialize(Collection<XHost> hostsToCheck, int loopID) {
-        this.initialize(hostsToCheck);
-        this.loopID = loopID;
-    }
-
-    public void initialize(Collection<XHost> hostsToCheck) {
+    public void initialise(Collection<XHost> hostsToCheck) {
         this.configuration = ExtractConfiguration(hostsToCheck);
-        DefaultParameters ps = new DefaultParameters(); //TODO: permettre de passer les paramètres en paramètre
-        this.scheduler = new DefaultChocoScheduler(ps);
-        this.scheduler.doOptimize(true); // TODO: Voir si nous cherchons la meilleur solution possible (Voire passer la valeur en paramètre ?)
+        this.scheduler = new DefaultChocoScheduler();
+        this.scheduler.doOptimize(false);
         this.scheduler.doRepair(true);
-        this.scheduler.setTimeLimit(configuration.getModel().getMapping().getNbNodes() / 8); //TODO: Hadrien, 8 -> nombre de coeurs dispos ?
-        this.scheduler.setDurationEvaluators(DurationEvaluators.newBundle()); //TODO: Hadrien, Vérifier cohérence
+        this.scheduler.setTimeLimit(Math.max(configuration.getNbNodes() / 8, 10));
         this.abortRP = false;
         //Log the current Configuration
-        //TODO Hadrien : Implementer la serialisation de la configuration BtrPlace
-        /*try {
-            String fileName = "logs/entropy/configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt";
-            FileConfigurationSerializerFactory.getInstance().write(configuration, fileName);
+        try {
+            String fileName = BtrPlaceUtils.LOG_PATH_BASE + "configuration/" + loopID + "-"+ System.currentTimeMillis() + ".txt";
+            BtrPlaceUtils.log(configuration, fileName);
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
+        }
+    }
+
+    public void initialise(Collection<XHost> hostsToCheck, int loopID) {
+        this.initialise(hostsToCheck);
+        this.loopID = loopID;
     }
 
     @Override
@@ -75,26 +74,16 @@ public class BtrPlace extends AbstractScheduler {
 
         try {
             timeToComputeVMRP = System.currentTimeMillis();
-
-            reconfigurationPlan = scheduler.solve(configuration.getModel(), configuration.getSatConstraints());//configuration.asInstance());
-
+            reconfigurationPlan = scheduler.solve(configuration.getModel(), configuration.getSatConstraints()); //configuration.asInstance());
             timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
-            /*System.out.println("Time-based plan:");
-            System.out.println(new TimeBasedPlanApplier().toString(reconfigurationPlan));
-            System.out.println("\nDependency based plan:");
-            System.out.println(new DependencyBasedPlanApplier().toString(reconfigurationPlan));*/
+            BtrPlaceUtils.print(reconfigurationPlan);
         } catch (SchedulerException ex) {
             System.err.println(ex.getMessage());
             res = ComputingState.RECONFIGURATION_FAILED;
         }
 
-        if (reconfigurationPlan != null) {
-            if (reconfigurationPlan.getActions().isEmpty()) {
-                res = ComputingState.NO_RECONFIGURATION_NEEDED;
-            }
+        if (reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()) {
             reconfigurationPlanCost = reconfigurationPlan.getDuration();
-            //configuration = new Instance(plan.getResult(), configuration.getSatConstraints(), configuration.getOptConstraint());
-            //newModel = reconfigurationPlan.getResult();
             nbMigrations = computeNbMigrations();
             reconfigurationGraphDepth = computeReconfigurationGraphDepth();
             res = ComputingState.SUCCESS;
@@ -107,7 +96,7 @@ public class BtrPlace extends AbstractScheduler {
     private int computeNbMigrations(){
         int nbMigrations = 0;
 
-        for (org.btrplace.plan.event.Action a : reconfigurationPlan.getActions()){
+        for (Action a : reconfigurationPlan.getActions()){
             if(a instanceof MigrateVM){
                 nbMigrations++;
             }
@@ -126,9 +115,9 @@ public class BtrPlace extends AbstractScheduler {
         } else {
             int maxNbDeps = 0;
             int nbDeps;
-            Collection<org.btrplace.plan.event.Action> actions = reconfigurationPlan.getActions();
-            for (org.btrplace.plan.event.Action action : actions) {
-                nbDeps = reconfigurationPlan.getDirectDependencies(action).size(); //TODO: Hadrien, vérifier correspondance getDirectDependencies() <-> getUnsatisfiedDependencies()
+            Collection<Action> actions = reconfigurationPlan.getActions();
+            for (Action action : actions) {
+                nbDeps = reconfigurationPlan.getDirectDependencies(action).size();
                 if (nbDeps > maxNbDeps) {
                     maxNbDeps = nbDeps;
                 }
@@ -141,25 +130,18 @@ public class BtrPlace extends AbstractScheduler {
     @Override
     public void applyReconfigurationPlan() {
         if(reconfigurationPlan != null && !reconfigurationPlan.getActions().isEmpty()) {
-            //Model model = plan.getReconfigurationApplier().apply(plan);
-            //configuration = new Instance(model, configuration.getSatConstraints(), configuration.getOptConstraint());
-            Comparator<org.btrplace.plan.event.Action> startFirstComparator = new VmNamesBasedActionComparator(configuration.getVmNames());
-            LinkedList<org.btrplace.plan.event.Action> sortedActions = new LinkedList<>(reconfigurationPlan.getActions());
+
+            Comparator<Action> startFirstComparator = new VmNamesBasedActionComparator(configuration.getVmNames());
+            LinkedList<Action> sortedActions = new LinkedList<>(reconfigurationPlan.getActions());
             Collections.sort(sortedActions, startFirstComparator);
 
             try {
-                File file = new File("logs/entropy/reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt");
-                file.getParentFile().mkdirs();
-                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-                pw.write(reconfigurationPlan.toString());
-                /*for (org.btrplace.plan.event.Action a : sortedActions) {
-                    pw.write(a.toString()+"\n");
-                }*/
-                pw.flush();
-                pw.close();
+                String filePath = BtrPlaceUtils.LOG_PATH_BASE + "reconfigurationplan/" + loopID + "-" + System.currentTimeMillis() + ".txt";
+                BtrPlaceUtils.log(reconfigurationPlan, filePath);
             } catch (IOException e) {
                 e.printStackTrace();
             }
+
             // Apply the reconfiguration plan.
             try {
                 applyReconfigurationPlanLogically(sortedActions);
@@ -171,9 +153,9 @@ public class BtrPlace extends AbstractScheduler {
     }
 
     //Apply the reconfiguration plan logically (i.e. create/delete Java objects)
-    private void applyReconfigurationPlanLogically(LinkedList<org.btrplace.plan.event.Action> sortedActions) throws InterruptedException{
+    private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException{
 
-        for (org.btrplace.plan.event.Action a : sortedActions) {
+        for (Action a : sortedActions) {
             applyReconfigurationPlanForAction(a);
         }
 
@@ -201,21 +183,21 @@ public class BtrPlace extends AbstractScheduler {
         }
     }
 
-    private void applyReconfigurationPlanForAction(org.btrplace.plan.event.Action a) throws InterruptedException {
+    private void applyReconfigurationPlanForAction(Action a) throws InterruptedException {
         //Start the feasible actions
         // ie, actions with a start moment equals to 0.
         if ((a.getStart() == 0)  && !isReconfigurationPlanAborted()) {
-            Set<org.btrplace.plan.event.Action> depedencies = reconfigurationPlan.getDirectDependencies(a);
-            for(org.btrplace.plan.event.Action dep : depedencies) {
+            Set<Action> depedencies = reconfigurationPlan.getDirectDependencies(a);
+            for (Action dep : depedencies) {
                 applyReconfigurationPlanForAction(dep);
             }
             instantiateAndStart(a);
-            a.apply(configuration.getModel());
+            //a.apply(configuration.getModel());
         }
     }
 
 
-    private void instantiateAndStart(org.btrplace.plan.event.Action a) throws InterruptedException{
+    private void instantiateAndStart(Action a) throws InterruptedException{
         if(a instanceof MigrateVM){
             MigrateVM migration = (MigrateVM) a;
             this.relocateVM(configuration.getVmName(migration.getVM().id()),
@@ -309,7 +291,7 @@ public class BtrPlace extends AbstractScheduler {
 
             Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
         } else {
-            Msg.info("Entropy did not find any viable solution");
+            Msg.info("Btrplace did not find any viable solution");
             enRes.setRes(-1);
         }
 
@@ -343,19 +325,51 @@ public class BtrPlace extends AbstractScheduler {
 
             Node n = model.newNode();
             currConf.setNodeName(n.id(), tmpH.getName());
-            rcCPU.setCapacity(n,tmpH.getCPUCapacity());
+            rcCPU.setCapacity(n, tmpH.getCPUCapacity());
             rcMem.setCapacity(n,tmpH.getMemSize());
             map.addOnlineNode(n);
+            currConf.getSatConstraints().add(new Online(n));
+
+
+            int maxCPU = tmpH.getCPUCapacity();
+            int maxMem = tmpH.getMemSize();
+            int demandCPU = (int) tmpH.computeCPUDemand();
+            int demandMem = tmpH.getMemDemand();
+            boolean needShareCPU = demandCPU > maxCPU;
+            boolean needShareMem = demandMem > maxMem;
+            int sharedCPU = maxCPU / tmpH.getRunnings().size();
+            int sharedMem = maxMem / tmpH.getRunnings().size();
+
 
             for (XVM tmpVM : tmpH.getRunnings()) {
                 VM vm = model.newVM();
                 currConf.setVmName(vm.id(), tmpVM.getName());
-                rcCPU.setConsumption(vm, (int) tmpVM.getCPUDemand());
-                rcMem.setConsumption(vm, tmpVM.getMemSize());
                 map.addRunningVM(vm, n);
+                currConf.getSatConstraints().add(new Running(vm));
+                //currConf.getSatConstraints().add(new NoDelay(vm));
+
+                if (needShareCPU) {
+                    rcCPU.setConsumption(vm, Math.min(sharedCPU,(int) tmpVM.getCPUDemand()));
+                } else {
+                    rcCPU.setConsumption(vm, (int) tmpVM.getCPUDemand());
+                }
+                currConf.getSatConstraints().add(new Preserve(vm, "cpu", (int) tmpVM.getCPUDemand()));
+
+                if (needShareMem) {
+                    rcMem.setConsumption(vm, Math.min(sharedMem,(int) tmpVM.getMemSize()));
+                } else {
+                    rcMem.setConsumption(vm, tmpVM.getMemSize());
+                }
+                currConf.getSatConstraints().add(new Preserve(vm, "mem", tmpVM.getMemSize()));
+
             }
 
+
         }
+        //model.attach(rcCPU);
+        //model.attach(rcMem);
+
+        BtrPlaceUtils.print(currConf);
 
         return currConf;
     }
@@ -383,9 +397,9 @@ public class BtrPlace extends AbstractScheduler {
     public void relocateVM(final String vmName, final String sourceName, final String destName) {
         Random rand = new Random(SimulatorProperties.getSeed());
 
-        Msg.info("Relocate VM " + vmName + " (from " + sourceName + " to " + destName + ")");
+         Msg.info("Relocate VM " + vmName + " (from " + sourceName + " to " + destName + ")");
 
-        if (destName != null) {
+        if (sourceName != null && destName != null) {
             String[] args = new String[3];
 
             args[0] = vmName;

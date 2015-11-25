@@ -39,9 +39,6 @@ public class SchedulerSelector {
 
             scheduler = (EntropyBasedScheduler) c.newInstance();
 
-        } catch (ClassNotFoundException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
         } catch (InstantiationException e) {
             System.err.println("Unable to instantiate Scheduler class:" + e.getMessage());
             System.exit(1);
@@ -56,13 +53,13 @@ public class SchedulerSelector {
 
     public static EntropyBasedScheduler createAndInitScheduler(Collection<XHost> hostsToCheck) {
         EntropyBasedScheduler scheduler = createScheduler();
-        scheduler.initialize(hostsToCheck);
+        scheduler.initialise(hostsToCheck);
         return scheduler;
     }
 
     public static EntropyBasedScheduler createAndInitScheduler(Collection<XHost> hostsToCheck, int loopID) {
         EntropyBasedScheduler scheduler = createScheduler();
-        scheduler.initialize(hostsToCheck, loopID);
+        scheduler.initialise(hostsToCheck, loopID);
         return scheduler;
     }
 

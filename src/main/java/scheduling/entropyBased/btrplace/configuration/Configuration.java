@@ -1,5 +1,6 @@
 package scheduling.entropyBased.btrplace.configuration;
 
+import com.sun.swing.internal.plaf.synth.resources.synth_sv;
 import org.btrplace.model.DefaultModel;
 import org.btrplace.model.Instance;
 import org.btrplace.model.Model;
@@ -85,6 +86,19 @@ public class Configuration {
 
     public void setNodeName(int id, String name) {
         this.nodeNames.put(id, name);
+    }
+
+    public int getNbNodes() {
+        if (model != null && model.getMapping() != null) {
+            return model.getMapping().getNbNodes();
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return this.model.toString();
     }
 
 }

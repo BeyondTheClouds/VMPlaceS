@@ -13,9 +13,9 @@ import java.util.Collection;
  */
 public interface EntropyBasedScheduler extends Scheduler {
 
-    void initialize(Collection<XHost> hostsToCheck);
+    void initialise(Collection<XHost> hostsToCheck);
 
-    void initialize(Collection<XHost> hostsToCheck, int loopID);
+    void initialise(Collection<XHost> hostsToCheck, int loopID);
 
     SchedulerResult checkAndReconfigure(Collection<XHost> hostsToCheck);
 }

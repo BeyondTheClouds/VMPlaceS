@@ -41,11 +41,13 @@ mergeStrategy in assembly <<= (mergeStrategy in assembly) { (old) =>
 }
 }
 
+resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
 libraryDependencies ++= Seq(
-  "org.btrplace" % "scheduler-api" % "0.41",
-  "org.btrplace" % "scheduler-choco" % "0.41",
-  "org.btrplace" % "scheduler-json" % "0.41",
-  "org.btrplace" % "btrpsl" % "0.41",
-  "org.btrplace" % "scheduler" % "0.41",
-  "org.btrplace" % "bench" % "0.41"
+  "org.btrplace" % "scheduler-api" % "0.42-SNAPSHOT",
+  "org.btrplace" % "scheduler-choco" % "0.42-SNAPSHOT",
+  "org.btrplace" % "scheduler-json" % "0.42-SNAPSHOT",
+  "org.btrplace" % "btrpsl" % "0.42-SNAPSHOT",
+  "org.btrplace" % "scheduler" % "0.42-SNAPSHOT",
+  "org.btrplace" % "bench" % "0.42-SNAPSHOT"
 )
