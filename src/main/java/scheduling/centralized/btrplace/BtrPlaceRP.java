@@ -15,12 +15,10 @@ import org.btrplace.plan.event.*;
 import org.btrplace.scheduler.SchedulerException;
 import org.btrplace.scheduler.choco.ChocoScheduler;
 import org.btrplace.scheduler.choco.DefaultChocoScheduler;
-import org.simgrid.msg.Host;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
 import scheduling.AbstractScheduler;
 import simulation.SimulatorManager;
-import trace.Trace;
 
 import java.io.*;
 import java.util.*;
@@ -78,7 +76,6 @@ public class BtrPlaceRP extends AbstractScheduler {
          */
 
         this.btrSolver.doRepair(true);
-        this.btrSolver.doOptimize(true);
         this.btrSolver.setTimeLimit(15);
 
         this.extractConfiguration(xHosts);
