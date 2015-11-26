@@ -1,3 +1,22 @@
+# VMPlaceS - GroupeB
+* Maxime Perocheau
+* Joris Pichard
+
+This branch contains the implementation of the algorithm BtrPlace into VMPlaceS. It is now possible to switch easily from Entropty2 to BtrPlace thanks to the configuration file.
+
+## Requirements
+* sbt
+* java (openjdk-8)
+
+## Launch of BtrPlace
+```
+sbt update
+```
+Change the simulator strategy to “btrplace” into the simulator.properties in ./config and run the app as usual
+
+##
+
+
 # VMPlaceS
 
 This repository contains the source of a dedicated framework to evaluate and compare VM placement algorithms.

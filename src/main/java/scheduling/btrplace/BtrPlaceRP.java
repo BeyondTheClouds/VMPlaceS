@@ -35,7 +35,7 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
 	private ChocoScheduler planner;
     private int loopID; //Adrien, just a hack to serialize configuration and reconfiguration into a particular file name
     private boolean abortRP;
-    private int timeLimit = 300;
+    private int timeLimit = 15;
 
     public BtrPlaceRP(Collection<XHost> xhosts) {
 
@@ -46,8 +46,9 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
         super(BtrPlaceRP.ExtractConfiguration(xhosts));
         planner =  new DefaultChocoScheduler();
         planner.doRepair(true);
+        planner.doOptimize(true);
         int time = initialConfiguration.getModel().getMapping().getAllNodes().size()/8;
-        int limit = (time < 300) ? timeLimit : time;
+        int limit = (time < timeLimit) ? timeLimit : time;
         planner.setTimeLimit(limit);
         this.loopID = loopID;
         this.abortRP = false;
@@ -72,7 +73,6 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
 		ComputingState res = ComputingState.SUCCESS;
 
 		try {
-			timeToComputeVMRP = System.currentTimeMillis();
             Instance i = new Instance(initialConfiguration.getModel(), new ArrayList<>(), new MinMTTR());
             InstanceConverter conv = new InstanceConverter();
             String path = "logs/JSON-BtrPlace" + ".txt";
@@ -82,12 +82,16 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
             bufWriter.write(conv.toJSON(i).toString());
             bufWriter.close();
             fw.close();
+            timeToComputeVMRP = System.currentTimeMillis();
             reconfigurationPlan = planner.solve(initialConfiguration.getModel(), initialConfiguration.getCstrs());
 			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
+            if(reconfigurationPlan == null)
+                res = ComputingState.NO_RECONFIGURATION_NEEDED;
 		} catch (SchedulerException e) {
 			e.printStackTrace();
             Msg.error("Scheduler has failed to compute !");
-			timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
+            res = ComputingState.RECONFIGURATION_FAILED ;
+            timeToComputeVMRP = System.currentTimeMillis() - timeToComputeVMRP;
 			reconfigurationPlan = null;
 		} catch (JSONConverterException e) {
             e.printStackTrace();
@@ -106,9 +110,7 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
                     initialConfiguration.getNodeNames());
 			nbMigrations = computeNbMigrations();
 			reconfigurationGraphDepth = computeReconfigurationGraphDepth();
-		} else {
-            res = ComputingState.RECONFIGURATION_FAILED ;
-        }
+		}
 
 		return res;
 	}
