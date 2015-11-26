@@ -46,7 +46,6 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
         super(BtrPlaceRP.ExtractConfiguration(xhosts));
         planner =  new DefaultChocoScheduler();
         planner.doRepair(true);
-        planner.doOptimize(true);
         int time = initialConfiguration.getModel().getMapping().getAllNodes().size()/8;
         int limit = (time < timeLimit) ? timeLimit : time;
         planner.setTimeLimit(limit);
