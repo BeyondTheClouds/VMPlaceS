@@ -103,14 +103,14 @@ Inside the project source folder, run the following:
 $ sbt gen-idea
 ```
 
-Open, then chose the project VMPlaceS
+In intelliJ, chose Open, then chose the project VMPlaceS, then click on "Convert..."
 
 Ignore the warning "Maven Project need to be imported"
 
-Do not convert to a SBT project
+Do not convert to a SBT project or import the SBT project when openning the file "build.sbt"
 
-Do not import the SBT project
-and open the folder in intelliJ: a fully configured project has been generated.
+Configure a scala SDK (Open a .scala file to see the associated warning): Chose or create a scala SDK selecting the 2.10.4 version
+
 
 ### B- Running with command line
 
