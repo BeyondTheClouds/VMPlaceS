@@ -6,12 +6,17 @@ For more details, a deeper scientific description of the project can be found he
 
 ## Requirements
 * sbt
-* java (openjdk-7)
+* java 8 : **openjdk-8**
 * python
 * r language (optional: visualisation)
 
 ## Installation
 
+Clone this branch using
+
+```
+git clone -b groupeA https://github.com/BeyondTheClouds/VMPlaceS.git
+```
 
 ### 1- Simgrid
 
@@ -64,56 +69,31 @@ $ sbt update
 and then copy the **simgrid.jar** from **step 1.2** in the lib folder
 
 
-### Configuring the simulation environement
+### 3- Running the program with IntelliJ
 
-We developed some scripts that ease the conduction of experiments on grid'5000.
-
-```
-simulation.Main
-```
-
-run this class with the following arguments:
-
-Option Type        | Value
--------------------|-------------
-VM_OPTIONS         | -Xmx4G -d64 -Dlogback.configurationFile=config/logback.xml
-PROGRAM_ARGUMENTS  | ./config/cluster_platform.xml ./config/generated_deploy.xml  --cfg=cpu/optim:Full --cfg=tracing:1  --cfg=tracing/filename:simu.trace --cfg=tracing/platform:1
-LOGS (if exists)   | ./logs/console.log
-
-### A- Running with the development environment (IntelliJ)
+#### 3.1- Make the project compatible with IntelliJ
 
 Inside the project source folder, run the following:
 
 ```
 $ sbt gen-idea
 ```
+
 and open the folder in intelliJ: a fully configured project has been generated.
 
-### B- Running with command line
+#### 3.2- Set the configuration
 
-Inside the project source folder, run the following command:
+Click on **Run > Edit configurations...** and then the **plus (+)** button in the top left corner. Choose **Application**.
 
-```
-sbt assembly
-```
+Name it as you wish, for instance _VMPlaceS_, and set the options:
 
-it results in the creation of a **fat-jar** named **simulation.jar** in the target folder:
+Option Type        | Value
+-------------------|-------------
+Main class         | simulation.Main
+VM_OPTIONS         | -Xmx4G -d64 -Dlogback.configurationFile=config/logback.xml
+PROGRAM_ARGUMENTS  | ./config/cluster_platform.xml ./config/generated_deploy.xml  --cfg=cpu/optim:Full --cfg=tracing:1  --cfg=tracing/filename:simu.trace --cfg=tracing/platform:1
 
-```
-jonathan@artoo ~/D/w/VMPlaceS (master)> ls -lh target/*.jar
--rw-r--r--  1 jonathan  staff    12M Dec 18 14:21 target/simulation.jar
-```
+#### 3.3- Run the program
 
-This jar contains all dependencies and can be run with the java command. Please not that the jar must be located in a folder that contains the **config** folder.
-
-Thus it is possible to run the jar with the following command:
-
-```
-java -jar $VM_OPTIONS simulation.Main $PROGRAM_ARGUMENTS
-```
-
-## Run experiments on grid'5000
-
-We developed some scripts to ease the conduction of experiments on grid'5000. These scripts are located on the Rennes site, in the folder /home/jpastor.
-
-Further documentation will arrive later: in case you plan to use it now, do not hesitate to contact us!
+Set the algorithm you want to test in the property `simulator.implementation` in the `simulator.properties` file.
+Click **Run > Run 'VMPlaceS'**.
