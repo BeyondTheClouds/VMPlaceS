@@ -38,23 +38,33 @@ public interface Scheduler {
 
         public State state;
 
-        public int actionCount;
+        /**
+         * Number of migrations in the computed plan
+         */
+        public int nbMigrations;
 
+        /**
+         * Duration of the computing process
+         */
         public long duration;
 
-        public ComputingResult(State state, long duration, int actionCount) {
+        /**
+         * 	The cost of the reconfiguration plan.
+         */
+        protected int planCost;
+
+        public ComputingResult(State state, long duration, int nbMigrations, int planCost) {
             this.state = state;
             this.duration = duration;
-            this.actionCount = actionCount;
+            this.nbMigrations = nbMigrations;
+            this.planCost = planCost;
         }
 
         public ComputingResult(State state, long duration) {
-            this(state, duration, 0);
+            this(state, duration, 0, 0);
         }
 
-        public ComputingResult() {
-            this.state = State.SUCCESS;
-        }
+        public ComputingResult() { this(State.SUCCESS, 0, 0, 0); }
 
     }
 
@@ -64,6 +74,9 @@ public interface Scheduler {
      */
     class SchedulerResult {
 
+        /**
+         * Result of the Scheduling process.
+         */
         public enum State {
 
             SUCCESS("SUCCESS"),

@@ -76,7 +76,8 @@ public class BtrPlaceRP extends AbstractScheduler {
          */
 
         this.btrSolver.doRepair(true);
-        this.btrSolver.setTimeLimit(15);
+        int timeLimit = xHosts.size() / 8;
+        this.btrSolver.setTimeLimit(timeLimit > 10 ? timeLimit : 10);
 
         this.extractConfiguration(xHosts);
 
@@ -201,7 +202,7 @@ public class BtrPlaceRP extends AbstractScheduler {
         else if (reconfigurationPlan.getActions().isEmpty())
             return new ComputingResult(ComputingResult.State.NO_RECONFIGURATION_NEEDED, timeToComputeVMRP);
         else
-            return new ComputingResult(ComputingResult.State.SUCCESS, timeToComputeVMRP, reconfigurationPlan.getSize());
+            return new ComputingResult(ComputingResult.State.SUCCESS, timeToComputeVMRP, computeNbMigrations(), reconfigurationPlan.getDuration());
 
     }
 
@@ -256,7 +257,6 @@ public class BtrPlaceRP extends AbstractScheduler {
 
                 @Override
                 public void committed(MigrateVM migrateVM) {
-                    // Adrian - Naive implementation using the existing relocateVM method
                     relocateVM(
                             vmMap.get(migrateVM.getVM().id()),
                             nodesMap.get(migrateVM.getSourceNode().id()),
@@ -314,6 +314,21 @@ public class BtrPlaceRP extends AbstractScheduler {
                 }
             }
         }
+    }
+
+    /**
+     * Get the number of migrations
+     */
+    private int computeNbMigrations(){
+        int nbMigrations = 0;
+
+        for (Action a : reconfigurationPlan.getActions()) {
+            if (a instanceof MigrateVM) {
+                nbMigrations++;
+            }
+        }
+
+        return nbMigrations;
     }
 
 }

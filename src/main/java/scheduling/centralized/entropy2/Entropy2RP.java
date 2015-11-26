@@ -97,17 +97,18 @@ public class Entropy2RP extends AbstractScheduler {
 			if(reconfigurationPlan.getActions().isEmpty())
 				return new ComputingResult(ComputingResult.State.NO_RECONFIGURATION_NEEDED, timeToComputeVMRP);
 			
-			planCost = reconfigurationPlan.getDuration();
 			destination = reconfigurationPlan.getDestination();
 			planGraphDepth = computeReconfigurationGraphDepth();
-            return new ComputingResult(ComputingResult.State.SUCCESS, timeToComputeVMRP, computeNbMigrations());
+            return new ComputingResult(ComputingResult.State.SUCCESS, timeToComputeVMRP, computeNbMigrations(), reconfigurationPlan.getDuration());
 		} else {
             return new ComputingResult(ComputingResult.State.RECONFIGURATION_FAILED, timeToComputeVMRP);
         }
 		
 	}
-		
-	//Get the number of migrations
+
+    /**
+     * Get the number of migrations
+     */
 	private int computeNbMigrations(){
 		int nbMigrations = 0;
 
