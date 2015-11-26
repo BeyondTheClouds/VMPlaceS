@@ -40,6 +40,7 @@ public class CentralizedResolver extends Process {
         long previousDuration = 0;
         Scheduler scheduler;
         SchedulerRes schedulerRes;
+        String strat = "";
 
         try{
             while (!SimulatorManager.isEndOfInjection()) {
@@ -66,13 +67,12 @@ public class CentralizedResolver extends Process {
                     Msg.info("Reconfiguration OK (duration: " + previousDuration + ")");
                     numberOfSucess++;
                 }
+                strat = scheduler.getClass().getName();
             }
         } catch(HostFailureException e){
             System.err.println(e);
             System.exit(-1);
         }
-        String strat = SimulatorProperties.getStrategy();
-        strat = strat.substring(0, 1).toUpperCase() + strat.substring(1);
         Msg.info(strat+" has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
 
     }

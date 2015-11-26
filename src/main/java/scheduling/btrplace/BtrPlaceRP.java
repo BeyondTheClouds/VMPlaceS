@@ -42,7 +42,7 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
         this(xhosts,new Random().nextInt());
     }
 
-    public BtrPlaceRP(Collection<XHost> xhosts, int loopID) {
+    public BtrPlaceRP(Collection<XHost> xhosts, Integer loopID) {
         super(BtrPlaceRP.ExtractConfiguration(xhosts));
         planner =  new DefaultChocoScheduler();
         planner.doRepair(true);
@@ -362,8 +362,12 @@ public class BtrPlaceRP extends AbstractScheduler<ConfigBtrPlace, Reconfiguratio
             for (XVM tmpVM : tmpH.getRunnings()) {
                 VM v = model.newVM();
                 if(cpu > tmpH.getCPUCapacity()){
-                    int arbitraryCpu = tmpH.getCPUCapacity()/tmpH.getRunnings().size();
-                    rcCPU.setConsumption(v, arbitraryCpu);
+                    int fairShareCPU = tmpH.getCPUCapacity()/tmpH.getRunnings().size();
+                    if(tmpVM.getCPUDemand() < fairShareCPU){
+                        rcCPU.setConsumption(v, (int) tmpVM.getCPUDemand());
+                    } else {
+                        rcCPU.setConsumption(v, fairShareCPU);
+                    }
                     cstrs.add(new Online(n));
                     cstrs.add(new Running(v));
                     cstrs.add(new Preserve(v, "cpu", (int) tmpVM.getCPUDemand()));

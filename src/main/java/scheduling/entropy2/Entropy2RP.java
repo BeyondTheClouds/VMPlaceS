@@ -45,7 +45,7 @@ public class Entropy2RP extends AbstractScheduler<Configuration, TimedReconfigur
         this(xhosts,new Random().nextInt());
     }
 
-    public Entropy2RP(Collection<XHost> xhosts, int loopID) {
+    public Entropy2RP(Collection<XHost> xhosts, Integer loopID) {
 		super(Entropy2RP.ExtractConfiguration(xhosts));
 		planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
 		planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
