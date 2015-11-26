@@ -161,8 +161,9 @@ public class BtrPlaceRP extends AbstractScheduler {
                     mapping.addRunningVM(v, n);
                     this.vmMap.put(v.id(), tmpVM.getName());
 
-                    rcCPU.setConsumption(v, cpuFairShare);
-                    rcMem.setConsumption(v, memFairShare);
+                    // if the VM ask for more resource than what the host can provide, we allow only a fair share of the resources
+                    rcCPU.setConsumption(v, Math.min((int) tmpVM.getCPUDemand(), cpuFairShare));
+                    rcMem.setConsumption(v, Math.min(tmpVM.getMemSize(), memFairShare));
 
                     this.constraints.add(new Preserve(v, "cpu", (int) tmpVM.getCPUDemand()));
                     this.constraints.add(new Preserve(v, "mem", tmpVM.getMemSize()));
