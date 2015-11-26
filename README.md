@@ -87,11 +87,12 @@ Click on **Run > Edit configurations...** and then the **plus (+)** button in th
 
 Name it as you wish, for instance _VMPlaceS_, and set the options:
 
-Option Type        | Value
--------------------|-------------
-Main class         | simulation.Main
-VM_OPTIONS         | -Xmx4G -d64 -Dlogback.configurationFile=config/logback.xml
-PROGRAM_ARGUMENTS  | ./config/cluster_platform.xml ./config/generated_deploy.xml  --cfg=cpu/optim:Full --cfg=tracing:1  --cfg=tracing/filename:simu.trace --cfg=tracing/platform:1
+Option Type             | Value
+------------------------|-------------
+Main class              | simulation.Main
+VM_OPTIONS              | -Xmx4G -d64 -Dlogback.configurationFile=config/logback.xml
+PROGRAM_ARGUMENTS       | ./config/cluster_platform.xml ./config/generated_deploy.xml  --cfg=cpu/optim:Full --cfg=tracing:1  --cfg=tracing/filename:simu.trace --cfg=tracing/platform:1
+Use classpath of module | VMPlaceS
 
 #### 3.3- Run the program
 
