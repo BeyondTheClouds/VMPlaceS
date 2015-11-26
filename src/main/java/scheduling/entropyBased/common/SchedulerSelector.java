@@ -16,11 +16,12 @@ public class SchedulerSelector {
 
     private static final String requiredClassName = EntropyBasedScheduler.class.getCanonicalName();
 
+    private static final String schedulerClassName = SimulatorProperties.getScheduler();
+
     private SchedulerSelector() { }
 
     private static EntropyBasedScheduler createScheduler() {
 
-        String schedulerClassName = SimulatorProperties.getScheduler();
         EntropyBasedScheduler scheduler = null;
 
         if (schedulerClassName.isEmpty()) {

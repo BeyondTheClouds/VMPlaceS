@@ -6,13 +6,23 @@ For more details, a deeper scientific description of the project can be found he
 
 ## Requirements
 * sbt
-* java (openjdk-7)
+* java (openjdk-8)
 * python
 * r language (optional: visualisation)
 
 ## Installation
 
+### - To Do
+Clone the VMPlaceS project 
 
+```
+git clone https://github.com/BeyondTheClouds/VMPlaceS.git
+```
+Switch to the right branch (group C)
+
+```
+git checkout groupeC
+```
 ### 1- Simgrid
 
 #### 1.1- Get Simgrid
@@ -58,10 +68,15 @@ Please follow the instructions corresponding to your operating system: [http://w
 Inside the project source folder, run the following:
 
 ```
+$ sbt clean
+```
+
+```
 $ sbt update
 ```
 
 and then copy the **simgrid.jar** from **step 1.2** in the lib folder
+
 
 
 ### Configuring the simulation environement
@@ -87,6 +102,14 @@ Inside the project source folder, run the following:
 ```
 $ sbt gen-idea
 ```
+
+Open, then chose the project VMPlaceS
+
+Ignore the warning "Maven Project need to be imported"
+
+Do not convert to a SBT project
+
+Do not import the SBT project
 and open the folder in intelliJ: a fully configured project has been generated.
 
 ### B- Running with command line

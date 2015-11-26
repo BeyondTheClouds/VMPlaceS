@@ -36,21 +36,6 @@ public class Entropy2RP extends AbstractEntropyScheduler {
     //	private ChocoCustomPowerRP planner;//Entropy2.0
     private boolean abortRP;
 
-    // Constructeurs gardes pour une eventuelle retro-compatibilite ---------------
-
-    public Entropy2RP(Configuration initialConfiguration) {
-        this.initialise(initialConfiguration);
-    }
-
-    public Entropy2RP(Configuration initialConfiguration, int loopID) {
-		this(initialConfiguration);
-        this.loopID = loopID;
-	}
-
-    // -----------------------------------------------------------------------------
-
-    public Entropy2RP() { }
-
     public void initialise(Collection<XHost> hostsToCheck) {
         Configuration configuration = (Configuration) ExtractConfiguration(hostsToCheck);
         this.initialise(configuration);

@@ -12,7 +12,7 @@ public abstract class AbstractEntropyScheduler extends AbstractScheduler {
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	//The initial configuration
-	protected /*final*/ Configuration initialConfiguration;
+	protected Configuration initialConfiguration;
 	
 	//The new/final configuration
 	protected Configuration newConfiguration;

@@ -1,8 +1,8 @@
 package scheduling.entropyBased.common;
 
 /**
- * Classe de résultat d'un Scheduler basée sur l'ancienne classe Entropy2RP.Entropy2RPRes
- *
+ * Classe de résultat d'un Scheduler
+ * Basée sur l'ancienne classe Entropy2RP.Entropy2RPRes
  */
 public class SchedulerResult {
 

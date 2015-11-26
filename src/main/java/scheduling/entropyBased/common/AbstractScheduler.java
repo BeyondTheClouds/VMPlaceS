@@ -1,16 +1,11 @@
 package scheduling.entropyBased.common;
 
-import configuration.XHost;
-import scheduling.Scheduler;
-
-import java.util.Collection;
 import java.util.Random;
 
 /**
  * Classe représentant un scheduler Abstrait s'appuyant d'Entropy
  * Basée sur l'ancienne classe entropy2.AbstractScheduler
  */
-//An abstract scheduler
 public abstract class AbstractScheduler implements EntropyBasedScheduler {
 
 

@@ -1,9 +1,5 @@
 package scheduling;
 
-import configuration.XHost;
-
-import java.util.Collection;
-
 /**
  * Created with IntelliJ IDEA.
  * User: alebre
