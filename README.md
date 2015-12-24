@@ -2,7 +2,7 @@
 
 This repository contains the source of a dedicated framework to evaluate and compare VM placement algorithms.
 
-For more details, a deeper scientific description of the project can be found here: [http://beyondtheclouds.github.io/VMPlaceS](http://beyondtheclouds.github.io/VMPlaceS)
+For more details, a deeper scientific description of the project can be found [here](http://beyondtheclouds.github.io/VMPlaceS).
 
 ## Requirements
 * sbt
@@ -50,7 +50,7 @@ This file will be used during step **2.2**.
 
 #### 2.1- Installation of sbt:
 
-Please follow the instructions corresponding to your operating system: [http://www.scala-sbt.org/release/tutorial/Setup.html](http://www.scala-sbt.org/release/tutorial/Setup.html) .
+Please follow the instructions corresponding to your operating system [here](http://www.scala-sbt.org/release/tutorial/Setup.html).
 
 #### 2.2- Installation of dependencies
 
