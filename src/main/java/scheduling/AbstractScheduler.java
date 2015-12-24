@@ -25,11 +25,6 @@ public abstract class AbstractScheduler implements Scheduler {
      */
     protected boolean rpAborted;
 
-	/**
-	 * 	The cost of the reconfiguration plan.
-	 */
-	protected int planCost;
-
     /**
      * The depth of the graph of the reconfiguration actions.
      */
@@ -53,7 +48,6 @@ public abstract class AbstractScheduler implements Scheduler {
 	 * Constructor initializing fields and creating the source configuration regarding xHosts.
 	 */
 	protected AbstractScheduler() {
-		planCost = 0;
 		planGraphDepth = 0;
 	}
 
@@ -124,7 +118,7 @@ public abstract class AbstractScheduler implements Scheduler {
 
         /** **** NOW LET'S GO BACK TO THE SIMGRID WORLD **** */
 
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"state\" : \"%s\", \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingResult.state, computingResult.actionCount, partitionSize));
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"state\" : \"%s\", \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingResult.state, computingResult.nbMigrations, partitionSize));
 
 
         try {

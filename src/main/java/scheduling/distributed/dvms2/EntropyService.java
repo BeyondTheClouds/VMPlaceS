@@ -136,7 +136,7 @@ public class EntropyService {
             if (reconfigurationPlan.getActions().isEmpty())
                 res.state = ComputingResult.State.NO_RECONFIGURATION_NEEDED;
 
-            res.actionCount = computeNbMigrations(reconfigurationPlan, machines);
+            res.nbMigrations = computeNbMigrations(reconfigurationPlan, machines);
 
 
             try {
