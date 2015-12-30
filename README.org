@@ -71,3 +71,5 @@ A complete example, should be available on the website soon.
 - Flavien Quesnel -  flavien.quesnel@irt-systemx.fr - France - Contributor (simulator properties, bug fixes, distributed resolver)
 - José Simao - jsimao@cc.isel.ipl.pt - Portugal - First beta tester - few bug fixes
 - Mario Sudhol - mario.sudholt@inria.fr - Implementation of the hierarchical resolver (based on the Snooze proposal)
+- Adrian Fraisse - adrian.fraisse@gmail.com - France -  Implementation of the centralized resolver based on the BtrPlace algorithm
+- Killian Saint Cricq - killian.saintcricq@gmail.com - France - Implementation of the centralized resolver based on the BtrPlace algorithm
