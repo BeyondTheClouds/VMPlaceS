@@ -248,7 +248,7 @@ for key in map_algos_size:
             script_folder_name = "repartition/scripts/%d-%s" % (node_count, algo)
             out_file_path = "repartition/results/%s-%s-%d.pdf" % (metric, algo, node_count)
 
-            execute_cmd(["/usr/bin/Rscript", "%s/compare_%s.r" % (script_folder_name, metric)])
+            execute_cmd(["/usr/bin/env", "Rscript", "%s/compare_%s.r" % (script_folder_name, metric)])
 
             execute_cmd(["mv", "Rplots.pdf", out_file_path])
 

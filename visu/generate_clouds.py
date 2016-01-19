@@ -318,7 +318,7 @@ for key in map_algos_size:
         script_folder_name = "clouds/scripts/%d-%s-%s" % (node_count, element[0], element[1])
         out_file_path = "clouds/results/%d-%s-%s.pdf" % (node_count, element[0], element[1])
 
-        execute_cmd(["/usr/bin/Rscript", "%s/compare.r" % (script_folder_name)])
+        execute_cmd(["/usr/bin/env", "Rscript", "%s/compare.r" % (script_folder_name)])
 
         execute_cmd(["mv", "Rplots.pdf", out_file_path])
 
@@ -358,7 +358,7 @@ for key in map_algos_size:
         script_folder_name = "clouds/scripts/%d-%s" % (node_count, algo)
         out_file_path = "clouds/results/%d-%s.pdf" % (node_count, algo)
 
-        execute_cmd(["/usr/bin/Rscript", "%s/compare.r" % (script_folder_name)])
+        execute_cmd(["/usr/bin/env", "Rscript", "%s/compare.r" % (script_folder_name)])
 
         execute_cmd(["mv", "Rplots.pdf", out_file_path])
 

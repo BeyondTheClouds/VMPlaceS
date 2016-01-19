@@ -40,7 +40,7 @@ execute_cmd(["rm", "scripts/allfigure.r"])
 open("scripts/allfigure.r", 'a').close()
 all_figure_script = open("scripts/allfigure.r", 'a')
 with all_figure_script as f:
-    f.write("#!/usr/bin/Rscript")
+    f.write("#!/usr/bin/env Rscript")
 
     execute_cmd(["chmod", "+x", "scripts/allfigure.r"])
 
@@ -58,6 +58,6 @@ with all_figure_script as f:
                 #     if not line.startswith("#!"):
                 #     	popen("ls")
                 #     	# execute_cmd(["echo", "toto"])
-                execute_cmd(["/usr/bin/Rscript", "%s/%s" % (dirname, filename)])
+                execute_cmd(["/usr/bin/env", "Rscript", "%s/%s" % (dirname, filename)])
                 basename_script = filename.split(".")[0]
                 execute_cmd(["mv", "Rplots.pdf", "results/%s.pdf" % (basename_script)])

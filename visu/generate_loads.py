@@ -222,7 +222,7 @@ for simulation in simulations:
     script_folder_name = "loads/scripts/%d-%s" % (node_count, algo)
     out_file_path = "loads/results/%d-%s.pdf" % (node_count, algo)
 
-    execute_cmd(["/usr/bin/Rscript", "%s/compare.r" % (script_folder_name)])
+    execute_cmd(["/usr/bin/env", "Rscript", "%s/compare.r" % (script_folder_name)])
 
     execute_cmd(["mv", "Rplots.pdf", out_file_path])
 
