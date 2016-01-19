@@ -368,7 +368,6 @@ public class TraceImpl {
         hostVariables.put(host, currentHostVariable);
 
         String valueAsJson = String.format(Locale.US, "{\"value\": %f}", value);
-        Msg.info("value: " + valueAsJson);
         writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
     }
 
