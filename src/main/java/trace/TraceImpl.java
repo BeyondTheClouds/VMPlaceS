@@ -10,6 +10,7 @@ import scheduling.distributed.dvms2.dvms.dvms2.LoggingProtocol;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Locale;
 
 /**
  * Copyright 2012-2013-2014. The SimGrid Team. All rights reserved.
@@ -366,7 +367,8 @@ public class TraceImpl {
         currentHostVariable.put(variable, new TValue(value, now()));
         hostVariables.put(host, currentHostVariable);
 
-        String valueAsJson = String.format("{\"value\": %f}", value);
+        String valueAsJson = String.format(Locale.US, "{\"value\": %f}", value);
+        Msg.info("value: " + valueAsJson);
         writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
     }
 
