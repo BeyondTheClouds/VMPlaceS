@@ -390,7 +390,7 @@ public class TraceImpl {
         currentHostVariable.put(variable, new TValue((tmp - value), now()));
         hostVariables.put(host, currentHostVariable);
 
-        String valueAsJson = String.format("{\"value\": %f}", tmp - value);
+        String valueAsJson = String.format(Locale.US, "{\"value\": %f}", tmp - value);
         writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
     }
 
@@ -416,7 +416,7 @@ public class TraceImpl {
             currentHostVariable.put(variable, new TValue((tmp+value), now()));
             hostVariables.put(host, currentHostVariable);
 
-            String valueAsJson = String.format("{\"value\": %f}", tmp + value);
+            String valueAsJson = String.format(Locale.US, "{\"value\": %f}", tmp + value);
             writeJson(now(), host, "VARIABLE", variable, valueAsJson, duration);
         }
 

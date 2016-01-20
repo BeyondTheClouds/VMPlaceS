@@ -67,6 +67,7 @@ public class Main {
         SimulatorManager.setBeginTimeOfSimulation(System.currentTimeMillis());
 
         // Init. internal values
+        Msg.energyInit();
         Msg.init(args);
 
         // Automatically generate deployment file that is mandatory for launching the simgrid simulation.
@@ -140,17 +141,35 @@ public class Main {
         Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
         Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
 
+        Trace.hostVariableDeclare("ENERGY");
 
 	    /*  execute the simulation. */
         System.out.println("Launcher: begin Msg.run()" + new Date().toString());
+        notify(String.format("Started %s with %d hosts and %d VMs", SimulatorProperties.getImplementation(), SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfVMs()));
+
         Msg.run();
 
         System.out.println("Launcher: end of Msg.run()" + new Date().toString());
-        Trace.flush();
+        Trace.close();
         Msg.info("End of run");
 
-
+        notify(String.format("End of simulation %s", SimulatorProperties.getImplementation()));
 
         Process.killAll(-1);
+    }
+
+    private static void notify(String message) {
+        /*
+        try {
+            Runtime.getRuntime().exec(new String[]{
+                    "terminal-notifier",
+                    "-title", "VMPlaceS",
+                    "-group", "SIMULATOR",
+                    "-message", message
+            });
+        } catch (Exception e) {
+            System.err.println(e);
+        }
+        */
     }
 }

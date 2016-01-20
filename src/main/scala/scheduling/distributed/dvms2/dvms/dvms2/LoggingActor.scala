@@ -29,6 +29,12 @@ object LoggingActor {
   val file = new File("events.json")
   val writer = new PrintWriter(new BufferedWriter(new FileWriter(file)))
 
+
+  def close(){
+    writer.flush()
+    writer.close()
+  }
+
   def write(message: LoggingMessage) = message match {
 
 

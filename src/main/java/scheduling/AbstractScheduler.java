@@ -8,6 +8,7 @@ import simulation.SimulatorManager;
 import trace.Trace;
 
 import java.util.Collection;
+import java.util.Locale;
 import java.util.Random;
 
 /**
@@ -118,7 +119,7 @@ public abstract class AbstractScheduler implements Scheduler {
 
         /** **** NOW LET'S GO BACK TO THE SIMGRID WORLD **** */
 
-        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format("{\"duration\" : %f, \"state\" : \"%s\", \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingResult.state, computingResult.nbMigrations, partitionSize));
+        Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format(Locale.US, "{\"duration\" : %f, \"state\" : \"%s\", \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingResult.state, computingResult.nbMigrations, partitionSize));
 
 
         try {
@@ -235,11 +236,11 @@ public abstract class AbstractScheduler implements Scheduler {
                                     }
 
                                     /* Export that the migration has finished */
-                                    Trace.hostSetState(vmName, "migration", "finished", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+                                    Trace.hostSetState(vmName, "migration", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
                                     Trace.hostPopState(vmName, "migration");
                                 } else {
 
-                                    Trace.hostSetState(vmName, "migration", "failed", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+                                    Trace.hostSetState(vmName, "migration", "failed", String.format(Locale.US, "{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
                                     Trace.hostPopState(vmName, "migration");
 
                                     Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
@@ -308,16 +309,16 @@ public abstract class AbstractScheduler implements Scheduler {
                                     }
 
                                     /* Export that the suspension has finished */
-                                    Trace.hostSetState(args[0], "suspension", "finished", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
+                                    Trace.hostSetState(args[0], "suspension", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
                                     Trace.hostPopState(args[0], "suspension");
                                 case 1:
-                                    Trace.hostSetState(args[0], "suspension", "cancelled", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
+                                    Trace.hostSetState(args[0], "suspension", "cancelled", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
                                     Trace.hostPopState(args[0], "suspension");
 
                                     Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
                                     // Todo : no need to abort the ReconfigurationPlan here ?
                                 case -1:
-                                    Trace.hostSetState(args[0], "suspension", "failed", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
+                                    Trace.hostSetState(args[0], "suspension", "failed", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
                                     Trace.hostPopState(args[0], "suspension");
 
                                     Msg.info("Something went wrong during the suspension of  " + args[0] + " on " + args[1]);
@@ -382,15 +383,15 @@ public abstract class AbstractScheduler implements Scheduler {
                                     }
 
                                     /* Export that the suspension has finished */
-                                    Trace.hostSetState(args[0], "resumption", "finished", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
+                                    Trace.hostSetState(args[0], "resumption", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
                                     Trace.hostPopState(args[0], "resumption");
                                 case 1:
-                                    Trace.hostSetState(args[0], "resumption", "cancelled", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
+                                    Trace.hostSetState(args[0], "resumption", "cancelled", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
                                     Trace.hostPopState(args[0], "resumption");
 
                                     Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
                                 case -1:
-                                    Trace.hostSetState(args[0], "resumption", "failed", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
+                                    Trace.hostSetState(args[0], "resumption", "failed", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
                                     Trace.hostPopState(args[0], "resumption");
 
                                     Msg.info("Something went wrong during the resumption of  " + args[0] + " on " + args[1]);

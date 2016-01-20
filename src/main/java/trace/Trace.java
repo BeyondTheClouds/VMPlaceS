@@ -1,5 +1,8 @@
 package trace;
 
+import com.sun.javafx.binding.Logging;
+import scheduling.distributed.dvms2.dvms.dvms2.LoggingActor;
+
 /**
  * Created by jonathan on 17/09/14.
  */
@@ -154,6 +157,11 @@ public class Trace {
      */
     public static void flush(){
         TraceImpl.getInstance().flush();
+    }
+
+    public static void close() {
+        flush();
+        LoggingActor.close();
     }
 
 }

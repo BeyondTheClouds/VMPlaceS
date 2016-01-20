@@ -198,6 +198,9 @@ public class SimulatorProperties extends Properties {
 	@Override
 	public String getProperty(String key){
 		String result = super.getProperty(key);
+
+		if(System.getProperty(key) != null)
+			result = System.getProperty(key);
 		
 		if(result != null)
 			return result.trim();
@@ -208,7 +211,10 @@ public class SimulatorProperties extends Properties {
 	
 	public static int getPropertyAsInt(String key, int defaultValue){
 		String value = INSTANCE.getProperty(key);
-		
+
+		if(System.getProperty(key) != null)
+			value = System.getProperty(key);
+
 		if(value != null)
 			return Integer.parseInt(value);
 		
@@ -218,7 +224,10 @@ public class SimulatorProperties extends Properties {
 	
 	public static long getPropertyAsLong(String key, long defaultValue){
 		String value = INSTANCE.getProperty(key);
-		
+
+		if(System.getProperty(key) != null)
+			value = System.getProperty(key);
+
 		if(value != null)
 			return Long.parseLong(value);
 		
@@ -228,7 +237,10 @@ public class SimulatorProperties extends Properties {
 	
 	public static boolean getPropertyAsBoolean(String key, boolean defaultValue){
 		String value = INSTANCE.getProperty(key);
-		
+
+		if(System.getProperty(key) != null)
+			value = System.getProperty(key);
+
 		if(value != null)
 			return Boolean.parseBoolean(value);
 		

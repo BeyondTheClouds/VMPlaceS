@@ -87,6 +87,11 @@ public class SimulatorManager {
     private static double currentCPUDemand = 0;
 
     /**
+     * The previous energy consumption
+     */
+    private static Map<XHost, Double> lastEnergy = new HashMap<>();
+
+    /**
      * When the injection is complete, we turn the endOfInjection boolean to true and kill the running daemon inside each VM
      */
 	public static void setEndOfInjection(){
@@ -488,6 +493,13 @@ public class SimulatorManager {
             Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
 
         }
+
+        double energy = tmpHost.getSGHost().getConsumedEnergy();
+        if(lastEnergy.containsKey(tmpHost))
+            energy -= lastEnergy.get(tmpHost);
+
+        Trace.hostVariableSet(tmpHost.getName(), "ENERGY", energy);
+        lastEnergy.put(tmpHost, tmpHost.getSGHost().getConsumedEnergy());
     }
 
     public static boolean willItBeViableWith(XVM sgVM, int load){
