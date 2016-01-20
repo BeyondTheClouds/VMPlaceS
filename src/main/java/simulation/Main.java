@@ -95,6 +95,11 @@ public class Main {
                 //"Usage: python generate.py nb_nodes
                 String[] cmd = {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " > config/generated_deploy.xml"};
                 Runtime.getRuntime().exec(cmd);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
