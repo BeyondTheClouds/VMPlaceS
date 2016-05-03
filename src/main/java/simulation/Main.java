@@ -79,32 +79,31 @@ public class Main {
         // Automatically generate deployment file that is mandatory for launching the simgrid simulation.
         // TODO - implement a more generic way to generate the deployment file
         try {
-
+            String[] cmd = null;
             if (SimulatorProperties.getAlgo().equals("distributed")) {
                 Msg.info("Distributed scheduling selected (generating deployment file)");
-                String[] cmd = {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " +
+                cmd = new String[] {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " +
                         SimulatorProperties.getNbOfHostingNodes() + " " +
                         SimulatorProperties.getNbOfCPUs() + " " +
                         SimulatorProperties.getCPUCapacity() + " " +
                         SimulatorProperties.getMemoryTotal() + " 23000 > config/generated_deploy.xml"};
                 //"Usage: python generate.py nb_nodes nb_cpu total_cpu_cap ram port >
-                Runtime.getRuntime().exec(cmd);
             } else if (SimulatorProperties.getAlgo().equals("hierarchical")) {
                 Msg.info("Hierarchical scheduling selected (generating deployment file for hierarchical approach)");
 
                 //"Usage: python generate.py nb_nodes
-                String[] cmd = {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " " + SimulatorProperties.getNbOfServiceNodes() + " > config/generated_deploy.xml"};
-                Runtime.getRuntime().exec(cmd);
+                cmd = new String[] {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " " + SimulatorProperties.getNbOfServiceNodes() + " > config/generated_deploy.xml"};
             } else { //(SimulatorProperties.getAlgo().equals("centralized"))
                 Msg.info("Default selected (generating deployment file for centralized approach)");
 
                 //"Usage: python generate.py nb_nodes
-                String[] cmd = {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " > config/generated_deploy.xml"};
-                try {
-                    Runtime.getRuntime().exec(cmd).waitFor();
-                } catch (InterruptedException e) {
-                    // Ignore
-                }
+                cmd = new String[] {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " > config/generated_deploy.xml"};
+            }
+            
+            try {
+                Runtime.getRuntime().exec(cmd).waitFor();
+            } catch (InterruptedException e) {
+                // Ignore
             }
         } catch (IOException e) {
             e.printStackTrace();
