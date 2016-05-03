@@ -21,12 +21,18 @@ package simulation;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.util.StatusPrinter;
 import configuration.SimulatorProperties;
+import configuration.XHost;
+import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Date;
 
 import scheduling.hierarchical.snooze.AUX;
@@ -157,23 +163,28 @@ public class Main {
         Trace.close();
         Msg.info("End of run");
 
+        Double energy = 0D;
+        for(XHost h: SimulatorManager.getSGHosts())
+            energy += h.getSGHost().getConsumedEnergy();
+
+        try {
+            String message = null;
+            if(SimulatorProperties.getAlgo().equals("centralized"))
+                message = String.format("%d %s %s %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), SimulatorProperties.getImplementation(), energy);
+            else
+                message = String.format("%d %s %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), energy);
+
+            Files.write(Paths.get("./energy.dat"), message.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         notify(String.format("End of simulation %s", SimulatorProperties.getImplementation()));
 
         Process.killAll(-1);
     }
 
     private static void notify(String message) {
-        /*
-        try {
-            Runtime.getRuntime().exec(new String[]{
-                    "terminal-notifier",
-                    "-title", "VMPlaceS",
-                    "-group", "SIMULATOR",
-                    "-message", message
-            });
-        } catch (Exception e) {
-            System.err.println(e);
-        }
-        */
+        Msg.info(message);
     }
 }
