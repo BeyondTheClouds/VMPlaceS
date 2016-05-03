@@ -15,7 +15,7 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
 
     @Override
     protected void manageOverloadedHost(TreeSet<XHost> overloadedHosts, Collection<XHost> saneHosts, SchedulerResult result) {
-        TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true));
+        TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true, useLoad));
         Map<XVM, XHost> sources = new HashMap<>();
 
         // Remove all VMs from the overloaded hosts

@@ -122,6 +122,7 @@ public class SimulatorProperties extends Properties {
 	private static final String SIMU_ALGO = "simulator.algorithm";
 	private static final String SIMU_IMPL = "simulator.implementation";
 	private static final String STATIONARY_STATUS = "simulator.gotostationarystatus";
+	private static final String FFD_USE_LOAD = "simulator.implementation.ffd.useload";
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Property default values
@@ -170,6 +171,8 @@ public class SimulatorProperties extends Properties {
 	private static final String DEFAULT_SIMU_ALGO = "centralized";
     private static final String DEFAULT_SIMU_IMPL = "scheduling.centralized.entropy2.Entropy2RP";
 	private static final boolean DEFAULT_STATIONARY_STATUS = false;
+
+	private static final boolean DEFAULT_FFD_USE_LOAD = false;
 
 
 
@@ -355,9 +358,9 @@ public class SimulatorProperties extends Properties {
 	}
 	
 	
-	
-	
-	
+
+	public static boolean getUseLoad() { return getPropertyAsBoolean(FFD_USE_LOAD, DEFAULT_FFD_USE_LOAD); }
+
 	
 	
 	

@@ -12,10 +12,11 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
 
     @Override
     protected void manageOverloadedHost(TreeSet<XHost> overloadedHosts, Collection<XHost> saneHosts, SchedulerResult result) {
-        TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true));
+        // The VMs are sorted by decreasing size of CPU and RAM capacity
+        TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true, useLoad));
         Map<XVM, XHost> sources = new HashMap<>();
 
-        // Remove all VMs from the overloaded hosts
+        // Remove enough VMs so the overloaded hosts are no longer overloaded
         for(XHost host: overloadedHosts) {
             Iterator<XVM> vms = host.getRunnings().iterator();
             host.setCPUDemand(host.computeCPUDemand());
@@ -33,7 +34,7 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
         for(XVM vm: toSchedule) {
             XHost dest = null;
 
-            // Try find a new host for the VMs
+            // Try find a new host for the VMs (saneHosts is not sorted)
             for(XHost host: saneHosts) {
                 if(host.getCPUCapacity() >= host.getCPUDemand() - vm.getCPUDemand()) {
                     dest = host;

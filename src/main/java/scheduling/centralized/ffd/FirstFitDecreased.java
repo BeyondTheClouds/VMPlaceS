@@ -1,5 +1,6 @@
 package scheduling.centralized.ffd;
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import org.simgrid.msg.HostFailureException;
@@ -14,7 +15,11 @@ import java.util.TreeSet;
 public abstract class FirstFitDecreased extends AbstractScheduler {
     protected int nMigrations = 0;
 
+    protected boolean useLoad;
+
     public FirstFitDecreased(Collection<XHost> hosts, Integer id) {
+        useLoad = SimulatorProperties.getUseLoad();
+        Msg.info("Sorting VMs according to their load: " + useLoad);
     }
 
     @Override
@@ -107,18 +112,25 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
     class XVMComparator implements Comparator<XVM> {
         private int factor = 1;
+        private boolean useLoad = false;
 
-        public XVMComparator() {
-            this(false);
+        public XVMComparator(boolean useLoad) {
+            this(false, useLoad);
         }
 
-        public XVMComparator(boolean decreasing) {
+        public XVMComparator(boolean decreasing, boolean useLoad) {
             if(decreasing)
                 this.factor = -1;
+
+            this.useLoad = useLoad;
         }
 
         @Override
         public int compare(XVM h1, XVM h2) {
+            if(useLoad && h1.getLoad() != h2.getLoad()) {
+                return factor * h1.getLoad() - h2.getLoad();
+            }
+
             if(h1.getCPUDemand() != h2.getCPUDemand()) {
                 return factor * (int) Math.round((h1.getCPUDemand() - h2.getCPUDemand()));
             }
