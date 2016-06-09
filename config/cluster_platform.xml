@@ -5,8 +5,8 @@
  
 <AS  id="AS0"  routing="Full">
   <cluster id="my_cluster_1" prefix="node" suffix=""
-  		radical="0-50010"	speed="1000000000"    bw="125000000"     lat="5E-5"
-        bb_bw="2250000000" bb_lat="5E-4">
+  		radical="0-65"	speed="1000000000flops"    bw="1000000000bps"     lat="5E-5s"
+        bb_bw="1000000000bps" bb_lat="5E-4s">
       <prop id="ramsize"  value="32768"/>
       <prop id="watt_per_state" value="95:200" />
    </cluster>
