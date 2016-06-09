@@ -306,9 +306,9 @@ public class SimulatorManager {
                 }
             } catch(NoSuchElementException ex){
                 System.err.println("There is not enough memory on the physical hosts to start all VMs");
-                System.err.println(String.format("Number of hosts: ", nbOfHostingHosts));
-                System.err.println(String.format("Number of VMs: ", nbOfVMs));
-                System.err.println(String.format("VM placed: ", vmIndex));
+                System.err.println(String.format("Number of hosts: %d", nbOfHostingHosts));
+                System.err.println(String.format("Number of VMs: %d", nbOfVMs));
+                System.err.println(String.format("VM placed: %d", vmIndex));
                 System.err.println("(Please fix simulator.properties parameters and you should dive in the SimulatorManager.configureHostsAndVMs() function");
                 System.exit(1);
             }
