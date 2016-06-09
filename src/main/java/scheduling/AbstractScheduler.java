@@ -211,7 +211,11 @@ public abstract class AbstractScheduler implements Scheduler {
                         }
 
                         if (destHost != null) {
-                            if (!sourceHost.isOff() && !destHost.isOff()) {
+                            // We may need to turn on the host
+                            if(destHost.isOff())
+                                SimulatorManager.turnOn(destHost);
+
+                            if (!sourceHost.isOff()) {
                                 incOngoingMigrations();
 
                                 double timeStartingMigration = Msg.getClock();

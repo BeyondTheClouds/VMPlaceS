@@ -1,0 +1,3 @@
+nodes{% for algo in algos %}, {{ algo }}{% endfor %}
+{% for line in data %}
+{{ line }}{% for algo in data[line] %}, {{ data[line][algo] }}{% endfor %}{% endfor %}

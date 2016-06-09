@@ -1,0 +1,69 @@
+#!/usr/bin/Rscript
+
+{% set colors = ["#E04836", "#5696BC", "#F39D41", "#8D5924", "#2F5168"] %}
+{% set algos_size = algos|count %}
+{% set tuple_size = x_axis|count %}
+{% set group_by_nodes_count = group_by_nodes|count %}
+
+pdf(width=10, heigh=7)
+
+# Import the date
+{% set i = 0 %}
+names <- c({% for name in names %}{% if i > 0 %}, {% endif %}"{{ name }}"{% set i = i+1 %}{% endfor %})
+data <- read.table("{{source}}", header=T,sep=",")
+attach(data)
+
+# Compute the range of the series 
+g_range <- range(0{% for algo in algos %},{{ algo }} {% endfor %})
+
+{% set pch_start = 20 %}
+{% set lty_start = 3 %}
+
+{% set cex = 1.5 %}
+{% set lwd = 1 %}
+{% set legend_cex = 1 %}
+{% set legend_lwd = 1.5 %}
+
+{% set title_enabled = False %}
+
+# Plot the first serie
+{% set count = 0 %}
+plot({{algos[0]}}, type="o", col="{{ colors[0] }}", ylim=g_range, pch={{pch_start+count}}, cex={{cex}}, lwd={{lwd}}, lty={{lty_start+count}}, 
+   axes=TRUE, ann=FALSE)
+
+# Generate x-axis
+{% set count = 0 %}
+#axis(1, at=1:{{tuple_size}}, lab=c({% for server_count,vm_count in x_axis %}{% if count > 0 %},{% endif %}"{{server_count}} nodes\n{{vm_count}} vms"{% set count = count +1 %}{% endfor %}))
+
+print(g_range[2])
+
+# Generate x-axis
+axis(2)
+
+# Create box around plot
+box()
+
+# Graph other series of data
+{% set count = 0 %}
+{% for algo in algos %}{% if count > 0 %}lines({{ algo }}, type="o", pch={{pch_start+count}}, cex={{cex}}, lwd={{lwd}}, lty={{lty_start+count}}, col="{{ colors[count] }}"){% endif %}{% set count = count +1 %}
+{% endfor %}
+
+{% if title_enabled %}
+# 		Create a title with a red, bold/italic font
+title(main="{{title|capitalize}}", font.main=4)
+{% endif %}
+
+# 		Label the x and y axes with dark green text
+title(xlab="{{x_label}}", col.lab=rgb(0,0,0))
+title(ylab="{{y_label}}", col.lab=rgb(0,0,0))
+
+#abline(h=3600,col="black",lty=2)
+# text(1.5, (3600+g_range[2]/40), "3600 s", col = "black")
+
+# 		Create a legend at (1, g_range[2]) that is slightly smaller 
+# 		(cex) and uses the same line colors and points used by 
+# 		the actual plots 
+{% set count = 0 %}
+legend(1, g_range[2], names, cex={{legend_cex}}, lwd={{legend_lwd}}, 
+   col=c({% for algo in algos %}{% if count > 0 %},{% endif %}"{{ colors[count] }}"{% set count = count +1 %}{% endfor %}), pch={{pch_start}}:{{pch_start + algos|length}}, lty={{lty_start}}:{{lty_start + algos|length}});
+

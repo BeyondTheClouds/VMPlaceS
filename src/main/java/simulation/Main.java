@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Date;
+import java.util.Locale;
 
 import scheduling.hierarchical.snooze.AUX;
 import trace.Trace;
@@ -99,7 +100,7 @@ public class Main {
                 //"Usage: python generate.py nb_nodes
                 cmd = new String[] {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " > config/generated_deploy.xml"};
             }
-            
+
             try {
                 Runtime.getRuntime().exec(cmd).waitFor();
             } catch (InterruptedException e) {
@@ -118,7 +119,7 @@ public class Main {
         /* The initial deployment is based on a round robin fashion */
         System.out.println("Configure simulation" + new Date().toString());
         SimulatorManager.cleanLog();
-        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
+        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), false);
         SimulatorManager.writeCurrentConfiguration();
 
         String algorithmName = SimulatorProperties.getAlgo();
@@ -168,10 +169,13 @@ public class Main {
 
         try {
             String message = null;
-            if(SimulatorProperties.getAlgo().equals("centralized"))
-                message = String.format("%d %s %s %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), SimulatorProperties.getImplementation(), energy);
+            if(SimulatorProperties.getAlgo().equals("centralized")) {
+                String implem = SimulatorProperties.getImplementation();
+                implem = implem.substring(implem.lastIndexOf('.') + 1, implem.length());
+                message = String.format(Locale.US, "%d %s %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), implem, SimulatorProperties.getHostsTurnoff(), energy);
+            }
             else
-                message = String.format("%d %s %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), energy);
+                message = String.format(Locale.US, "%d %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), SimulatorProperties.getHostsTurnoff(), energy);
 
             Files.write(Paths.get("./energy.dat"), message.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {

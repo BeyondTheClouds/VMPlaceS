@@ -313,6 +313,13 @@ public class BtrPlaceRP extends AbstractScheduler {
                     Msg.critical("Host crashed while reconfiguring : " + e.getLocalizedMessage());
                 }
             }
+
+            // Turn off unused hosts
+            if(SimulatorProperties.getHostsTurnoff()) {
+                for (XHost host : SimulatorManager.getSGHostingHosts())
+                    if (host.isOn() && host.getRunnings().size() == 0)
+                        SimulatorManager.turnOff(host);
+            }
         }
     }
 

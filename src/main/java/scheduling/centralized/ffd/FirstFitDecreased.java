@@ -8,18 +8,27 @@ import org.simgrid.msg.Msg;
 import scheduling.AbstractScheduler;
 import simulation.SimulatorManager;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Random;
 import java.util.TreeSet;
 
 public abstract class FirstFitDecreased extends AbstractScheduler {
+    private static int iteration = 0;
     protected int nMigrations = 0;
 
     protected boolean useLoad;
 
+    public FirstFitDecreased(Collection<XHost> hosts) {
+        this(hosts, new Random().nextInt());
+    }
+
     public FirstFitDecreased(Collection<XHost> hosts, Integer id) {
         useLoad = SimulatorProperties.getUseLoad();
-        Msg.info("Sorting VMs according to their load: " + useLoad);
     }
 
     @Override
@@ -37,35 +46,32 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
         long start = System.currentTimeMillis();
 
         TreeSet<XHost> overloaded = new TreeSet<>(new XHostComparator(true));
-        TreeSet<XHost> sane = new TreeSet<>(new XHostComparator(true));
 
         // Find the overloaded hosts
         for(XHost host: hostsToCheck) {
             double demand = host.computeCPUDemand();
             if(host.getCPUCapacity() < demand)
                 overloaded.add(host);
-            else
-                sane.add(host);
         }
 
         nMigrations = 0;
-        manageOverloadedHost(overloaded, hostsToCheck, result);
+        manageOverloadedHost(overloaded, result);
 
         if(nMigrations > 0)
             result.state = SchedulerResult.State.SUCCESS;
-        else
+        else if(result.state != SchedulerResult.State.NO_VIABLE_CONFIGURATION)
             result.state = SchedulerResult.State.NO_RECONFIGURATION_NEEDED;
         result.duration = System.currentTimeMillis() - start;
 
         // Wait for all the migrations to terminate
         int watchDog = 0;
 
-        while(this.ongoingMigrations()){
+        while(this.ongoingMigrations()) {
             try {
                 org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
                 if (watchDog%100==0){
-                    Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
+                    Msg.info("You're waiting for a couple of seconds (already "+watchDog+" seconds)");
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
                         System.exit(-1);
@@ -76,10 +82,42 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             }
         }
 
+        // Turn off unused hosts
+        if(SimulatorProperties.getHostsTurnoff()) {
+            for (XHost host : SimulatorManager.getSGHostingHosts()) {
+                if (host.isOn() && host.getRunnings().size() <= 0)
+                    SimulatorManager.turnOff(host);
+            }
+        }
+
+        // Log the new configuration
+        try {
+            File file = new File("logs/ffd/configuration/" + (++iteration) + "-" + System.currentTimeMillis() + ".txt");
+            file.getParentFile().mkdirs();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+
+            for(XHost host: SimulatorManager.getSGHostingHosts()) {
+                writer.write(host.getName() + ':');
+
+                for(XVM vm: host.getRunnings()) {
+                    writer.write(' ' + vm.getName());
+                }
+                writer.write('\n');
+            }
+
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            System.err.println("Could not write FFD log");
+            e.printStackTrace();
+            System.exit(5);
+        }
+
+
         return result;
     }
 
-    protected abstract void manageOverloadedHost(TreeSet<XHost> overloadedHosts, Collection<XHost> saneHosts, SchedulerResult result);
+    protected abstract void manageOverloadedHost(TreeSet<XHost> overloadedHosts, SchedulerResult result);
 
 
     class XHostComparator implements Comparator<XHost> {
@@ -138,7 +176,8 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             if(h1.getMemSize() != h2.getMemSize())
                 return factor = (h1.getMemSize() - h2.getMemSize());
 
-            return 0;
+
+            return(h1.getName().compareTo(h2.getName()));
         }
     }
 }

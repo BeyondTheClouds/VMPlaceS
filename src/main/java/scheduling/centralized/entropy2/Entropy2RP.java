@@ -1,5 +1,6 @@
 package scheduling.centralized.entropy2;
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import entropy.configuration.*;
@@ -231,7 +232,7 @@ public class Entropy2RP extends AbstractScheduler {
                 org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
                 if (watchDog%100==0){
-                  Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
+                  Msg.info("You're waiting for a couple of seconds (already "+watchDog+" seconds)");
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
                         System.exit(-1);
@@ -240,6 +241,13 @@ public class Entropy2RP extends AbstractScheduler {
             } catch (HostFailureException e) {
                 e.printStackTrace();
             }
+        }
+
+        // Turn off unused hosts
+        if(SimulatorProperties.getHostsTurnoff()) {
+            for (XHost host : SimulatorManager.getSGHostingHosts())
+                if (host.isOn() && host.getRunnings().size() == 0)
+                    SimulatorManager.turnOff(host);
         }
     }
 

@@ -124,6 +124,8 @@ public class SimulatorProperties extends Properties {
 	private static final String STATIONARY_STATUS = "simulator.gotostationarystatus";
 	private static final String FFD_USE_LOAD = "simulator.implementation.ffd.useload";
 
+    private static final String HOSTS_TURN_OFF= "hosts.turn_off";
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Property default values
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -173,6 +175,8 @@ public class SimulatorProperties extends Properties {
 	private static final boolean DEFAULT_STATIONARY_STATUS = false;
 
 	private static final boolean DEFAULT_FFD_USE_LOAD = false;
+
+    private static final boolean DEFAULT_HOSTS_TURN_OFF = false;
 
 
 
@@ -361,12 +365,8 @@ public class SimulatorProperties extends Properties {
 
 	public static boolean getUseLoad() { return getPropertyAsBoolean(FFD_USE_LOAD, DEFAULT_FFD_USE_LOAD); }
 
-	
-	
-	
-	
-	
-	
+    public static boolean getHostsTurnoff() { return getPropertyAsBoolean(HOSTS_TURN_OFF, DEFAULT_HOSTS_TURN_OFF); }
+
 	
 	
 	public static String getVirtualNodesNamesFile(){
