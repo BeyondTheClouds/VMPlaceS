@@ -152,6 +152,13 @@ public class Main {
         Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
 
         Trace.hostVariableDeclare("ENERGY");
+        Trace.hostVariableDeclare("NB_OFF"); //Nb of hosts turned off
+        Trace.hostVariableDeclare("NB_ON"); //Nb of hosts turned on
+
+        for(XHost host: SimulatorManager.getSGHosts()) {
+            Trace.hostVariableSet(host.getName(), "NB_ON", 1);
+            Trace.hostVariableSet(host.getName(), "NB_OFF", 0);
+        }
 
 	    /*  execute the simulation. */
         System.out.println("Launcher: begin Msg.run()" + new Date().toString());

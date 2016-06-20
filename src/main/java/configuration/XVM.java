@@ -13,10 +13,7 @@
 
 package configuration;
 
-import org.simgrid.msg.HostFailureException;
-import org.simgrid.msg.HostNotFoundException;
-import org.simgrid.msg.Msg;
-import org.simgrid.msg.VM;
+import org.simgrid.msg.*;
 
 public class XVM {
 
@@ -66,7 +63,7 @@ public class XVM {
      * Similarly to the VM abstraction, the MSG Host abstraction has been extended in order to save/manipulate
      * additional states in an easier way.
      */
-    private XHost host;
+    private Host host;
 
     /**
      * Temporary fix due to a simgrid issue
@@ -96,10 +93,10 @@ public class XVM {
      *                    The parameter is expressed has a percentage of the network bandwidth.
      *
      */
-     public XVM(XHost host, String name,
+     public XVM(Host host, String name,
             int nbCores, int ramsize, int netBW, String diskPath, int diskSize, int migNetBW, int dpIntensity){
         // TODO, why should we reduce the migNetBW ? (i.e. interest of multiplying the value by 0.9)
-        this.vm = new VM (host.getSGHost(), name, nbCores, ramsize, netBW, diskPath, diskSize, (int)(migNetBW*0.9), dpIntensity);
+        this.vm = new VM (host, name, nbCores, ramsize, netBW, diskPath, diskSize, (int)(migNetBW*0.9), dpIntensity);
         this.currentLoadDemand = 0;
         this.netBW = netBW ;
         this. dpIntensity = dpIntensity ;
@@ -133,7 +130,8 @@ public class XVM {
      */
     public void setLoad(int expectedLoad){
         if (expectedLoad >0) {
-            this.vm.setBound(expectedLoad);
+            //this.vm.setBound(expectedLoad);
+            this.vm.setBound(this.vm.getSpeed()*expectedLoad/100);
             daemon.resume();
         }
         else{
@@ -187,13 +185,13 @@ public class XVM {
      * Migrate a VM from one XHost to another one.
      * @param host the host where to migrate the VM
      */
-    public void migrate(XHost host) throws HostFailureException, DoubleMigrationException {
+    public void migrate(Host host) throws HostFailureException, DoubleMigrationException {
         if (!this.isMigrating) {
             this.isMigrating = true;
             Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
             Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
             try {
-                this.vm.migrate(host.getSGHost());
+                this.vm.migrate(host);
                 this.NbOfMigrations++;
                 this.host = host;
                 this.setLoad(this.currentLoadDemand);   //TODO temporary fixed (setBound is not correctly propagated to the new node at the surf level)
@@ -293,7 +291,7 @@ public class XVM {
     /**
      * @return the current location of the VM (i.e. its XHost)
      */
-    public XHost getLocation() {
+    public Host getLocation() {
         return this.host;
     }
 
@@ -303,5 +301,4 @@ public class XVM {
     public long getNetBW() {
         return this.netBW;
     }
-
 }

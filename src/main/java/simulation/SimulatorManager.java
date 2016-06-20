@@ -314,7 +314,7 @@ public class SimulatorManager {
             }
 
             // Creation of the VM
-            sgVMTmp = new XVM(sgHostTmp, "vm-" + vmIndex,
+            sgVMTmp = new XVM(sgHostTmp.getSGHost(), "vm-" + vmIndex,
                         vmClass.getNbOfCPUs(), vmClass.getMemSize(), vmClass.getNetBW(), null, -1, vmClass.getMigNetBW(), vmClass.getMemIntensity());
             sgVMsOn.put("vm-"+vmIndex, sgVMTmp);
             vmIndex++;
@@ -456,7 +456,7 @@ public class SimulatorManager {
      * @param load the new expected load
      */
     public static void updateVM(XVM sgVM, int load) {
-        XHost tmpHost = sgVM.getLocation();
+        XHost tmpHost = getXHostByName(sgVM.getLocation().getName());
         boolean previouslyViable = tmpHost.isViable();
 
         // A simple hack to avoid computing on-the-fly the CPUDemand of each host
@@ -506,7 +506,7 @@ public class SimulatorManager {
     }
 
     public static boolean willItBeViableWith(XVM sgVM, int load){
-        XHost tmpHost = sgVM.getLocation();
+        XHost tmpHost = getXHostByName(sgVM.getLocation().getName());
         double hostPreviousLoad = tmpHost.getCPUDemand();
         double vmPreviousLoad = sgVM.getCPUDemand();
         return ((hostPreviousLoad-vmPreviousLoad+load) <= tmpHost.getCPUCapacity());
@@ -521,6 +521,7 @@ public class SimulatorManager {
         if(host.isOff()) {
             Msg.info("Turn on node "+name);
             host.turnOn();
+            Trace.hostVariableAdd(host.getName(), "NB_ON", 1);
             sgHostsOff.remove(name);
             sgHostsOn.put(name, host);
 
@@ -601,6 +602,7 @@ public class SimulatorManager {
             sgHostsOff.put(host.getName(), host);
 
           //  Msg.info("Nb of remaining processes on " + host.getName() + ": " + (previousCount - org.simgrid.msg.Process.getCount()));
+            Trace.hostVariableAdd(host.getName(), "NB_OFF", 1);
 
 
         }

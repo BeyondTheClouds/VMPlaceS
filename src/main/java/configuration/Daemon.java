@@ -16,13 +16,10 @@
 package configuration;
 
 
-import org.simgrid.msg.Process;
-import org.simgrid.msg.Host;
-import org.simgrid.msg.Task;
-import org.simgrid.msg.MsgException;
-import org.simgrid.msg.HostFailureException;
-import org.simgrid.msg.TaskCancelledException;
+import migration.Migrator;
+import org.simgrid.msg.*;
 
+import org.simgrid.msg.Process;
 import simulation.SimulatorManager;
 
 public class Daemon extends Process {
@@ -48,15 +45,18 @@ public class Daemon extends Process {
     public void main(String[] args) throws MsgException {
         int i = 1;
 
-        while(!SimulatorManager.isEndOfInjection()) {
+        while(!Migrator.isEnd()) {
             try {
+                Msg.info("task started");
                 currentTask.execute();
+                Msg.info("task terminated");
             } catch (HostFailureException e) {
                 e.printStackTrace();
             } catch (TaskCancelledException e) {
                 suspend(); // Suspend the process
             }
             currentTask = new Task(this.getHost().getName()+"-daemon-"+(i++), this.getHost().getSpeed()*100.0, 0);
+            Msg.info("a new task has been created");
             // TODO test whether the CPU consumption is higher when putting larger tasks (i.e. 1000000000000.0 for instance).
         }
     }

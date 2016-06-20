@@ -213,7 +213,7 @@ public class XHost{
         }
         // migrate the VM and reassign correctly to the corresponding host
         try {
-            vm.migrate(dest);
+            vm.migrate(dest.sgHost);
         } catch (Exception e){
             Msg.info("Host failure exception");
             this.onGoingMigration = false;
