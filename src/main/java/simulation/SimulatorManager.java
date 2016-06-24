@@ -521,6 +521,7 @@ public class SimulatorManager {
         if(host.isOff()) {
             Msg.info("Turn on node "+name);
             host.turnOn();
+            Trace.hostVariableAdd(host.getName(), "NB_ON", 1);
             sgHostsOff.remove(name);
             sgHostsOn.put(name, host);
 
@@ -601,6 +602,7 @@ public class SimulatorManager {
             sgHostsOff.put(host.getName(), host);
 
           //  Msg.info("Nb of remaining processes on " + host.getName() + ": " + (previousCount - org.simgrid.msg.Process.getCount()));
+            Trace.hostVariableAdd(host.getName(), "NB_OFF", 1);
 
 
         }

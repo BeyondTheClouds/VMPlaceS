@@ -134,6 +134,7 @@ public class XVM {
     public void setLoad(int expectedLoad){
         if (expectedLoad >0) {
             this.vm.setBound(expectedLoad);
+            //this.vm.setBound(this.vm.getSpeed()*expectedLoad/100);
             daemon.resume();
         }
         else{
@@ -303,5 +304,4 @@ public class XVM {
     public long getNetBW() {
         return this.netBW;
     }
-
 }

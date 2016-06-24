@@ -48,7 +48,7 @@ function run() {
 
 	n_vms=$(($n_nodes * 7))
 
-	SIM_ARGS="-Dsimulato7.algorithm=$algo $implem"
+	SIM_ARGS="-Dsimulator.algorithm=$algo $implem"
 	SIM_ARGS="$SIM_ARGS -Dhostingnodes.number=$n_nodes"
 	SIM_ARGS="$SIM_ARGS -Dservicenodes.number=$n_service"
 	SIM_ARGS="$SIM_ARGS -Dvm.number=$n_vms"
@@ -84,15 +84,15 @@ abort=0
 rm -rf logs/ffd
 
 for n in $nodes; do
-	run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased false
-	run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased false
 	run $n centralized scheduling.centralized.entropy2.Entropy2RP false
 	run $n centralized scheduling.centralized.btrplace.BtrPlaceRP false
+	run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased false
+	run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased false
 
-	run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased true
-	run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased true
 	run $n centralized scheduling.centralized.entropy2.Entropy2RP true
 	run $n centralized scheduling.centralized.btrplace.BtrPlaceRP true
+	run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased true
+	run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased true
 
 	#run $n hierarchical false
 
