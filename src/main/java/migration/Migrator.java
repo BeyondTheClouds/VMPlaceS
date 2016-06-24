@@ -48,40 +48,51 @@ public class Migrator extends Process {
         vm.start();
         vm.setLoad(load);
 
-        class Monitor extends Thread {
-            private Host host1 = null;
-            private Host host2 = null;
-
-            public Monitor(Host host1, Host host2) {
-                this.host1 = host1;
-                this.host2 = host2;
+        // REPLACE WITH PROCESS
+        class Monitor extends Process {
+            public Monitor(String host) throws HostNotFoundException, NativeException {
+                super(host, "monitor", new String[] {});
             }
 
-            public void run() {
+            @Override
+            public void main(String[] args) throws MsgException {
                 try {
+                    Host host1 = null;
+                    Host host2 = null;
+                    try {
+                        host1 = Host.getByName("node0");
+                        host2 = Host.getByName("node1");
+                    } catch (HostNotFoundException e) {
+                        Msg.critical(e.getMessage());
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
+
                     File out = new File("migration_energy.dat");
                     FileWriter writer = new FileWriter(out, true);
                     writer.write("# time\thost 1\thost 2\n");
 
                     double prev1 = host1.getConsumedEnergy();
                     double prev2 = host2.getConsumedEnergy();
+                    double period = 0.5;
                     int s = 0;
 
                     Msg.info("Monitor started");
                     do {
                         try {
-                            Migrator.this.waitFor(1);
+                            Migrator.this.waitFor(period);
                         } catch (HostFailureException e) {
                             e.printStackTrace();
                         }
 
                         double curr1 = host1.getConsumedEnergy();
                         double curr2 = host2.getConsumedEnergy();
-                        writer.write(String.format("%d\t%d\t\t%.2f\t%.2f\t%.2f\n", s++, curr1 - prev1, curr2 - prev2));
-                        Msg.info(String.valueOf(s));
+                        double watt1 = (curr1 - prev1) / period;
+                        double watt2 = (curr2 - prev2) / period;
+                        writer.write(String.format("%d\t%.2f\t%.2f\n", s++, watt1, watt2));
                         prev1 = curr1;
                         prev2 = curr2;
-                    } while(!interrupted());
+                    } while(!Migrator.isEnd());
 
                     Msg.info("Monitor interrupted");
 
@@ -92,7 +103,7 @@ public class Migrator extends Process {
             }
         };
 
-        Monitor monitor = new Monitor(host1, host2);
+        Monitor monitor = new Monitor("node2");
         monitor.start();
 
         Msg.info(vm.getName() + " started on host " + host1.getName());
@@ -102,17 +113,14 @@ public class Migrator extends Process {
         double host2Before = host2.getConsumedEnergy();
         double start = Msg.getClock();
         vm.migrate(host2);
+        waitFor(15);
+        vm.migrate(host1);
+        waitFor(5);
         double duration = Msg.getClock() - start;
         double host1After = host1.getConsumedEnergy();
         double host2After = host2.getConsumedEnergy();
 
         isEnd = true;
-        monitor.interrupt();
-        try {
-            monitor.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
 
         host1.off();
         host2.off();

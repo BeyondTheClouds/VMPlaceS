@@ -1,0 +1,8 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4">
+  <process host="node2" function="migration.Migrator">
+  	<argument value="80" />
+  	<argument value="80" />
+  </process>
+</platform>

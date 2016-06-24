@@ -1,0 +1,14 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4">
+ 
+ 
+<AS  id="AS0"  routing="Full">
+  <cluster id="my_cluster_1" prefix="node" suffix=""
+  		radical="0-2"	speed="1000000000flops"    bw="1GBps"     lat="5E-5s"
+        bb_bw="1GBps" bb_lat="5E-4s">
+      <prop id="ramsize"  value="32768"/>
+      <prop id="watt_per_state" value="187:240" />
+   </cluster>
+</AS>
+</platform>
