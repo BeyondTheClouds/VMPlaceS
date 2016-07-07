@@ -89,6 +89,10 @@ public abstract class AbstractScheduler implements Scheduler {
         return (this.ongoingMigrations != 0);
     }
 
+    protected int getOngoingMigrations() {
+        return ongoingMigrations;
+    }
+
     /**
      * Core implementation
      *

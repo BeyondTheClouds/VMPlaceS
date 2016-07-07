@@ -71,7 +71,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
                 org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
                 if (watchDog%100==0){
-                    Msg.info("You're waiting for a couple of seconds (already "+watchDog+" seconds)");
+                    Msg.info(String.format("You're waiting for %d migrations to complete (already %d seconds)", getOngoingMigrations(), watchDog));
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
                         System.exit(-1);

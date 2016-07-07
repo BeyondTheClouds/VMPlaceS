@@ -46,9 +46,7 @@ public class Daemon extends Process {
 
         while(!SimulatorManager.isEndOfInjection()) {
             try {
-                Msg.info("task started");
                 currentTask.execute();
-                Msg.info("task terminated");
             } catch (HostFailureException e) {
                 e.printStackTrace();
             } catch (TaskCancelledException e) {
@@ -56,7 +54,6 @@ public class Daemon extends Process {
                 suspend(); // Suspend the process
             }
             currentTask = new Task(this.getHost().getName()+"-daemon-"+(i++), this.getHost().getSpeed()*100.0, 0);
-            Msg.info("a new task has been created");
             // TODO test whether the CPU consumption is higher when putting larger tasks (i.e. 1000000000000.0 for instance).
         }
     }
