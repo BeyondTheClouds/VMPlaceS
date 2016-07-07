@@ -26,6 +26,9 @@ import scheduling.hierarchical.snooze.Logger;
 import trace.Trace;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 
 /**
@@ -640,4 +643,24 @@ public class SimulatorManager {
         return (endTimeOfSimulation != -1) ?  endTimeOfSimulation - beginTimeOfSimulation : endTimeOfSimulation;
     }
 
+    public static void writeEnergy(String logPath) {
+        Double energy = 0D;
+        for(XHost h: SimulatorManager.getSGHosts())
+            energy += h.getSGHost().getConsumedEnergy();
+
+        try {
+            String message = null;
+            if(SimulatorProperties.getAlgo().equals("centralized")) {
+                String implem = SimulatorProperties.getImplementation();
+                implem = implem.substring(implem.lastIndexOf('.') + 1, implem.length());
+                message = String.format(Locale.US, "%d %s %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), implem, SimulatorProperties.getHostsTurnoff(), energy);
+            }
+            else
+                message = String.format(Locale.US, "%d %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), SimulatorProperties.getHostsTurnoff(), energy);
+
+            Files.write(Paths.get(logPath), message.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 }

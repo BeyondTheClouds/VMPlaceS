@@ -170,25 +170,6 @@ public class Main {
         Trace.close();
         Msg.info("End of run");
 
-        Double energy = 0D;
-        for(XHost h: SimulatorManager.getSGHosts())
-            energy += h.getSGHost().getConsumedEnergy();
-
-        try {
-            String message = null;
-            if(SimulatorProperties.getAlgo().equals("centralized")) {
-                String implem = SimulatorProperties.getImplementation();
-                implem = implem.substring(implem.lastIndexOf('.') + 1, implem.length());
-                message = String.format(Locale.US, "%d %s %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), implem, SimulatorProperties.getHostsTurnoff(), energy);
-            }
-            else
-                message = String.format(Locale.US, "%d %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), SimulatorProperties.getHostsTurnoff(), energy);
-
-            Files.write(Paths.get("./energy.dat"), message.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         notify(String.format("End of simulation %s", SimulatorProperties.getImplementation()));
 
         Process.killAll(-1);

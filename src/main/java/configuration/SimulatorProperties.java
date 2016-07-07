@@ -126,6 +126,8 @@ public class SimulatorProperties extends Properties {
 
     private static final String HOSTS_TURN_OFF= "hosts.turn_off";
 
+	private static final String ENERGY_LOG_FILE = "simulation.energy.log";
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Property default values
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -367,8 +369,10 @@ public class SimulatorProperties extends Properties {
 
     public static boolean getHostsTurnoff() { return getPropertyAsBoolean(HOSTS_TURN_OFF, DEFAULT_HOSTS_TURN_OFF); }
 
-	
-	
+	public static String getEnergyLogFile() {
+		return INSTANCE.getProperty(ENERGY_LOG_FILE, null);
+	}
+
 	public static String getVirtualNodesNamesFile(){
 		return INSTANCE.getProperty(VIRTUAL_NODES_NAMES_FILE, DEFAULT_VIRTUAL_NODES_NAMES_FILE);
 	}

@@ -27,9 +27,9 @@ public class Injector extends Process {
     private Deque<LoadEvent> loadQueue = null ;
     private Deque<FaultEvent> faultQueue = null ;
 
-	Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
-	    super(host, name, args);
-       // System.out.println("Create the event queues");
+    Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
+        super(host, name, args);
+        // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
         //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
         // Stupid code to stress Snooze service nodes - Used for the paper submission
@@ -37,9 +37,9 @@ public class Injector extends Process {
             faultQueue =generateSnoozeFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration());
         else
             faultQueue =generateFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
-         System.out.println("Size of fault queue:"+faultQueue.size());
+        System.out.println("Size of fault queue:"+faultQueue.size());
         evtQueue = mergeQueues(loadQueue,faultQueue);
-       // System.out.println("Size of event queue:"+evtQueue.size());
+        // System.out.println("Size of event queue:"+evtQueue.size());
 
         // Serialize eventqueue in a file.
         File f = new File ("injector_queue.txt");
@@ -81,7 +81,7 @@ public class Injector extends Process {
 
         double lambda=lambdaPerVM*vms.length;
 
-       // int maxCPUDemand = SimulatorProperties.getCPUCapacity()/SimulatorProperties.getNbOfCPUs();
+        // int maxCPUDemand = SimulatorProperties.getCPUCapacity()/SimulatorProperties.getNbOfCPUs();
         int maxCPUDemand = SimulatorProperties.getVMMAXCPUConsumption();
         int nbOfCPUDemandSlots = SimulatorProperties.getNbOfCPUConsumptionSlots();
         int vmCPUDemand;
@@ -164,7 +164,7 @@ public class Injector extends Process {
             if (GLFaultPeriod == 0)
                 index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size());
             else // GL faults have been already treated, so only consider GMs
-             index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size()-1);
+                index = randHostPicker.nextInt(SimulatorManager.getSGServiceHosts().size()-1);
 
             // Please remind that node0 hosts VMs, so the first service node is Simulator.Manager.getSGHostingHosts().
             tempHost = xhosts[SimulatorManager.getSGHostingHosts().size()+index];
@@ -206,7 +206,7 @@ public class Injector extends Process {
 
     }
 
-        public static Deque<FaultEvent> generateFaultQueue(XHost[] xhosts,  long duration, int faultPeriod){
+    public static Deque<FaultEvent> generateFaultQueue(XHost[] xhosts,  long duration, int faultPeriod){
         LinkedList<FaultEvent> faultQueue = new LinkedList<FaultEvent>();
         Random randExpDis=new Random(SimulatorProperties.getSeed());
         double currentTime = 0 ;
@@ -235,8 +235,8 @@ public class Injector extends Process {
                 faultQueue.add(new FaultEvent(id++, currentTime, tempHost, false));
             }
             if (currentTime + crashDuration < duration) {
-                    //For the moment, downtime of a node is arbitrarily set to crashDuration
-                    faultQueue.add(new FaultEvent(id++, currentTime + (crashDuration), tempHost, true));
+                //For the moment, downtime of a node is arbitrarily set to crashDuration
+                faultQueue.add(new FaultEvent(id++, currentTime + (crashDuration), tempHost, true));
                 //        System.err.println(eventQueue.size());
             }
             currentTime += exponentialDis(randExpDis, lambda);
@@ -251,11 +251,11 @@ public class Injector extends Process {
         Collections.sort(faultQueue, new Comparator<FaultEvent>() {
             @Override
             public int compare(FaultEvent o1, FaultEvent o2) {
-                 if (o1.getTime() > o2.getTime())
-                     return 1 ;
-                 else if (o1.getTime() == o2.getTime())
-                      return 0 ;
-                 else // o1.getTime() < o2.getTime()
+                if (o1.getTime() > o2.getTime())
+                    return 1 ;
+                else if (o1.getTime() == o2.getTime())
+                    return 0 ;
+                else // o1.getTime() < o2.getTime()
                     return -1;
             }
         });
@@ -344,54 +344,53 @@ public class Injector extends Process {
         }
     }
 
-    /* Args : nbPMs nbVMs eventFile */
-	public void main(String[] args) throws MsgException {
-
-        /* Display the queue */
-
-   /*     for(InjectorEvent evt: this.evtQueue){
-            System.out.println(evt);
-        }
-*/
-		/* Initialization is done in Main */
-   
-		if(!SimulatorManager.isViable()){
-		   System.err.println("Initial Configuration should be viable !");
-    	   System.exit(1);
-       }
-
-
-	   Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MIG", 0);
-	   Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MC", 0);
-
-      InjectorEvent evt = nextEvent();
-      if(SimulatorProperties.goToStationaryStatus()){
-          do {
-              if ((evt instanceof LoadEvent) &&
-                      (!SimulatorManager.willItBeViableWith(((LoadEvent)evt).getVm(),((LoadEvent) evt).getCPULoad()))) {
-                  break;
-              } else {
-                  evt.play();
-                  evt=nextEvent();
-              }
-          } while (true);
-      }
-
-      while(evt!=null){
-		   if(evt.getTime() - Msg.getClock()>0)
-         	   waitFor(evt.getTime() - Msg.getClock());
-	       evt.play();
-	       evt=nextEvent();
-      }
-      waitFor(SimulatorProperties.getDuration() - Msg.getClock());
-	  Msg.info("End of Injection");
-	  SimulatorManager.setEndOfInjection();
-
-	  // Wait for termination of On going scheduling
-	  waitFor(EntropyProperties.getEntropyPlanTimeout());
+    public void main(String[] args) throws MsgException{
+        main2(args);
     }
 
-	private InjectorEvent nextEvent() {
-		return this.evtQueue.pollFirst();
-	}
+    /* Args : nbPMs nbVMs eventFile */
+    public void main2(String[] args) throws MsgException {
+		/* Initialization is done in Main */
+
+        if(!SimulatorManager.isViable()){
+            System.err.println("Initial Configuration should be viable !");
+            System.exit(1);
+        }
+
+
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MIG", 0);
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MC", 0);
+
+        InjectorEvent evt = nextEvent();
+        if(SimulatorProperties.goToStationaryStatus()){
+            do {
+                if ((evt instanceof LoadEvent) &&
+                        (!SimulatorManager.willItBeViableWith(((LoadEvent)evt).getVm(),((LoadEvent) evt).getCPULoad()))) {
+                    break;
+                } else {
+                    evt.play();
+                    evt=nextEvent();
+                }
+            } while (true);
+        }
+
+        while(evt!=null){
+            if(evt.getTime() - Msg.getClock()>0)
+                waitFor(evt.getTime() - Msg.getClock());
+            evt.play();
+            evt=nextEvent();
+        }
+        waitFor(SimulatorProperties.getDuration() - Msg.getClock());
+        Msg.info("End of Injection");
+        SimulatorManager.setEndOfInjection();
+        if(SimulatorProperties.getEnergyLogFile() != null)
+            SimulatorManager.writeEnergy(SimulatorProperties.getEnergyLogFile());
+
+        // Wait for termination of On going scheduling
+        waitFor(EntropyProperties.getEntropyPlanTimeout());
+    }
+
+    private InjectorEvent nextEvent() {
+        return this.evtQueue.pollFirst();
+    }
 }
