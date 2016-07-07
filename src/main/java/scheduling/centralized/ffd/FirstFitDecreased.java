@@ -74,7 +74,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
                     Msg.info(String.format("You're waiting for %d migrations to complete (already %d seconds)", getOngoingMigrations(), watchDog));
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
-                        System.exit(-1);
+                        System.exit(131);
                     }
                 }
             } catch (HostFailureException e) {

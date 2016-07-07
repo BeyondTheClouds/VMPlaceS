@@ -306,7 +306,7 @@ public class BtrPlaceRP extends AbstractScheduler {
                         Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
                         if(SimulatorManager.isEndOfInjection()){
                             Msg.critical("The reconfiguration is taking too long - Forcing termination...");
-                            System.exit(-1);
+                            System.exit(131);
                         }
                     }
                 } catch (HostFailureException e) {

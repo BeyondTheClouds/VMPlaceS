@@ -1,9 +1,5 @@
 #! /bin/bash
 
-# Copy output to log file
-exec > >(tee -i run_all.log)
-exec 2>&1
-
 source xprc
 
 function do_abort() {
@@ -12,6 +8,8 @@ function do_abort() {
 }
 
 trap do_abort SIGINT
+
+error=0
 
 # run <nb nodes> <algo> <implem>
 # Ex: run 128 centralized scheduling.centralized.entropy2.Entropy2RP
@@ -63,10 +61,14 @@ function run() {
 	java $VM_OPTIONS $SIM_ARGS simulation.Main $PROGRAM_ARGUMENTS &
 	current_pid=$!
 	wait $current_pid
+	ret=$?
 
-	if [ $? -ne 0 ]
+	echo Returned $ret
+
+	if [ $ret -ne 0 && $ret -ne 131 ]
 	then
-		exit 1
+		error=1
+		exit $ret
 	fi
 
 	mkdir -p visu/events/$name
@@ -83,19 +85,25 @@ abort=0
 
 rm -rf logs/ffd
 
-for n in $nodes; do
-	run $n centralized scheduling.centralized.entropy2.Entropy2RP false
-	run $n centralized scheduling.centralized.btrplace.BtrPlaceRP false
-	run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased false
-	run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased false
+{
+	for n in $nodes; do
+		run $n centralized scheduling.centralized.entropy2.Entropy2RP false
+		run $n centralized scheduling.centralized.btrplace.BtrPlaceRP false
+		run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased false
+		run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased false
 
-	run $n centralized scheduling.centralized.entropy2.Entropy2RP true
-	run $n centralized scheduling.centralized.btrplace.BtrPlaceRP true
-	run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased true
-	run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased true
+		run $n centralized scheduling.centralized.entropy2.Entropy2RP true
+		run $n centralized scheduling.centralized.btrplace.BtrPlaceRP true
+		run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased true
+		run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased true
 
-	#run $n hierarchical false
+		#run $n hierarchical false
 
-	#run $n distributed false
-done
+		#run $n distributed false
+	done
+} 2>&1 | tee run_all.log
 
+if [ ! $error ]
+	then
+		visu/energy_plot.py run_all.log energy.dat
+	fi
