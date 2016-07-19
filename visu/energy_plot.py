@@ -7,6 +7,8 @@ import sys
 import re
 import math
 import operator
+import pprint
+pp = pprint.PrettyPrinter(indent=4).pprint
 
 import numpy as np
 
@@ -21,10 +23,23 @@ locale.setlocale(locale.LC_ALL, 'en_US')
 def eprint(*args, **kwargs):
 	print(*args, file=sys.stderr, **kwargs)
 
+# Determines the order of the bars in the plots
+ORDER = ['Entropy', 'BtrPlace', 'Lazy FFD', 'Optimistic FFD']
+
 # Check arguments
 if len(sys.argv) != 3:
-	eprint("Usage: ./energy_plot.py <log file> <energy file>")
+	eprint('Usage: ./energy_plot.py <log file> <energy file>')
 	sys.exit(1)
+
+def to_bool(string):
+	if string in ['true', 'True']:
+		return True
+	
+	if string in ['false', 'False']:
+		return False
+
+	eprint("%s is not a boolean" % string)
+	sys.exit(3)
 
 def correct_name(name):
 	names = {
@@ -35,124 +50,200 @@ def correct_name(name):
 
 	return names[name]
 
+# time_on['Entropy']['node56'] = 17546.57
+time_on = {}
+last_on = None
+def new_experiment(alg):
+	global last_on
+	time_on[alg] = {}
+	last_on = {}
+
+def end_experiment(time, alg):
+	for node in last_on.keys():
+		if last_on[node] is not None:
+			node_off(node, time, alg)
+
+def node_on(name, time, alg):
+	if name in last_on and last_on[name] is not None:
+		eprint("Node %s was already on since %.2f" % (name, time))
+		sys.exit(1)
+	
+	last_on[name] = time
+
+def node_off(name, time, alg):
+	if last_on[name] is None:
+		eprint("None %s was not on" % name)
+		sys.exit(1)
+
+	if name not in time_on[alg]:
+		time_on[alg][name] = 0
+	
+	time_on[alg][name] += time - last_on[name]
+	last_on[name] = None
+
 ########################################
 # Get the number of turned off hosts 
 ########################################
-n_turn_off = {'true': [], 'false': []}
-n_migrations = {'true': [], 'false': []}
+n_turn_off = {True: {}, False: {}}
+n_migrations = {True: {}, False: {}}
 algos = []
+n_off = {}
+
+# load and standard deviation must be the same
+# for all the experiments in the log file
+load = None
+std = None
+simulation_time = None
+
 with open(sys.argv[1], 'r') as f:
-	currentAlg = None
 	turn_off = None
 
 	curr = None
 
 	# Compile 3 patterns and read the logs
-	start_pattern = re.compile(r'Running (\w+)(\s-D[\w\.]+\=([\w\.]+))? with (\d+) compute and (\d+) service nodes turning off hosts: (\w+)')
-	off_pattern = re.compile(r'Turn off node\d+')
+	start_pattern = re.compile(r'Running (\w+)(\s-D[\w\.]+\=([\w\.]+))? with (\d+) compute and (\d+) service nodes turning off hosts: (\w+), load.mean=(\d+), load.std=(\d+)')
+	end_pattern = re.compile(r'\[.*\s(\d+\.\d+)\] \[.*\] End of Injection')
+	off_pattern = re.compile(r'\[(.*\s)?(\d+\.\d+)\] \[.*\] Turn off (node\d+)')
+	on_pattern = re.compile(r'\[(.* )?(\d+\.\d+)\] \[.*\] Turn on (node\d+)')
 	migration_pattern = re.compile(r'End of migration of VM vm-\d+ from node\d+ to node\d+')
 
 	for line in f:
 		# This is a new experiment
 		m = re.search(start_pattern, line)
 		if m:
-			turn_off = m.group(6)
-
-			if curr != turn_off:
-				currentAlg = 0
-			else:
-				currentAlg += 1 
+			turn_off = to_bool(m.group(6))
 
 			algo = correct_name(m.group(3).split('.')[-1])
 			if algo not in algos:
 				algos.append(algo)
 
-			n_turn_off[turn_off].append(0)
-			n_migrations[turn_off].append(0)
+			if turn_off:
+				n_off[algo] = {}
+				n_off[algo][0.0] = 0
+
+			n_turn_off[turn_off][algo] = 0
+			n_migrations[turn_off][algo] = 0
 
 			curr = turn_off
+
+			load = int(m.group(7))
+			std = int(m.group(7))
+
+			new_experiment(algo)
+
+			continue
+
+		# An experiment is over
+		m = re.search(end_pattern, line)
+		if m:
+			time = float(m.group(1))
+			end_experiment(time, algo)
+			simulation_time = int(time)
 			continue
 
 		# A node has been turned off
 		m = re.search(off_pattern, line)
 		if m:
-			n_turn_off[curr][currentAlg] += 1
+			n_turn_off[curr][algo] += 1
+
+			if turn_off:
+				n_off[algo][float(m.group(2))] = n_off[algo][n_off[algo].keys()[-1]] - 1
+
+			node_off(m.group(3), float(m.group(2)), algo)
+			continue
+
+		# A node has been turned on
+		m = re.search(on_pattern, line)
+		if m:
+			if turn_off:
+				n_off[algo][float(m.group(2))] = n_off[algo][n_off[algo].keys()[-1]] + 1
+
+			node_on(m.group(3), float(m.group(2)), algo)
 			continue
 
 		# A VM has been migrated
 		m = re.search(migration_pattern, line)
 		if m:
-			n_migrations[curr][currentAlg] += 1
-
-for alg in range(len(algos)):
-	print("\t%s & %d" % (algos[alg], n_turn_off[turn_off][alg]))
+			n_migrations[curr][algo] += 1
 
 
 ########################################
 # Get the energy metrics
 ########################################
-energy = {'true': [], 'false': []}
-for alg in range(len(algos)):
-	energy['true'].append(-1000)
-	energy['false'].append(-1000)
+energy = {True: {}, False: {}}
+#for alg in range(len(algos)):
+#	energy[True].append(-1000)
+#	energy[False].append(-1000)
 
 with open(sys.argv[2], 'r') as f:
 	p = re.compile(r'\d+ \w+ (\w+) (\w+) ([\d\.]+)')
 	for line in f:
 		m = re.match(p, line)
-		implem = algos.index(correct_name(m.group(1)))
-		turn_off = m.group(2)
+		implem = correct_name(m.group(1))
+		turn_off = to_bool(m.group(2))
 		joules = float(m.group(3))
 
-		energy[turn_off][implem] = joules / 1000 / 1000
+		energy[turn_off][implem] = joules / simulation_time / 1000
 
 ########################################
 # Make the bar plot
 ########################################
-ind = np.arange(len(energy['true'])) # the x locations for the groups
+ind = np.arange(len(ORDER)) # the x locations for the groups
 width = 0.35
+
+ordered_energy = {True: [], False: []}
+for alg in ORDER:
+	ordered_energy[True].append(energy[True][alg])
+	ordered_energy[False].append(energy[False][alg])
+	print("Inserting True %s %.2f" % (alg, energy[True][alg]))
+	print("Inserting False %s %.2f" % (alg, energy[False][alg]))
+
+print("erergy:")
+pp(energy)
+print("ordered_energy:")
+pp(ordered_energy)
 
 fig, ax1 = plt.subplots()
 
-#color1 = '#FF4040'
-#color2 = '#5DD475'
 color1 = '#888888'
 color2 = '#FFFFFF'
 linewidth = 1
-rects1 = ax1.bar(ind, energy['false'], width, color=color1, linewidth=linewidth)
-rects2 = ax1.bar(ind + width, energy['true'], width, color=color2, linewidth=linewidth)
+rects1 = ax1.bar(ind, ordered_energy[False], width, color=color1, linewidth=linewidth)
+rects2 = ax1.bar(ind + width, ordered_energy[True], width, color=color2, linewidth=linewidth)
 
-ax1.set_ylabel('Energy (Megajoules)')
+ax1.set_ylabel('Energy (Megawatts)')
 ax1.set_xticks(ind + width)
 lim = ax1.get_ylim()
 ax1.set_ylim(lim[0], lim[1])
 
-ax1.set_xticklabels(algos)
-#ax1.get_yaxis().set_major_formatter(ticker.FuncFormatter(lambda val, pos: locale.format("%.2f", val, grouping=True)))
+ax1.set_xticklabels(ORDER)
 
 ########################################
 # Make the line plots
 ########################################
 
 # Make sure the values here are in the same order as the energy values
-off_values = []
-migration_values = []
-for alg in range(len(algos)):
-	off_values.append(n_turn_off['true'][alg])
-	migration_values.append(n_migrations['true'][alg])
+off_ordered = []
+migration_ordered = []
+for alg in ORDER:
+	off_ordered.append(n_turn_off[True][alg])
+	migration_ordered.append(n_migrations[True][alg])
+
+print("off_ordered:")
+pp(off_ordered)
 
 ax2 = ax1.twinx()
-off_plot, = ax2.plot(ind + width, off_values, 'k-o', linewidth=linewidth)
-migration_plot, = ax2.plot(ind + width, migration_values, 'k--^', linewidth=linewidth)
+off_plot, = ax2.plot(ind + width, off_ordered, 'k-o', linewidth=linewidth)
+migration_plot, = ax2.plot(ind + width, migration_ordered, 'k--^', linewidth=linewidth)
 
 lim = ax2.get_ylim()
 ax2.set_ylim(lim[0], lim[1])
-ax2.set_yticks(range(0, int(math.ceil(max(migration_values))), 50))
+ax2.set_yticks(range(0, int(math.ceil(max(migration_ordered))), 50))
 
-for i,j in zip(ind + width, off_values):
+for i,j in zip(ind + width, off_ordered):
 	ax2.annotate(str(j), xy=(i,j + .5), va='bottom', weight='bold', size='large')
 
-for i,j in zip(ind + width, migration_values):
+for i,j in zip(ind + width, migration_ordered):
 	ax2.annotate(str(j), xy=(i,j + .5), va='bottom', weight='bold', size='large')
 
 lgd = ax1.legend((rects1[0], rects2[0], off_plot, migration_plot),
@@ -160,6 +251,80 @@ lgd = ax1.legend((rects1[0], rects2[0], off_plot, migration_plot),
 		loc='upper left', bbox_to_anchor=(1.08, 1.02),
 		handlelength=2, framealpha=1.0, markerscale=.8)
 
-plt.savefig('energy.pdf', transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
-if os.system('which imgcat') == 0:
-	os.system('imgcat energy.pdf')
+def find_filename(format):
+	i = 0
+	path = format % i
+	while os.path.isfile(path):
+		i += 1
+		path = format % i
+	
+	return path
+
+save_path = find_filename('energy_%d_%d_%%d.pdf' % (load, std))
+plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
+print('Saved plot as ' + save_path)
+if os.system('which imgcat > /dev/null 2>&1') == 0:
+	os.system('imgcat ' + save_path)
+
+
+########################################
+# Make n_on plot
+########################################
+fig, ax1 = plt.subplots()
+
+ordered_n_on = {}
+plots = {}
+styles = ['k-o', 'k--^', 'k-^', 'k--o']
+i = 0
+for alg in ORDER:
+	ordered_n_on[alg] = sorted(n_off[alg].items())
+	plots[alg], = ax1.plot(map(lambda t: t[0], ordered_n_on[alg]),
+			map(lambda t: t[1], ordered_n_on[alg]), styles[i], linewidth=linewidth)
+	i += 1
+
+lgd = ax1.legend(plots.values(),
+		n_off.keys())
+#		loc='upper right', bbox_to_anchor=(1.08, 1.02),
+#		handlelength=2, framealpha=1.0, markerscale=.8)
+
+save_path = find_filename('n_on_%d_%d_%%d.pdf' % (load, std))
+plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
+print('Saved plot as ' + save_path)
+if os.system('which imgcat > /dev/null 2>&1') == 0:
+	os.system('imgcat ' + save_path)
+
+print("n_on:")
+print(ordered_n_on)
+
+########################################
+# Make time_on plot
+########################################
+time_on = {k: reduce(lambda a, b: a+b, v.values()) for k, v in time_on.items()}
+ordered_time_on = []
+
+for alg in ORDER:
+	ordered_time_on.append(time_on[alg])
+
+print("time_on:")
+pp(time_on)
+
+fig, ax1 = plt.subplots()
+
+color1 = '#888888'
+color2 = '#FFFFFF'
+linewidth = 1
+rects1 = ax1.bar(ind, ordered_time_on, width, color=color1, linewidth=linewidth)
+
+ax1.set_ylabel('Cumulated uptime of all servers')
+ax1.set_xticks(ind)
+lim = ax1.get_ylim()
+ax1.set_ylim(lim[0], lim[1])
+
+ax1.set_xticklabels(ORDER)
+
+save_path = find_filename('time_on_%d_%d_%%d.pdf' % (load, std))
+plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
+print('Saved plot as ' + save_path)
+if os.system('which imgcat > /dev/null 2>&1') == 0:
+	os.system('imgcat ' + save_path)
+
