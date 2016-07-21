@@ -26,6 +26,7 @@ public class Injector extends Process {
     private Deque<InjectorEvent> evtQueue = null ;
     private Deque<LoadEvent> loadQueue = null ;
     private Deque<FaultEvent> faultQueue = null ;
+    private Deque<VMSuspendResumeEvent> vmSuspendResumeQueue = null ;
 
     Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
         super(host, name, args);
@@ -34,11 +35,15 @@ public class Injector extends Process {
         //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
         // Stupid code to stress Snooze service nodes - Used for the paper submission
         if(SimulatorProperties.getAlgo().equals("hierarchical") && SnoozeProperties.faultMode())
-            faultQueue =generateSnoozeFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration());
+            faultQueue = generateSnoozeFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration());
         else
-            faultQueue =generateFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
-        System.out.println("Size of fault queue:"+faultQueue.size());
-        evtQueue = mergeQueues(loadQueue,faultQueue);
+            faultQueue = generateFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
+
+        if(SimulatorProperties.getSuspendVMs()) {
+            vmSuspendResumeQueue = generateVMFluctuationQueue(SimulatorManager.getSGVMsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getVMSuspendPeriod());
+        }
+        System.out.println(String.format("Size of event queues: load: %d, faults: %d, vm suspend: %d", loadQueue.size(), faultQueue.size(), vmSuspendResumeQueue.size()));
+        evtQueue = mergeQueues(loadQueue,faultQueue, vmSuspendResumeQueue);
         // System.out.println("Size of event queue:"+evtQueue.size());
 
         // Serialize eventqueue in a file.
@@ -262,6 +267,62 @@ public class Injector extends Process {
 
         return faultQueue;
     }
+
+
+    public static Deque<VMSuspendResumeEvent> generateVMFluctuationQueue(XVM[] xvms,  long duration, int faultPeriod){
+        LinkedList<VMSuspendResumeEvent> vmQueue = new LinkedList<VMSuspendResumeEvent>();
+        Random randExpDis=new Random(SimulatorProperties.getSeed());
+        double currentTime = 0 ;
+        double lambdaPerHost=1.0/faultPeriod ; // Nb crash per host (average)
+        double crashDuration = SimulatorProperties.getCrashDuration();
+        int nbOfVMs= xvms.length;
+
+        double lambda=lambdaPerHost* nbOfVMs;
+        long id=0;
+        XVM tempVM;
+
+        currentTime+=exponentialDis(randExpDis, lambda);
+
+        Random randHostPicker = new Random(SimulatorProperties.getSeed());
+
+        while(currentTime < duration){
+            // select a VM
+            int index = randHostPicker.nextInt(nbOfVMs);
+            tempVM = xvms[index];
+
+            if(!ifStillSuspendedUpdate(tempVM, vmQueue, currentTime)) {
+                // and change its state
+                // false = suspend, true = resume
+                // Add a new event queue
+                vmQueue.add(new VMSuspendResumeEvent(id++, currentTime, tempVM, false));
+            }
+
+            if (currentTime + crashDuration < duration) {
+                // For the moment, downtime of a VM is arbitrarily set to crashDuration
+                vmQueue.add(new VMSuspendResumeEvent(id++, currentTime + (crashDuration), tempVM, true));
+            }
+            currentTime += exponentialDis(randExpDis, lambda);
+        }
+
+        /*
+        Msg.info("Number of VM suspend-resume events:" + vmQueue.size());
+        for (InjectorEvent evt: vmQueue){
+            Msg.info(evt.toString());
+        }
+        */
+
+        // Sort the list for the merge:
+        Collections.sort(vmQueue, new Comparator<VMSuspendResumeEvent>() {
+            @Override
+            public int compare(VMSuspendResumeEvent o1, VMSuspendResumeEvent o2) {
+                return (int) Math.round(o1.getTime() - o2.getTime());
+            }
+        });
+
+        return vmQueue;
+    }
+
+
     public static boolean isStillOff(XHost tmp, LinkedList<FaultEvent> queue, double currentTime, double crashDuration){
         ListIterator<FaultEvent> iterator = queue.listIterator(queue.size());
         while(iterator.hasPrevious()){
@@ -277,6 +338,7 @@ public class Injector extends Process {
         }
         return false;
     }
+
     // if the node is off, we should remove the next On event and postpone it at currenttime +crashDuration
     // Note that the update is performed in the upper function.
     private static boolean ifStillOffUpdate(XHost tmp, LinkedList<FaultEvent> queue, double currentTime){
@@ -297,29 +359,42 @@ public class Injector extends Process {
         return false;
     }
 
-    public static Deque<InjectorEvent> mergeQueues(Deque<LoadEvent> loadQueue, Deque<FaultEvent> faultQueue) {
-        LinkedList<InjectorEvent> queue = new LinkedList<InjectorEvent>();
-        FaultEvent crashEvt;
-        if (faultQueue != null)
-            crashEvt = faultQueue.pollFirst();
-        else
-            crashEvt = null;
-        LoadEvent loadEvt = loadQueue.pollFirst();
-        // Here we are considering that the getCPUDemand event queue cannot be empty
-        while(loadEvt != null){
+    // If the VM is suspended, we should remove the next resume event and postpone it at currenttime +crashDuration
+    // Note that the update is performed in the upper function.
+    private static boolean ifStillSuspendedUpdate(XVM tmp, LinkedList<VMSuspendResumeEvent> queue, double currentTime){
+        ListIterator<VMSuspendResumeEvent> iterator = queue.listIterator(queue.size());
 
-            while (crashEvt != null && loadEvt.getTime()>crashEvt.getTime()){
-                queue.addLast(crashEvt);
-                crashEvt = faultQueue.pollFirst();
+        while(iterator.hasPrevious()) {
+            VMSuspendResumeEvent evt = iterator.previous();
+
+            if(evt.getState() == true){
+                if (evt.getTime()  >= currentTime) {
+                    if (evt.getVM() == tmp) {
+                        iterator.remove();
+                        return true;
+                    }
+                }
+                else
+                    break;
             }
-            queue.addLast(loadEvt);
-            loadEvt = loadQueue.pollFirst();
-        }//while(loadEvt != null);
-
-        while(crashEvt != null){
-            queue.addLast(crashEvt);
-            crashEvt = faultQueue.pollFirst();
         }
+        return false;
+    }
+
+    public static Deque<InjectorEvent> mergeQueues(Deque<LoadEvent> loadQueue,
+                                                   Deque<FaultEvent> faultQueue,
+                                                   Deque<VMSuspendResumeEvent> vmEvents) {
+        LinkedList<InjectorEvent> queue = new LinkedList<InjectorEvent>();
+        queue.addAll(loadQueue);
+        queue.addAll(faultQueue);
+        queue.addAll(vmEvents);
+
+        queue.sort(new Comparator<InjectorEvent>() {
+            @Override
+            public int compare(InjectorEvent o1, InjectorEvent o2) {
+                return (int) Math.round(o1.getTime() - o2.getTime());
+            }
+        });
 
         writeEventQueue(queue);
 

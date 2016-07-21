@@ -11,33 +11,28 @@ public class MyProcess extends Process {
         super(host, name, args);
     }
 
-    boolean end = false;
-
     @Override
     public void main(String[] args) throws MsgException {
         // Start a bunch of processes on node1
         Host node1 = Host.getByName("node1");
+        XHost host = new XHost(node1, 4096, 8, 800,1000, null);
         Msg.info("Got " + node1.getName());
 
-        Process p = new Process(node1, "p") {
-            @Override
-            public void main(String[] strings) throws MsgException {
-                while(!end) {
-                    Task t = new Task("t1", node1.getSpeed() * 100, 0);
-                    try {
-                        t.execute();
-                    } catch (TaskCancelledException e) {
-                        e.printStackTrace();
-                        suspend();
-                    }
-                }
-            }
-        };
+        XVM vm =  new XVM(host, "vm", 1, 1024, 125, null, 0, 125, 40);
+        vm.start();
+        vm.setLoad(20);
 
-        p.start();
-        p.suspend();
+        waitFor(1000);
+        vm.suspend();
+        vm.setLoad(80);
+
         waitFor(10);
-        end = true;
+        vm.resume();
+        waitFor(500);
+
+        vm.shutdown();
+
+        Msg.info("This is the end");
     }
 }
 

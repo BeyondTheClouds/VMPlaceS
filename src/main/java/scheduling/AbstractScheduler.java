@@ -7,9 +7,7 @@ import org.simgrid.msg.*;
 import simulation.SimulatorManager;
 import trace.Trace;
 
-import java.util.Collection;
-import java.util.Locale;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Abstract scheduler that must be extended by implemented algorithms.
@@ -39,7 +37,9 @@ public abstract class AbstractScheduler implements Scheduler {
     /**
      * Number of ongoing migrations.
      */
-	private int ongoingMigrations = 0 ;
+	private volatile int ongoingMigrations = 0 ;
+
+    private Collection<XVM> currentMigrations;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Constructors ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,8 +50,8 @@ public abstract class AbstractScheduler implements Scheduler {
 	 */
 	protected AbstractScheduler() {
 		planGraphDepth = 0;
+        currentMigrations = new HashSet<XVM>();
 	}
-
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Abstract methods ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,8 +89,8 @@ public abstract class AbstractScheduler implements Scheduler {
         return (this.ongoingMigrations != 0);
     }
 
-    protected int getOngoingMigrations() {
-        return ongoingMigrations;
+    protected Collection<XVM> getMigratingVMs() {
+        return currentMigrations;
     }
 
     /**
@@ -217,6 +217,7 @@ public abstract class AbstractScheduler implements Scheduler {
                         if (destHost != null) {
                             if (!sourceHost.isOff()) {
                                 incOngoingMigrations();
+                                currentMigrations.add(SimulatorManager.getXVMByName(args[0]));
 
                                 double timeStartingMigration = Msg.getClock();
                                 Trace.hostPushState(vmName, "SERVICE", "migrate", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", vmName, sourceName, destName));
@@ -253,6 +254,7 @@ public abstract class AbstractScheduler implements Scheduler {
 
                                 }
                                 decOngoingMigrations();
+                                currentMigrations.remove(SimulatorManager.getXVMByName(args[0]));
                             }
                         }
 

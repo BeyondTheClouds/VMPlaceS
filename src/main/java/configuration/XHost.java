@@ -15,9 +15,12 @@ package configuration;
 
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
+import simulation.SimulatorManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class XHost{
 
@@ -25,7 +28,7 @@ public class XHost{
      * The VMs currently hosted on the VMs. Please note that a VM that is currently migrated to the host does not appear
      * in that list (i.e. this list contains only the VMs that are really hosted on the node).
      */
-    private ArrayList<XVM> hostedVMs = null;
+    private List<XVM> hostedVMs = null;
 
     /**
      * The MSG Host to extend (extension by aggregation)
@@ -158,8 +161,8 @@ public class XHost{
      */
     public double computeCPUDemand(){
         double cons=0;
-        for (XVM vm: this.getRunnings())
-            cons+=vm.getCPUDemand();
+            for (XVM vm : this.getRunnings())
+                cons += vm.getCPUDemand();
         return cons;
     }
 
@@ -225,13 +228,27 @@ public class XHost{
             System.err.println("Dammed the migration may have crash");
             return -1;
         }
+        Msg.info("Migrate going to update hosting VM " + vm);
         hostedVMs.remove(vm);
         this.setCPUDemand(computeCPUDemand());
         dest.hostedVMs.add(vm);
+        Msg.info("Hosted VM updated");
         dest.setCPUDemand(dest.computeCPUDemand());
         this.onGoingMigration = false;
         dest.setOnGoingMigration(false);
         return 0;
+    }
+
+    public void suspendVM(XVM vm) {
+        hostedVMs.remove(vm);
+        vm.suspend();
+        this.setCPUDemand(computeCPUDemand());
+    }
+
+    public void resumeVM(XVM vm) {
+        hostedVMs.add(vm);
+        vm.resume();
+        this.setCPUDemand(computeCPUDemand());
     }
 
     /**

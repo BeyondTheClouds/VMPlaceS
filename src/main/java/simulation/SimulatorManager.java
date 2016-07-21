@@ -79,10 +79,11 @@ public class SimulatorManager {
      */
     private static HashMap<String, XHost> sgServiceHosts= null;
     /**
-     * Just a stupid sorted table to have a reference toward each host
+     * Just a stupid sorted table to have a reference toward each host and vm
      * Used by the injector when generating the different event queues.
      */
     private static XHost[] xhosts = null;
+    private static XVM[] xvms = null;
     /**
      * Average CPU demand of the infrastructure (just a hack to avoid to compute the CPUDemand each time (computing the CPU demand is O(n)
      */
@@ -167,6 +168,9 @@ public class SimulatorManager {
         return xhosts;
     }
 
+    public static XVM[] getSGVMsToArray() {
+        return xvms;
+    }
 
     /**
      * @return the collection of XHosts that have been declared as hosting nodes (i.e. that can host VMs)
@@ -289,6 +293,8 @@ public class SimulatorManager {
         sgVMsOn = new HashMap<String,XVM>();
         sgVMsOff = new HashMap<String,XVM>();
 
+        xvms = new XVM[nbOfVMs];
+
         XVM sgVMTmp;
 
         Iterator<XHost> sgHostsIterator = SimulatorManager.getSGHostingHosts().iterator();
@@ -333,6 +339,8 @@ public class SimulatorManager {
             sgVMTmp = new XVM(sgHostTmp, "vm-" + vmIndex,
                         vmClass.getNbOfCPUs(), vmClass.getMemSize(), vmClass.getNetBW(), null, -1, vmClass.getMigNetBW(), vmClass.getMemIntensity());
             sgVMsOn.put("vm-"+vmIndex, sgVMTmp);
+
+            xvms[vmIndex] = sgVMTmp;
             vmIndex++;
 
             Msg.info(String.format("vm: %s, %d, %d, %s",
@@ -626,6 +634,18 @@ public class SimulatorManager {
         else{
             Msg.info("Weird... you are asking to turn off a host that is already off !");
         }
+    }
+
+    public static void shutdownVM(XVM vm) {
+        vm.getLocation().suspendVM(vm);
+        sgVMsOn.remove(vm.getName());
+        sgVMsOff.put(vm.getName(), vm);
+    }
+
+    public static void startVM(XVM vm) {
+        sgVMsOff.remove(vm.getName());
+        sgVMsOn.put(vm.getName(), vm);
+        vm.getLocation().resumeVM(vm);
     }
 
     private static int getProcessCount(XHost host) {
