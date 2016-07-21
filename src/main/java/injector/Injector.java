@@ -383,11 +383,16 @@ public class Injector extends Process {
         waitFor(SimulatorProperties.getDuration() - Msg.getClock());
         Msg.info("End of Injection");
         SimulatorManager.setEndOfInjection();
-        if(SimulatorProperties.getEnergyLogFile() != null)
+        if(SimulatorProperties.getEnergyLogFile() != null) {
+            Msg.info("Writing energy.dat");
             SimulatorManager.writeEnergy(SimulatorProperties.getEnergyLogFile());
+            Msg.info("Written energy.dat");
+        }
 
         // Wait for termination of On going scheduling
+        Msg.info("Waiting for timeout");
         waitFor(EntropyProperties.getEntropyPlanTimeout());
+        Msg.info("Done");
     }
 
     private InjectorEvent nextEvent() {

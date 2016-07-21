@@ -99,7 +99,7 @@ public class BtrPlaceRP extends AbstractScheduler {
     }
 
     public BtrPlaceRP(Collection<XHost> xHosts) {
-        this(xHosts, new Random().nextInt());
+        this(xHosts, new Random(SimulatorProperties.getSeed()).nextInt());
     }
 
     /**
@@ -124,11 +124,6 @@ public class BtrPlaceRP extends AbstractScheduler {
 
         // Add nodes
         for (XHost tmpH : xHosts) {
-            // Consider only hosts that are turned on
-            if (tmpH.isOff()) {
-                 Msg.critical("Trying to analyze a dead node (" + tmpH.getName() + ")");
-            }
-
             // Creates a physical node
             Node n = this.source.newNode();
             this.nodesMap.put(n.id(), tmpH.getName());
@@ -257,11 +252,21 @@ public class BtrPlaceRP extends AbstractScheduler {
 
                 @Override
                 public void committed(MigrateVM migrateVM) {
+                    XHost src = SimulatorManager.getXHostByName(nodesMap.get(migrateVM.getSourceNode().id()));
+                    XHost dst = SimulatorManager.getXHostByName(nodesMap.get(migrateVM.getDestinationNode().id()));
+
+                    if(dst.isOff())
+                        SimulatorManager.turnOn(dst);
+
                     relocateVM(
                             vmMap.get(migrateVM.getVM().id()),
                             nodesMap.get(migrateVM.getSourceNode().id()),
                             nodesMap.get(migrateVM.getDestinationNode().id())
                     );
+
+                    Msg.info(src.getName() + " has " + src.getRunnings().size() + " Vms");
+                    if(SimulatorProperties.getHostsTurnoff() && src.getRunnings().size() <= 0)
+                        SimulatorManager.turnOff(src);
                 }
 
                 @Override
@@ -306,19 +311,12 @@ public class BtrPlaceRP extends AbstractScheduler {
                         Msg.info("You're are waiting for a couple of seconds (already "+watchDog+" seconds)");
                         if(SimulatorManager.isEndOfInjection()){
                             Msg.critical("The reconfiguration is taking too long - Forcing termination...");
-                            System.exit(131);
+                            System.exit(42);
                         }
                     }
                 } catch (HostFailureException e) {
                     Msg.critical("Host crashed while reconfiguring : " + e.getLocalizedMessage());
                 }
-            }
-
-            // Turn off unused hosts
-            if(SimulatorProperties.getHostsTurnoff()) {
-                for (XHost host : SimulatorManager.getSGHostingHosts())
-                    if (host.isOn() && host.getRunnings().size() == 0)
-                        SimulatorManager.turnOff(host);
             }
         }
     }

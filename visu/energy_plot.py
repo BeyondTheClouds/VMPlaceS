@@ -94,6 +94,7 @@ n_off = {}
 load = None
 std = None
 simulation_time = None
+n_hosts = None
 
 with open(sys.argv[1], 'r') as f:
 	turn_off = None
@@ -127,9 +128,11 @@ with open(sys.argv[1], 'r') as f:
 			curr = turn_off
 
 			load = int(m.group(7))
-			std = int(m.group(7))
+			std = int(m.group(8))
 
 			new_experiment(algo)
+
+			n_hosts = int(m.group(4))
 
 			continue
 
@@ -274,18 +277,19 @@ fig, ax1 = plt.subplots()
 
 ordered_n_on = {}
 plots = {}
-styles = ['k-o', 'k--^', 'k-^', 'k--o']
+styles = ['k-o', 'k-^', 'k-v', 'k-*']
 i = 0
 for alg in ORDER:
 	ordered_n_on[alg] = sorted(n_off[alg].items())
 	plots[alg], = ax1.plot(map(lambda t: t[0], ordered_n_on[alg]),
-			map(lambda t: t[1], ordered_n_on[alg]), styles[i], linewidth=linewidth)
+			map(lambda t: t[1], ordered_n_on[alg]), styles[i], linewidth=linewidth, ms=8)
 	i += 1
 
 lgd = ax1.legend(plots.values(),
-		n_off.keys())
-#		loc='upper right', bbox_to_anchor=(1.08, 1.02),
-#		handlelength=2, framealpha=1.0, markerscale=.8)
+		n_off.keys(),
+		loc='lower right')
+
+ax1.set_ylim(0, n_hosts + 5)
 
 save_path = find_filename('n_on_%d_%d_%%d.pdf' % (load, std))
 plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
@@ -315,8 +319,8 @@ color2 = '#FFFFFF'
 linewidth = 1
 rects1 = ax1.bar(ind, ordered_time_on, width, color=color1, linewidth=linewidth)
 
-ax1.set_ylabel('Cumulated uptime of all servers')
-ax1.set_xticks(ind)
+ax1.set_ylabel('Cumulative uptime of all servers (in seconds)')
+ax1.set_xticks(ind + width / 2)
 lim = ax1.get_ylim()
 ax1.set_ylim(lim[0], lim[1])
 

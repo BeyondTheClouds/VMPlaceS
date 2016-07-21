@@ -1,5 +1,6 @@
 package scheduling.centralized.ffd;
 
+import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import org.simgrid.msg.Msg;
@@ -10,7 +11,7 @@ import java.util.*;
 public class OptimisticFirstFitDecreased extends FirstFitDecreased {
 
     public OptimisticFirstFitDecreased(Collection<XHost> hosts) {
-        this(hosts, new Random().nextInt());
+        this(hosts, new Random(SimulatorProperties.getSeed()).nextInt());
     }
 
     public OptimisticFirstFitDecreased(Collection<XHost> hosts, Integer id) {
@@ -57,8 +58,14 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
             predictedCPUDemand.put(dest, predictedCPUDemand.get(dest) + vm.getCPUDemand());
             XHost source = sources.get(vm);
             if(!source.getName().equals(dest.getName())) {
+                if(dest.isOff())
+                    SimulatorManager.turnOn(dest);
+
                 relocateVM(vm.getName(), source.getName(), dest.getName());
                 nMigrations++;
+
+                if(SimulatorProperties.getHostsTurnoff() && source.getRunnings().size() <= 0)
+                    SimulatorManager.turnOff(source);
             }
         }
     }

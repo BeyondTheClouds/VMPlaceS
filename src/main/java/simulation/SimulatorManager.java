@@ -110,7 +110,7 @@ public class SimulatorManager {
         // Kill all VMs daemons in order to finalize the simulation correctly
         for (XVM vm : SimulatorManager.getSGVMs()) {
             Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges() + "/ migrated: "+vm.getNbOfMigrations());
-            vm.getDaemon().kill();
+            //vm.getDaemon().kill();
         }
         Msg.info("Duration of the simulation in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
     }
@@ -181,10 +181,19 @@ public class SimulatorManager {
      */
     public static Collection<XHost> getSGTurnOnHostingHosts() {
         LinkedList<XHost> tmp = new LinkedList<XHost>();
-        for (XHost h: sgHostingHosts.values()){
+        for (XHost h: sgHostingHosts.values())
             if (!h.isOff())
                 tmp.add(h);
-        }
+
+        return tmp;
+    }
+
+    public static Collection<XHost> getSGTurnOffHostingHosts() {
+        LinkedList<XHost> tmp = new LinkedList<XHost>();
+        for(XHost h: sgHostingHosts.values())
+            if(h.isOff())
+                tmp.add(h);
+
         return tmp;
     }
 
@@ -267,9 +276,9 @@ public class SimulatorManager {
      * @param nbOfVMs the number of the VMs to instanciate
      */
     public static void configureHostsAndVMs(int nbOfHostingHosts, int nbOfServiceHosts, int nbOfVMs, boolean balance) {
-
         int nodeIndex = 0;
         int[] nodeMemCons = new int[nbOfHostingHosts];
+        int[] nodeCpuCons = new int[nbOfHostingHosts];
         int vmIndex= 0;
         int nbVMOnNode;
         Random r = new Random(SimulatorProperties.getSeed());
@@ -286,6 +295,7 @@ public class SimulatorManager {
 
         XHost sgHostTmp = sgHostsIterator.next();
         nodeMemCons[nodeIndex]=0;
+        nodeCpuCons[nodeIndex]=0;
         nbVMOnNode =0;
 
         //Add VMs to each node, preventing memory over provisioning
@@ -302,9 +312,12 @@ public class SimulatorManager {
             double vmsPerNodeRatio = ((double) nbOfVMs)/nbOfHostingHosts;
 
             try {
-                while ((nodeMemCons[nodeIndex] + vmClass.getMemSize() > sgHostTmp.getMemSize()) || (balance && nbVMOnNode >= vmsPerNodeRatio)) {
+                while ((nodeMemCons[nodeIndex] + vmClass.getMemSize() > sgHostTmp.getMemSize()
+                        && nodeCpuCons[nodeIndex] + SimulatorProperties.getMeanLoad() > sgHostTmp.getCPUCapacity())
+                        || (balance && nbVMOnNode >= vmsPerNodeRatio)) {
                     sgHostTmp = sgHostsIterator.next();
                     nodeMemCons[++nodeIndex] = 0;
+                    nodeCpuCons[++nodeIndex] = 0;
                     nbVMOnNode = 0;
                 }
             } catch(NoSuchElementException ex){
@@ -334,6 +347,7 @@ public class SimulatorManager {
             sgHostTmp.start(sgVMTmp);     // When the VM starts, its getCPUDemand equals 0
             nbVMOnNode ++;
             nodeMemCons[nodeIndex] += sgVMTmp.getMemSize();
+            nodeCpuCons[nodeIndex] += SimulatorProperties.getMeanLoad();
         }
     }
 

@@ -3,8 +3,7 @@ package scheduling.centralized.ffd;
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
-import org.simgrid.msg.HostFailureException;
-import org.simgrid.msg.Msg;
+import org.simgrid.msg.*;
 import scheduling.AbstractScheduler;
 import simulation.SimulatorManager;
 
@@ -24,7 +23,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
     protected boolean useLoad;
 
     public FirstFitDecreased(Collection<XHost> hosts) {
-        this(hosts, new Random().nextInt());
+        this(hosts, new Random(SimulatorProperties.getSeed()).nextInt());
     }
 
     public FirstFitDecreased(Collection<XHost> hosts, Integer id) {
@@ -74,19 +73,11 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
                     Msg.info(String.format("You're waiting for %d migrations to complete (already %d seconds)", getOngoingMigrations(), watchDog));
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
-                        System.exit(131);
+                        System.exit(42);
                     }
                 }
             } catch (HostFailureException e) {
                 e.printStackTrace();
-            }
-        }
-
-        // Turn off unused hosts
-        if(SimulatorProperties.getHostsTurnoff()) {
-            for (XHost host : SimulatorManager.getSGHostingHosts()) {
-                if (host.isOn() && host.getRunnings().size() <= 0)
-                    SimulatorManager.turnOff(host);
             }
         }
 

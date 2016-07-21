@@ -34,7 +34,7 @@ public class Entropy2RP extends AbstractScheduler {
     private TimedReconfigurationPlan reconfigurationPlan;
 
     public Entropy2RP(Collection<XHost> xhosts) {
-        this(xhosts, new Random().nextInt());
+        this(xhosts, new Random(SimulatorProperties.getSeed()).nextInt());
     }
 
     public Entropy2RP(Collection<XHost> xhosts, Integer id) {
@@ -242,20 +242,22 @@ public class Entropy2RP extends AbstractScheduler {
                 e.printStackTrace();
             }
         }
-
-        // Turn off unused hosts
-        if(SimulatorProperties.getHostsTurnoff()) {
-            for (XHost host : SimulatorManager.getSGHostingHosts())
-                if (host.isOn() && host.getRunnings().size() == 0)
-                    SimulatorManager.turnOff(host);
-        }
     }
 
 
     private void instantiateAndStart(Action a) throws InterruptedException{
         if(a instanceof Migration){
             Migration migration = (Migration)a;
+            XHost src = SimulatorManager.getXHostByName(migration.getHost().getName());
+            XHost dst = SimulatorManager.getXHostByName(migration.getDestination().getName());
+
+            if(dst.isOff())
+                SimulatorManager.turnOn(dst);
+
             super.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
+
+            if(SimulatorProperties.getHostsTurnoff() && src.getRunnings().size() <= 0)
+                SimulatorManager.turnOff(src);
         } else{
             System.err.println("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
         }
@@ -268,12 +270,6 @@ public class Entropy2RP extends AbstractScheduler {
 
         // Add nodes
         for (XHost tmpH:xhosts){
-            // Consider only hosts that are turned on
-            if (tmpH.isOff()) {
-                System.err.println("WTF, you are asking me to analyze a dead node (" + tmpH.getName() + ")");
-                //System.exit(-1);
-            }
-
             Node tmpENode = new SimpleNode(tmpH.getName(), tmpH.getNbCores(), tmpH.getCPUCapacity(), tmpH.getMemSize());
             currConf.addOnline(tmpENode);
             for (XVM tmpVM : tmpH.getRunnings()) {

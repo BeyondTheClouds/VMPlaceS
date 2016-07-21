@@ -160,6 +160,17 @@ public class Main {
             Trace.hostVariableSet(host.getName(), "NB_OFF", 0);
         }
 
+        // Turn off the hosts that we don't need
+        int nOff = 0;
+        if(SimulatorProperties.getHostsTurnoff()) {
+            for (XHost h : SimulatorManager.getSGHostingHosts())
+                if (h.getRunnings().size() <= 0) {
+                    SimulatorManager.turnOff(h);
+                    nOff++;
+                }
+            Msg.info(String.format("Turned off unused %d nodes before starting", nOff));
+        }
+
 	    /*  execute the simulation. */
         System.out.println("Launcher: begin Msg.run()" + new Date().toString());
         notify(String.format("Started %s with %d hosts and %d VMs", SimulatorProperties.getImplementation(), SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfVMs()));
@@ -173,6 +184,8 @@ public class Main {
         notify(String.format("End of simulation %s", SimulatorProperties.getImplementation()));
 
         Process.killAll(-1);
+        Msg.info(String.format("There are still %d processes running", Process.getCount()));
+        System.exit(0);
     }
 
     private static void notify(String message) {

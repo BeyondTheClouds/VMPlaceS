@@ -50,7 +50,7 @@ public class CentralizedResolver extends Process {
                     Process.sleep(wait); // instead of waitFor that takes into account only seconds
 
 			    /* Compute and apply the plan */
-                Collection<XHost> hostsToCheck = SimulatorManager.getSGTurnOnHostingHosts();
+                Collection<XHost> hostsToCheck = SimulatorManager.getSGHostingHosts();
 
                 scheduler = SchedulerBuilder.getInstance().build(hostsToCheck, ++loopID);
                 schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);

@@ -1,9 +1,13 @@
 #! /bin/bash
 
+PID_FILE=/tmp/vmplaces.pid
+
 source xprc
 
 function do_abort() {
-	kill -2 $current_pid
+	echo Killing java process with PID `cat $PID_FILE`
+	kill -9 `cat $PID_FILE`
+	rm -f $PID_FILE
 	exit 2
 }
 
@@ -44,7 +48,11 @@ function run() {
 			;;
 	esac
 
-	n_vms=$(($n_nodes * 7))
+	n_vms=$(($n_nodes * 9))
+	#mean=60
+	#std=20
+	mean=60
+	std=30
 
 	SIM_ARGS="-Dsimulator.algorithm=$algo $implem"
 	SIM_ARGS="$SIM_ARGS -Dhostingnodes.number=$n_nodes"
@@ -53,19 +61,22 @@ function run() {
 	SIM_ARGS="$SIM_ARGS -Dhostingnodes.cpunumber=8"
 	SIM_ARGS="$SIM_ARGS -Dhostingnodes.memorytotal=131072"
 	SIM_ARGS="$SIM_ARGS -Dhosts.turn_off=$turn_off"
+	SIM_ARGS="$SIM_ARGS -Dload.mean=$mean"
+	SIM_ARGS="$SIM_ARGS -Dload.std=$std"
 
 	echo '----------------------------------------'
-	echo "Running $algo $implem with $n_nodes compute and $n_service service nodes turning off hosts: $turn_off"
+	echo "Running $algo $implem with $n_nodes compute and $n_service service nodes turning off hosts: $turn_off, load.mean=$mean, load.std=$std"
 	echo "Command: java $VM_OPTIONS $SIM_ARGS simulation.Main $PROGRAM_ARGUMENTS"
 	echo '----------------------------------------'
 	java $VM_OPTIONS $SIM_ARGS simulation.Main $PROGRAM_ARGUMENTS &
-	current_pid=$!
-	wait $current_pid
+	pid=$!
+	echo $pid > $PID_FILE
+	wait $pid
 	ret=$?
 
-	echo Returned $ret
+	echo java returned $ret
 
-	if [ $ret -ne 0 && $ret -ne 131 ]
+	if [ $ret -ne 0 ] && [ $ret -ne 134 ]
 	then
 		error=1
 		exit $ret
