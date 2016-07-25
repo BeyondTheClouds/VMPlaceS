@@ -31,9 +31,9 @@ public class VMSuspendResumeEvent implements InjectorEvent{
 
     public void play(){
             if (this.state) {
-                SimulatorManager.startVM(vm);
+                SimulatorManager.resumeVM(vm.getName(), vm.getLocation().getName());
             } else {
-                SimulatorManager.shutdownVM(vm);
+                SimulatorManager.suspendVM(vm.getName(), vm.getLocation().getName());
             }
     }
 

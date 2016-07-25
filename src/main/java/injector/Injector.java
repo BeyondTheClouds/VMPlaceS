@@ -435,6 +435,7 @@ public class Injector extends Process {
 
         Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MIG", 0);
         Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MC", 0);
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VM", SimulatorManager.getSGVMsOn().size());
 
         InjectorEvent evt = nextEvent();
         if(SimulatorProperties.goToStationaryStatus()){
@@ -465,6 +466,7 @@ public class Injector extends Process {
         }
 
         // Wait for termination of On going scheduling
+        //TODO this timeout is not generic ...
         Msg.info("Waiting for timeout");
         waitFor(EntropyProperties.getEntropyPlanTimeout());
         Msg.info("Done");

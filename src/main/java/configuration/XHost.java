@@ -239,16 +239,32 @@ public class XHost{
         return 0;
     }
 
-    public void suspendVM(XVM vm) {
-        hostedVMs.remove(vm);
-        vm.suspend();
-        this.setCPUDemand(computeCPUDemand());
+    /**
+     *
+     * @param vm
+     *  @return 0 if success, 1 should be postponed, -1 if failure, -2 if already suspended
+     */
+    public int suspendVM(XVM vm) {
+        int res = vm.suspend();
+        if (res == 0 ) {
+            hostedVMs.remove(vm);
+            this.setCPUDemand(computeCPUDemand());
+        }
+        return res;
     }
 
-    public void resumeVM(XVM vm) {
-        hostedVMs.add(vm);
-        vm.resume();
-        this.setCPUDemand(computeCPUDemand());
+    /**
+     *
+     * @param vm
+     * @return 0 if success, -1 if failure, 1 if already running
+     */
+    public int resumeVM(XVM vm) {
+        int res = vm.resume();
+        if (res == 0) {
+            hostedVMs.add(vm);
+            this.setCPUDemand(computeCPUDemand());
+        }
+        return res;
     }
 
     /**

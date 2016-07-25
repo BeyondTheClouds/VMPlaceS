@@ -150,6 +150,7 @@ public class Main {
         Trace.hostVariableDeclare("LOAD");
         Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
         Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
+        Trace.hostVariableDeclare("NB_VM"); //To follow number of VMs.
 
         Trace.hostVariableDeclare("ENERGY");
         Trace.hostVariableDeclare("NB_OFF"); //Nb of hosts turned off
