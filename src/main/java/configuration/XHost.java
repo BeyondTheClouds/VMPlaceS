@@ -15,6 +15,7 @@ package configuration;
 
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
+import org.simgrid.trace.Trace;
 import simulation.SimulatorManager;
 
 import java.util.ArrayList;
@@ -189,6 +190,7 @@ public class XHost{
      * @param sgVM
      */
     public void start(XVM sgVM) {
+        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_VMS_ON", 1);
        hostedVMs.add(sgVM);
        sgVM.start();
     }
@@ -242,12 +244,14 @@ public class XHost{
     public void suspendVM(XVM vm) {
         hostedVMs.remove(vm);
         vm.suspend();
+        Trace.hostVariableSub(SimulatorManager.getInjectorNodeName(), "NB_VMS_ON", 1);
         this.setCPUDemand(computeCPUDemand());
     }
 
     public void resumeVM(XVM vm) {
         hostedVMs.add(vm);
         vm.resume();
+        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_VMS_ON", 1);
         this.setCPUDemand(computeCPUDemand());
     }
 

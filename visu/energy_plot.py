@@ -2,10 +2,8 @@
 
 from __future__ import print_function
 
-import os
-import sys
-import re
-import math
+import os, sys, re, json, math
+import traceback
 import operator
 import pprint
 pp = pprint.PrettyPrinter(indent=4).pprint
@@ -31,6 +29,7 @@ if len(sys.argv) != 3:
 	eprint('Usage: ./energy_plot.py <log file> <energy file>')
 	sys.exit(1)
 
+# Some functions
 def to_bool(string):
 	if string in ['true', 'True']:
 		return True
@@ -82,7 +81,8 @@ def node_off(name, time, alg):
 	last_on[name] = None
 
 ########################################
-# Get the number of turned off hosts 
+# Get the number of turned off hosts
+# and of migrations
 ########################################
 n_turn_off = {True: {}, False: {}}
 n_migrations = {True: {}, False: {}}
@@ -169,6 +169,50 @@ with open(sys.argv[1], 'r') as f:
 		if m:
 			n_migrations[curr][algo] += 1
 
+########################################
+# Count the number of on VMs
+########################################
+n_vms_on = {
+	True: {},
+	False: {}
+}
+
+dir_pattern = re.compile(r'(\w+)-([\w\d]+)-(\d+)-(true|false)')
+events = os.path.join('visu', 'events')
+
+# list dir in 'visu/events'
+for item in os.listdir(events):
+		m = re.search(dir_pattern, item)
+
+		# look for dirs like 'centralized-algo-64'
+		if m.group(1) == 'centralized' and int(m.group(3)) == n_hosts:
+			algo = m.group(2)
+			turn_off = to_bool(m.group(4))
+
+			event_file = os.path.join(events, item, 'events.json')
+			print('Reading ' + event_file)
+
+			with open(event_file, 'r') as f:
+				n_vms_on[turn_off][algo] = {}
+
+				# each line in this file is a JSON document
+				for line in f:
+					try:
+						event = json.loads(line)
+					except:
+						t, value, tb = sys.exc_info()
+						print(str(t) + " " + str(value))
+						print(line)
+						sys.exit(5)
+
+					if event['value'] != 'NB_VNS_ON':
+						continue
+
+					n_vms_on[turn_off][algo][float(event['time'])] = int(event['data']['value'])
+
+pp(n_vms_on)
+
+sys.exit(0)
 
 ########################################
 # Get the energy metrics

@@ -160,6 +160,9 @@ public class Main {
             Trace.hostVariableSet(host.getName(), "NB_OFF", 0);
         }
 
+        Trace.hostVariableDeclare("NB_VMS_ON"); // No of VMs running
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VMS_ON", 0);
+
         // Turn off the hosts that we don't need
         int nOff = 0;
         if(SimulatorProperties.getHostsTurnoff()) {
