@@ -42,7 +42,7 @@ public class Entropy2RP extends AbstractScheduler {
         this.source = this.extractConfiguration(xhosts);
         planner =  new ChocoCustomRP(new MockDurationEvaluator(2, 5, 1, 1, 7, 14, 7, 2, 4));//Entropy2.1
         planner.setRepairMode(true); //true by default for ChocoCustomRP/Entropy2.1; false by default for ChocoCustomPowerRP/Entrop2.0
-        planner.setTimeLimit(source.getAllNodes().size()/8);
+        planner.setTimeLimit(Math.min(30, source.getAllNodes().size()/8));
         this.id = id;
         super.rpAborted = false;
         //Log the current Configuration
@@ -262,8 +262,6 @@ public class Entropy2RP extends AbstractScheduler {
                 super.relocateVM(migration.getVirtualMachine().getName(), migration.getHost().getName(), migration.getDestination().getName());
             }
 
-            if(SimulatorProperties.getHostsTurnoff() && src.getRunnings().size() <= 0)
-                SimulatorManager.turnOff(src);
         } else{
             System.err.println("UNRECOGNIZED ACTION WHEN APPLYING THE RECONFIGURATION PLAN");
         }

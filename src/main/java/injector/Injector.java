@@ -297,10 +297,7 @@ public class Injector extends Process {
                 vmQueue.add(new VMSuspendResumeEvent(id++, currentTime, tempVM, false));
             }
 
-            if (currentTime + crashDuration < duration) {
-                // For the moment, downtime of a VM is arbitrarily set to crashDuration
-                vmQueue.add(new VMSuspendResumeEvent(id++, currentTime + (crashDuration), tempVM, true));
-            }
+            vmQueue.add(new VMSuspendResumeEvent(id++, currentTime + (crashDuration), tempVM, true));
             currentTime += exponentialDis(randExpDis, lambda);
         }
 
@@ -435,8 +432,11 @@ public class Injector extends Process {
 
         Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MIG", 0);
         Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MC", 0);
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VM", SimulatorManager.getSGVMsOn().size());
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VM_TRUE", SimulatorManager.getSGVMsOn().size());
 
         InjectorEvent evt = nextEvent();
+        /*
         if(SimulatorProperties.goToStationaryStatus()){
             do {
                 if ((evt instanceof LoadEvent) &&
@@ -448,8 +448,13 @@ public class Injector extends Process {
                 }
             } while (true);
         }
+        */
 
-        while(evt!=null){
+        // TODO uggly patch to reach a kind of stationary state
+        for(XVM vm: SimulatorManager.getSGVMsOn())
+            SimulatorManager.updateVM(vm, SimulatorProperties.getMeanLoad());
+
+        while(evt!=null && evt.getTime() < SimulatorProperties.getDuration()){
             if(evt.getTime() - Msg.getClock()>0)
                 waitFor(evt.getTime() - Msg.getClock());
             evt.play();
@@ -465,6 +470,7 @@ public class Injector extends Process {
         }
 
         // Wait for termination of On going scheduling
+        //TODO this timeout is not generic ...
         Msg.info("Waiting for timeout");
         waitFor(EntropyProperties.getEntropyPlanTimeout());
         Msg.info("Done");

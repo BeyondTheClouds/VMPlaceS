@@ -22,7 +22,8 @@ def eprint(*args, **kwargs):
 	print(*args, file=sys.stderr, **kwargs)
 
 # Determines the order of the bars in the plots
-ORDER = ['Entropy', 'BtrPlace', 'Lazy FFD', 'Optimistic FFD']
+#ORDER = ['Entropy', 'BtrPlace', 'Lazy FFD', 'Optimistic FFD']
+ORDER = ['Lazy FFD', 'Optimistic FFD']
 
 # Check arguments
 if len(sys.argv) != 3:
@@ -88,6 +89,7 @@ n_turn_off = {True: {}, False: {}}
 n_migrations = {True: {}, False: {}}
 algos = []
 n_off = {}
+scheduler_ticks = {True: {}, False: {}}
 
 # load and standard deviation must be the same
 # for all the experiments in the log file
@@ -108,6 +110,8 @@ with open(sys.argv[1], 'r') as f:
 	on_pattern = re.compile(r'\[(.* )?(\d+\.\d+)\] \[.*\] Turn on (node\d+)')
 	migration_pattern = re.compile(r'End of migration of VM vm-\d+ from node\d+ to node\d+')
 
+	scheduler_pattern = re.compile(r'\[(.*)\s(\d+\.\d+)\] \[.*\] Launching scheduler \(id = \d+\) - start to compute')
+
 	for line in f:
 		# This is a new experiment
 		m = re.search(start_pattern, line)
@@ -117,6 +121,7 @@ with open(sys.argv[1], 'r') as f:
 			algo = correct_name(m.group(3).split('.')[-1])
 			if algo not in algos:
 				algos.append(algo)
+				scheduler_ticks[turn_off][algo] = []
 
 			if turn_off:
 				n_off[algo] = {}
@@ -142,6 +147,14 @@ with open(sys.argv[1], 'r') as f:
 			time = float(m.group(1))
 			end_experiment(time, algo)
 			simulation_time = int(time)
+			continue
+		
+		# The scheduler is running
+		m = re.search(scheduler_pattern, line)
+		if m:
+			if algo not in scheduler_ticks[turn_off]:
+				scheduler_ticks[turn_off][algo] = []
+			scheduler_ticks[turn_off][algo].append(float(m.group(2)))
 			continue
 
 		# A node has been turned off
@@ -172,7 +185,12 @@ with open(sys.argv[1], 'r') as f:
 ########################################
 # Count the number of on VMs
 ########################################
-n_vms_on = {
+n_vms = {
+	True: {},
+	False: {}
+}
+
+n_vms_true = {
 	True: {},
 	False: {}
 }
@@ -186,34 +204,42 @@ for item in os.listdir(events):
 
 		# look for dirs like 'centralized-algo-64'
 		if m.group(1) == 'centralized' and int(m.group(3)) == n_hosts:
-			algo = m.group(2)
+			algo = correct_name(m.group(2))
 			turn_off = to_bool(m.group(4))
 
 			event_file = os.path.join(events, item, 'events.json')
 			print('Reading ' + event_file)
 
 			with open(event_file, 'r') as f:
-				n_vms_on[turn_off][algo] = {}
+				n_vms[turn_off][algo] = {}
+				n_vms_true[turn_off][algo] = {}
 
 				# each line in this file is a JSON document
 				for line in f:
 					try:
 						event = json.loads(line)
+
+						if event['value'] == "NB_VM":
+							time = float(event['time'])
+							value = int(event['data']['value'])
+							n_vms[turn_off][algo][time] = value
+
+						if event['value'] == "NB_VM_TRUE":
+							time = float(event['time'])
+							value = int(event['data']['value'])
+							n_vms_true[turn_off][algo][time] = value
 					except:
 						t, value, tb = sys.exc_info()
 						print(str(t) + " " + str(value))
 						print(line)
-						sys.exit(5)
 
 					if event['value'] != 'NB_VNS_ON':
 						continue
 
-					n_vms_on[turn_off][algo][float(event['time'])] = int(event['data']['value'])
+					n_vms[turn_off][algo][float(event['time'])] = int(event['data']['value'])
+					n_vms_true[turn_off][algo][float(event['time'])] = int(event['data']['value'])
 
-pp(n_vms_on)
-
-sys.exit(0)
-
+migration_ordered = []
 ########################################
 # Get the energy metrics
 ########################################
@@ -271,7 +297,7 @@ ax1.set_xticklabels(ORDER)
 
 # Make sure the values here are in the same order as the energy values
 off_ordered = []
-migration_ordered = []
+migation_ordered = []
 for alg in ORDER:
 	off_ordered.append(n_turn_off[True][alg])
 	migration_ordered.append(n_migrations[True][alg])
@@ -342,7 +368,9 @@ if os.system('which imgcat > /dev/null 2>&1') == 0:
 	os.system('imgcat ' + save_path)
 
 print("n_on:")
-print(ordered_n_on)
+pp(ordered_n_on)
+print("Scheduler:")
+pp(scheduler_ticks)
 
 ########################################
 # Make time_on plot
@@ -376,3 +404,63 @@ print('Saved plot as ' + save_path)
 if os.system('which imgcat > /dev/null 2>&1') == 0:
 	os.system('imgcat ' + save_path)
 
+########################################
+# Make vm_on plot
+########################################
+n_vms_ordered = {}
+
+fig, ax1 = plt.subplots()
+
+linewidth = 1
+
+print("n_vms:")
+pp(n_vms[True].keys())
+
+i = 0
+for alg in ORDER:
+	n_vms_ordered[alg] = sorted(n_vms[True][alg].items())
+	plots[alg], = ax1.plot(map(lambda t: t[0], n_vms_ordered[alg]),
+			map(lambda t: t[1], n_vms_ordered[alg]), '-', linewidth=linewidth, ms=8)
+	i += 1
+
+#for scheduler_ticks[True][
+
+lgd = ax1.legend(plots.values(),
+		n_off.keys(),
+		loc='upper right')
+
+save_path = find_filename('vms_on_%d_%d_%%d.pdf' % (load, std))
+plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
+print('Saved plot as ' + save_path)
+if os.system('which imgcat > /dev/null 2>&1') == 0:
+	os.system('imgcat ' + save_path)
+
+
+###############################
+
+
+
+n_vms_ordered_true = {}
+
+fig, ax1 = plt.subplots()
+
+linewidth = 1
+
+i = 0
+for alg in ORDER:
+	n_vms_ordered_true[alg] = sorted(n_vms_true[True][alg].items())
+	plots[alg], = ax1.plot(map(lambda t: t[0], n_vms_ordered_true[alg]),
+			map(lambda t: t[1], n_vms_ordered_true[alg]), '-', linewidth=linewidth, ms=8)
+	i += 1
+
+#for scheduler_ticks[True][
+
+lgd = ax1.legend(plots.values(),
+		n_off.keys(),
+		loc='upper right')
+
+save_path = find_filename('vms_on_true_%d_%d_%%d.pdf' % (load, std))
+plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
+print('Saved plot as ' + save_path)
+if os.system('which imgcat > /dev/null 2>&1') == 0:
+	os.system('imgcat ' + save_path)

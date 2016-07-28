@@ -43,7 +43,7 @@ public class XVM {
      * Please note that for the moment, one VM can have only have one vcpu.
      * Hence, this value represents the current load of the vcpu (i.e. between 0 and 100%)
      */
-    private int currentLoadDemand;
+    private double currentLoadDemand;
 
     /**
      * The number of times the load has been changed during the simulation.
@@ -74,11 +74,7 @@ public class XVM {
      */
     private boolean isMigrating; //Temporary fix to prevent migrating the same VM twice
 
-    /**
-     * Permanent fix due to simgrid issue related to the impossibility of suspending/shutting down a VM during a migration
-     * (the state will be switch after the migration completes, if need be)
-     */
-    private boolean expectedState = false;
+    private boolean isSuspended;
 
     /**
      * Construcor
@@ -115,6 +111,7 @@ public class XVM {
         this.NbOfLoadChanges = 0;
          this.NbOfMigrations = 0;
         this.isMigrating = false;
+         isSuspended = false;
    }
 
     /* Delegation method from MSG VM */
@@ -137,7 +134,7 @@ public class XVM {
      * TODO, check whether it makes sense to set the load to a minimal load.
      * @param expectedLoad expressed as a percentage (i.e. between 0 and 100)
      */
-    public void setLoad(int expectedLoad){
+    public void setLoad(double expectedLoad){
         if (expectedLoad >0) {
             this.vm.setBound(this.vm.getSpeed()*expectedLoad/100);
             daemon.resume();
@@ -150,7 +147,7 @@ public class XVM {
     }
 
     // TODO c'est crade
-    public int getLoad(){
+    public double getLoad(){
         return this.currentLoadDemand;
     }
 
@@ -205,8 +202,8 @@ public class XVM {
     public void migrate(XHost host) throws HostFailureException, DoubleMigrationException {
         if (!this.isMigrating) {
             this.isMigrating = true;
-            Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
-            Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
+            //Msg.info("Start migration of VM " + this.getName() + " to " + host.getName());
+            //Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
             try {
                 this.vm.migrate(host.getSGHost());
                 this.NbOfMigrations++;
@@ -223,35 +220,35 @@ public class XVM {
                 // This value can be then use at highler level to check whether the reconfiguration plan has been aborted or not.
             }
         } else {
-            Msg.info("You are trying to migrate twice a VM... it is impossible ! Byebye");
-            throw new DoubleMigrationException();
+            Msg.info("You are trying to migrate " + vm.getName() + " twice... it is impossible ! Byebye");
+            //throw new DoubleMigrationException();
+            System.exit(12);
         }
         this.isMigrating = false;
 
-        if(!this.expectedState) {
-            this.suspend();
-        }
     }
 
     /**
-     * TODO Adrian - Error management & documentation
-     * @return 0 if success, -1 if failure, 1 if already suspended
+     * TODO Adrien - Error management & documentation
+     * @return 0 if success, 1 if should be postponed, -1 if failure, -2 if already suspended
      */
     public int suspend() {
         // Todo check if 0 means false & if CPU load should be 0 when vm is suspended
-        if (this.vm.isMigrating() == 1) {
-            this.expectedState = false;
+        if (this.isMigrating() == true) {
+            Msg.info("VM " + vm.getName() + " is migrating");
             return 1;
         }
         else {
+            Msg.info("VM " + vm.getName() + " is not migrating");
             if (this.vm.isSuspended() == 0) {
                 try {
-                    Msg.info("Start suspension of VM " + this.getName() + " on " + this.host.getName());
+               //     Msg.info("Start suspension of VM " + this.getName() + " on " + this.host.getName());
                     //Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
                     this.vm.suspend();
                     // VM is suspended - we suspend the daemon simulating CPU demand
                     this.daemon.suspend();
                     //Msg.info("End of suspension of VM " + this.getName() + " on " + this.host.getName());
+                    isSuspended = true;
                     return 0;
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -260,43 +257,40 @@ public class XVM {
                     return -1;
                 }
             } else {
-                Msg.info("You are trying to suspend an already suspended VM.");
-                return 1;
+                Msg.info("You are trying to suspend "+ this.getName() +" that is an already suspended VM.");
+                System.exit(-1);
+                return -2;
             }
         }
     }
 
     /**
-     * TODO Adrian - improve implementation & documentation
+     * TODO Adrien - improve implementation & documentation
      * @return 0 if success, -1 if failure, 1 if already running
      */
     public int resume() {
-        if (this.vm.isMigrating() == 1) {
-            this.expectedState = true;
+        if (isSuspended) {
+            try {
+                //Msg.info("Start resuming VM " + this.getName() + " on " + this.host.getName());
+                this.vm.resume();
+                // VM is resumed - we resume the daemon simulating CPU demand
+                this.daemon.resume();
+                //Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
+                //Msg.info("End of resuming of VM " + this.getName() + " on " + this.host.getName());
+                isSuspended = false;
+                return 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+                Msg.info("An error occurred during resuming");
+                // todo throw exc ?
+                return -1;
+            }
+        } else {
+            Msg.info("You are trying to resume an already running VM " + this.getName());
             return 1;
         }
-        else {
-            if (this.vm.isRunning() == 0) {
-                try {
-                    //Msg.info("Start resuming VM " + this.getName() + " on " + this.host.getName());
-                    this.vm.resume();
-                    // VM is resumed - we resume the daemon simulating CPU demand
-                    this.daemon.resume();
-                    //Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
-                    Msg.info("End of resuming of VM " + this.getName() + " on " + this.host.getName());
-                    return 0;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Msg.info("An error occurred during resuming");
-                    // todo throw exc ?
-                    return -1;
-                }
-            } else {
-                Msg.info("You are trying to resume an already running VM " + this.getName());
-                return 1;
-            }
-        }
     }
+
 
     /**
      * @return the size of the RAM in MBytes
@@ -336,7 +330,7 @@ public class XVM {
     }
 
     public String toString() {
-        return String.format("XVM [name=%s, currentLoad=%d, dpIntensity=%d, isMigrating=%b, isRunning=%b]",
+        return String.format("XVM [name=%s, currentLoad=%.2f, dpIntensity=%d, isMigrating=%b, isRunning=%b]",
                 getName(),
                 currentLoadDemand,
                 dpIntensity,
@@ -344,3 +338,4 @@ public class XVM {
                 isRunning());
     }
 }
+

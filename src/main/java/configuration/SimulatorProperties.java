@@ -130,6 +130,7 @@ public class SimulatorProperties extends Properties {
 
 	private static final String VMS_SUSPEND = "vms.suspend";
 	public final static String VM_SUSPEND_PERIOD = "simulator.vm.suspendperiod";
+	public final static String VM_SUSPEND_DURATION = "simulator.vm.suspendduration";
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Property default values
@@ -184,6 +185,7 @@ public class SimulatorProperties extends Properties {
     private static final boolean DEFAULT_HOSTS_TURN_OFF = false;
 	private static final boolean DEFAULT_VMS_SUSPEND = false;
 	public final static int DEFAULT_VM_SUSPEND_PERIOD = 3600;  // in sec => 1 hour
+	public final static int DEFAULT_VM_SUSPEND_DURATION = 3600;  // in sec => 1 hour
 
 
 
@@ -372,9 +374,15 @@ public class SimulatorProperties extends Properties {
 		return getPropertyAsBoolean(VMS_SUSPEND, DEFAULT_VMS_SUSPEND);
 	}
 
+
 	public static int getVMSuspendPeriod() {
 		return getPropertyAsInt(VM_SUSPEND_PERIOD, DEFAULT_VM_SUSPEND_PERIOD);
 	}
+
+	public static int getVMSuspendDuration(){
+		return getPropertyAsInt(VM_SUSPEND_DURATION, DEFAULT_VM_SUSPEND_DURATION);
+	}
+
 
 	public static boolean getUseLoad() { return getPropertyAsBoolean(FFD_USE_LOAD, DEFAULT_FFD_USE_LOAD); }
 

@@ -150,6 +150,8 @@ public class Main {
         Trace.hostVariableDeclare("LOAD");
         Trace.hostVariableDeclare("NB_MC");  // Nb of microcosms (only for DVMS)
         Trace.hostVariableDeclare("NB_MIG"); //Nb of migration
+        Trace.hostVariableDeclare("NB_VM"); //To follow number of VMs.
+        Trace.hostVariableDeclare("NB_VM_TRUE"); //To follow the true number of VMs.
 
         Trace.hostVariableDeclare("ENERGY");
         Trace.hostVariableDeclare("NB_OFF"); //Nb of hosts turned off
@@ -159,9 +161,6 @@ public class Main {
             Trace.hostVariableSet(host.getName(), "NB_ON", 1);
             Trace.hostVariableSet(host.getName(), "NB_OFF", 0);
         }
-
-        Trace.hostVariableDeclare("NB_VMS_ON"); // No of VMs running
-        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VMS_ON", 0);
 
         // Turn off the hosts that we don't need
         int nOff = 0;

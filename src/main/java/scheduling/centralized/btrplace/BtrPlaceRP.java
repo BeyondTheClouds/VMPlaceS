@@ -77,7 +77,7 @@ public class BtrPlaceRP extends AbstractScheduler {
 
         this.btrSolver.doRepair(true);
         int timeLimit = xHosts.size() / 8;
-        this.btrSolver.setTimeLimit(timeLimit > 10 ? timeLimit : 10);
+        this.btrSolver.setTimeLimit(timeLimit > 30 ? timeLimit : 30);
 
         this.extractConfiguration(xHosts);
 
@@ -264,9 +264,9 @@ public class BtrPlaceRP extends AbstractScheduler {
                             nodesMap.get(migrateVM.getDestinationNode().id())
                     );
 
+
+
                     Msg.info(src.getName() + " has " + src.getRunnings().size() + " Vms");
-                    if(SimulatorProperties.getHostsTurnoff() && src.getRunnings().size() <= 0)
-                        SimulatorManager.turnOff(src);
                 }
 
                 @Override

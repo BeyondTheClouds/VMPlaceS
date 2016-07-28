@@ -3,7 +3,6 @@ package scheduling.centralized.ffd;
 import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
-import org.simgrid.msg.Msg;
 import simulation.SimulatorManager;
 
 import java.util.*;
@@ -19,25 +18,31 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
     }
 
     @Override
-    protected void manageOverloadedHost(TreeSet<XHost> overloadedHosts, SchedulerResult result) {
+    protected void manageOverloadedHost(List<XHost> overloadedHosts, ComputingResult result) {
         // The VMs are sorted by decreasing size of CPU and RAM capacity
         TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true, useLoad));
         Map<XVM, XHost> sources = new HashMap<>();
 
         // Store the load of each host
         Map<XHost, Double> predictedCPUDemand = new HashMap<>();
-        for(XHost host: SimulatorManager.getSGHostingHosts())
+        Map<XHost, Integer> predictedMemDemand = new HashMap<>();
+
+        for(XHost host: SimulatorManager.getSGHostingHosts()) {
             predictedCPUDemand.put(host, host.getCPUDemand());
+            predictedMemDemand.put(host, host.getMemDemand());
+        }
 
         // Remove enough VMs so the overloaded hosts are no longer overloaded
-        for(XHost host: overloadedHosts) {
+        for(XHost host : overloadedHosts) {
             Iterator<XVM> vms = host.getRunnings().iterator();
 
-            while(host.getCPUCapacity() < predictedCPUDemand.get(host)) {
+            while((host.getCPUCapacity() < predictedCPUDemand.get(host) ||
+                    host.getMemSize() < host.getMemDemand()) && vms.hasNext()) {
                 XVM vm = vms.next();
                 toSchedule.add(vm);
                 sources.put(vm, host);
                 predictedCPUDemand.put(host, predictedCPUDemand.get(host) - vm.getCPUDemand());
+                predictedMemDemand.put(host, predictedMemDemand.get(host) - vm.getMemSize());
             }
         }
 
@@ -46,29 +51,24 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
 
             // Try find a new host for the VMs (saneHosts is not sorted)
             for(XHost host: SimulatorManager.getSGHostingHosts()) {
-                if(host.getCPUCapacity() >= predictedCPUDemand.get(host) + vm.getCPUDemand()) {
+                if(host.getCPUCapacity() >= predictedCPUDemand.get(host) + vm.getCPUDemand() ||
+                        host.getMemSize() >= predictedMemDemand.get(host) + vm.getMemSize()) {
                     dest = host;
                     break;
                 }
             }
 
             if(dest == null) {
-                result.state = SchedulerResult.State.NO_VIABLE_CONFIGURATION;
+                result.state = ComputingResult.State.RECONFIGURATION_FAILED;
                 return;
             }
 
-            // Migrate the VM
+            // Schedule the migration
             predictedCPUDemand.put(dest, predictedCPUDemand.get(dest) + vm.getCPUDemand());
+            predictedMemDemand.put(dest, predictedMemDemand.get(dest) + vm.getMemSize());
             XHost source = sources.get(vm);
             if(!source.getName().equals(dest.getName())) {
-                if(dest.isOff())
-                    SimulatorManager.turnOn(dest);
-
-                relocateVM(vm.getName(), source.getName(), dest.getName());
-                nMigrations++;
-
-                if(SimulatorProperties.getHostsTurnoff() && source.getRunnings().size() <= 0)
-                    SimulatorManager.turnOff(source);
+                migrations.add(new Migration(vm, source, dest));
             }
         }
     }

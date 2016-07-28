@@ -190,7 +190,6 @@ public class XHost{
      * @param sgVM
      */
     public void start(XVM sgVM) {
-        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_VMS_ON", 1);
        hostedVMs.add(sgVM);
        sgVM.start();
     }
@@ -230,7 +229,7 @@ public class XHost{
             System.err.println("Dammed the migration may have crash");
             return -1;
         }
-        Msg.info("Migrate going to update hosting VM " + vm);
+        //Msg.info("Migrate going to update hosting VM " + vm);
         hostedVMs.remove(vm);
         this.setCPUDemand(computeCPUDemand());
         dest.hostedVMs.add(vm);
@@ -241,18 +240,32 @@ public class XHost{
         return 0;
     }
 
-    public void suspendVM(XVM vm) {
-        hostedVMs.remove(vm);
-        vm.suspend();
-        Trace.hostVariableSub(SimulatorManager.getInjectorNodeName(), "NB_VMS_ON", 1);
-        this.setCPUDemand(computeCPUDemand());
+    /**
+     *
+     * @param vm
+     *  @return 0 if success, 1 should be postponed, -1 if failure, -2 if already suspended
+     */
+    public int suspendVM(XVM vm) {
+        int res = vm.suspend();
+        if (res == 0 ) {
+            hostedVMs.remove(vm);
+            this.setCPUDemand(computeCPUDemand());
+        }
+        return res;
     }
 
-    public void resumeVM(XVM vm) {
-        hostedVMs.add(vm);
-        vm.resume();
-        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_VMS_ON", 1);
-        this.setCPUDemand(computeCPUDemand());
+    /**
+     *
+     * @param vm
+     * @return 0 if success, -1 if failure, 1 if already running
+     */
+    public int resumeVM(XVM vm) {
+        int res = vm.resume();
+        if (res == 0) {
+            hostedVMs.add(vm);
+            this.setCPUDemand(computeCPUDemand());
+        }
+        return res;
     }
 
     /**

@@ -14,13 +14,11 @@
 
 package simulation;
 
-import configuration.SimulatorProperties;
-import configuration.VMClasses;
-import configuration.XHost;
-import configuration.XVM;
+import configuration.*;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
+import org.simgrid.msg.MsgException;
 import scheduling.hierarchical.snooze.LocalController;
 import scheduling.hierarchical.snooze.Logger;
 import trace.Trace;
@@ -54,11 +52,20 @@ public class SimulatorManager {
      * @see configuration.XVM
      */
     private static HashMap<String,XVM> sgVMsOff = null;
+
     /**
      * The list of XVMs that run
      * @see configuration.XVM
      */
     private static HashMap<String,XVM> sgVMsOn = null;
+
+    /**
+     * The list of XVMs that should be suspend (right now, it is impossible to suspend VMs that are currently migrated)
+     * This collection is used to suspend VMs after the completion of the migration process.
+     * @see configuration.XVM
+     */
+    public static HashMap<String,XVM> sgVMsToSuspend = null;
+
     /**
      * The list of XHosts that are off
      * @see configuration.XHost
@@ -98,8 +105,8 @@ public class SimulatorManager {
     /**
      * When the injection is complete, we turn the endOfInjection boolean to true and kill the running daemon inside each VM
      */
-	public static void setEndOfInjection(){
-		endTimeOfSimulation = System.currentTimeMillis();
+    public static void setEndOfInjection(){
+        endTimeOfSimulation = System.currentTimeMillis();
 
         Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
         Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
@@ -119,9 +126,9 @@ public class SimulatorManager {
     /**
      * @return whether the injection is completed or not
      */
-	public static boolean isEndOfInjection(){
-		return (endTimeOfSimulation != -1);
-	}
+    public static boolean isEndOfInjection(){
+        return (endTimeOfSimulation != -1);
+    }
 
 
     /**
@@ -244,7 +251,7 @@ public class SimulatorManager {
                 // The SimulatorProperties.getCPUCapacity returns the value indicated by nodes.cpucapacity in the simulator.properties file
                 xtmp = new XHost (tmp, SimulatorProperties.getMemoryTotal(), SimulatorProperties.getNbOfCPUs(), SimulatorProperties.getCPUCapacity(), SimulatorProperties.getNetCapacity(), "127.0.0.1");
                 xtmp.turnOn();
-               sgHostsOn.put("node"+i, xtmp);
+                sgHostsOn.put("node"+i, xtmp);
                 sgHostingHosts.put("node" + i, xtmp);
                 xhosts[i]=xtmp;
             } catch (HostNotFoundException e) {
@@ -292,6 +299,8 @@ public class SimulatorManager {
         initHosts(nbOfHostingHosts, nbOfServiceHosts);
         sgVMsOn = new HashMap<String,XVM>();
         sgVMsOff = new HashMap<String,XVM>();
+        sgVMsToSuspend = new HashMap<String,XVM>();
+
 
         xvms = new XVM[nbOfVMs];
 
@@ -319,11 +328,11 @@ public class SimulatorManager {
 
             try {
                 while ((nodeMemCons[nodeIndex] + vmClass.getMemSize() > sgHostTmp.getMemSize()
-                        && nodeCpuCons[nodeIndex] + SimulatorProperties.getMeanLoad() > sgHostTmp.getCPUCapacity())
+                        || nodeCpuCons[nodeIndex] + SimulatorProperties.getMeanLoad() > sgHostTmp.getCPUCapacity())
                         || (balance && nbVMOnNode >= vmsPerNodeRatio)) {
                     sgHostTmp = sgHostsIterator.next();
                     nodeMemCons[++nodeIndex] = 0;
-                    nodeCpuCons[++nodeIndex] = 0;
+                    nodeCpuCons[nodeIndex] = 0;
                     nbVMOnNode = 0;
                 }
             } catch(NoSuchElementException ex){
@@ -337,17 +346,17 @@ public class SimulatorManager {
 
             // Creation of the VM
             sgVMTmp = new XVM(sgHostTmp, "vm-" + vmIndex,
-                        vmClass.getNbOfCPUs(), vmClass.getMemSize(), vmClass.getNetBW(), null, -1, vmClass.getMigNetBW(), vmClass.getMemIntensity());
+                    vmClass.getNbOfCPUs(), vmClass.getMemSize(), vmClass.getNetBW(), null, -1, vmClass.getMigNetBW(), vmClass.getMemIntensity());
             sgVMsOn.put("vm-"+vmIndex, sgVMTmp);
 
             xvms[vmIndex] = sgVMTmp;
             vmIndex++;
 
             Msg.info(String.format("vm: %s, %d, %d, %s",
-                        sgVMTmp.getName(),
-                        vmClass.getMemSize(),
-                        vmClass.getNbOfCPUs(),
-                        "NO IPs defined"
+                    sgVMTmp.getName(),
+                    vmClass.getMemSize(),
+                    vmClass.getNbOfCPUs(),
+                    "NO IPs defined"
             ));
             Msg.info("vm " + sgVMTmp.getName() + " is " + vmClass.getName() + ", dp is " + vmClass.getMemIntensity());
 
@@ -393,6 +402,7 @@ public class SimulatorManager {
             Runtime.getRuntime().exec("rm -rf ./logs/entropy.log");
             Runtime.getRuntime().exec("rm -rf ./logs/btrplace");
             Runtime.getRuntime().exec("rm -rf ./logs/btrplace.log");
+            Runtime.getRuntime().exec("rm -rf ./logs/ffd");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -405,7 +415,7 @@ public class SimulatorManager {
      */
     public static boolean isViable() {
         for (XHost h: sgHostsOn.values()){
-                  if(!h.isViable())
+            if(!h.isViable())
                 return false;
         }
         return true;
@@ -470,6 +480,13 @@ public class SimulatorManager {
         XVM tmp = sgVMsOn.get(name);
         if (tmp == null)
             tmp = sgVMsOff.get(name);
+        if(tmp == null)
+            tmp = sgVMsToSuspend.get(name);
+
+
+        if(tmp == null) {
+            Msg.error("No ");
+        }
         return tmp;
     }
 
@@ -480,54 +497,61 @@ public class SimulatorManager {
      * @param sgVM the VM that should be updated
      * @param load the new expected load
      */
-    public static void updateVM(XVM sgVM, int load) {
-        XHost tmpHost = sgVM.getLocation();
-        boolean previouslyViable = tmpHost.isViable();
+    public static void updateVM(XVM sgVM, double load) {
 
-        // A simple hack to avoid computing on-the-fly the CPUDemand of each host
-        double vmPreviousLoad = sgVM.getCPUDemand();
-        double hostPreviousLoad = tmpHost.getCPUDemand();
-       // Msg.info("Previous Load was" + hostPreviousLoad);
+        if(sgVM.isRunning()) {
 
-        tmpHost.setCPUDemand(hostPreviousLoad-vmPreviousLoad+load);
-      //  Msg.info("New Load is "+ tmpHost.getCPUDemand());
+            XHost tmpHost = sgVM.getLocation();
+            boolean previouslyViable = tmpHost.isViable();
 
-        sgVM.setLoad(load);
+            // A simple hack to avoid computing on-the-fly the CPUDemand of each host
+            double vmPreviousLoad = sgVM.getCPUDemand();
+            double hostPreviousLoad = tmpHost.getCPUDemand();
+            // Msg.info("Previous Load was" + hostPreviousLoad);
 
-        // If the node is off, we change the VM load but we do not consider it for possible violation and do not update
-        // neither the global load of the node nor the global load of the cluster.
-        // Violations are detected only on running node
-        if (!tmpHost.isOff()){
+            tmpHost.setCPUDemand(hostPreviousLoad - vmPreviousLoad + load);
+            //  Msg.info("New Load is "+ tmpHost.getCPUDemand());
 
-        //    Msg.info("Current getCPUDemand "+SimulatorManager.getCPUDemand()+"\n");
+            sgVM.setLoad(load);
+
+            // If the node is off, we change the VM load but we do not consider it for possible violation and do not update
+            // neither the global load of the node nor the global load of the cluster.
+            // Violations are detected only on running node
+            if (!tmpHost.isOff()) {
 
 
-            if(previouslyViable && (!tmpHost.isViable())) {
-                  Msg.info("STARTING VIOLATION ON "+tmpHost.getName()+"\n");
+                //    Msg.info("Current getCPUDemand "+SimulatorManager.getCPUDemand()+"\n");
+
+
+                if (previouslyViable && (!tmpHost.isViable())) {
+                    Msg.info("STARTING VIOLATION ON " + tmpHost.getName() + "\n");
                     tmpHost.incViolation();
                     Trace.hostSetState(tmpHost.getName(), "PM", "violation");
 
-            } else if ((!previouslyViable) && (tmpHost.isViable())) {
-                        Msg.info("ENDING VIOLATION ON "+tmpHost.getName()+"\n");
-                        Trace.hostSetState (tmpHost.getName(), "PM", "normal");
+                } else if ((!previouslyViable) && (tmpHost.isViable())) {
+                    Msg.info("ENDING VIOLATION ON " + tmpHost.getName() + "\n");
+                    Trace.hostSetState(tmpHost.getName(), "PM", "normal");
+                }
+                // else Do nothing the state does not change.
+
+                // Update getCPUDemand of the host
+                Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());
+
+                // TODO this is costly O(HOST_NB) - SHOULD BE FIXED
+                //Update global getCPUDemand
+                Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "LOAD", SimulatorManager.getCPUDemand());
+
             }
-            // else Do nothing the state does not change.
 
-            // Update getCPUDemand of the host
-            Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());
+            double energy = tmpHost.getSGHost().getConsumedEnergy();
+            if (lastEnergy.containsKey(tmpHost))
+                energy -= lastEnergy.get(tmpHost);
 
-            // TODO this is costly O(HOST_NB) - SHOULD BE FIXED
-            //Update global getCPUDemand
-            Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(),  "LOAD", SimulatorManager.getCPUDemand());
-
+            Trace.hostVariableSet(tmpHost.getName(), "ENERGY", energy);
+            lastEnergy.put(tmpHost, tmpHost.getSGHost().getConsumedEnergy());
+        } else { // VM is suspended: just update the load for consistency reason (i.e. when the VM will be resumed, we should assign the expected load
+            sgVM.setLoad(load);
         }
-
-        double energy = tmpHost.getSGHost().getConsumedEnergy();
-        if(lastEnergy.containsKey(tmpHost))
-            energy -= lastEnergy.get(tmpHost);
-
-        Trace.hostVariableSet(tmpHost.getName(), "ENERGY", energy);
-        lastEnergy.put(tmpHost, tmpHost.getSGHost().getConsumedEnergy());
     }
 
     public static boolean willItBeViableWith(XVM sgVM, int load){
@@ -626,7 +650,7 @@ public class SimulatorManager {
             sgHostsOn.remove(host.getName());
             sgHostsOff.put(host.getName(), host);
 
-          //  Msg.info("Nb of remaining processes on " + host.getName() + ": " + (previousCount - org.simgrid.msg.Process.getCount()));
+            //  Msg.info("Nb of remaining processes on " + host.getName() + ": " + (previousCount - org.simgrid.msg.Process.getCount()));
             Trace.hostVariableAdd(host.getName(), "NB_OFF", 1);
 
 
@@ -636,17 +660,6 @@ public class SimulatorManager {
         }
     }
 
-    public static void shutdownVM(XVM vm) {
-        vm.getLocation().suspendVM(vm);
-        sgVMsOn.remove(vm.getName());
-        sgVMsOff.put(vm.getName(), vm);
-    }
-
-    public static void startVM(XVM vm) {
-        sgVMsOff.remove(vm.getName());
-        sgVMsOn.put(vm.getName(), vm);
-        vm.getLocation().resumeVM(vm);
-    }
 
     private static int getProcessCount(XHost host) {
         Msg.info ("TODO");
@@ -697,4 +710,200 @@ public class SimulatorManager {
             e.printStackTrace();
         }
     }
+
+
+
+    public static boolean suspendVM(String vmName, String hostName){
+
+        boolean correctlyCompleted= true;
+        Msg.info("Suspending VM " + vmName + " on " + hostName);
+
+        if (vmName != null) {
+            XVM vm =  SimulatorManager.getXVMByName(vmName);
+            XHost host = SimulatorManager.getXHostByName(hostName);
+
+            if (vm != null) {
+                double timeStartingSuspension = Msg.getClock();
+                Trace.hostPushState(vmName, "SERVICE", "suspend", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\"}", vmName, hostName));
+                boolean previouslyViable = host.isViable();
+                // 0 if success, 1 should be postponed, -1 if failure, -2 if already suspended
+                int res = host.suspendVM(vm);
+                Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", vmName, res));
+                double suspensionDuration = Msg.getClock() - timeStartingSuspension;
+
+                switch (res) {
+                    case 0:
+//                        Msg.info("End of suspension operation of VM " + vmName + " on " + hostName);
+
+                        if (!previouslyViable && host.isViable()){
+                            Msg.info("END OF VIOLATION ON " + host.getName() + "\n");
+                            Trace.hostSetState(host.getName(), "PM", "normal");
+                        }
+
+                        /* Export that the suspension has finished */
+                        Trace.hostSetState(vmName, "suspension", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", vmName, hostName, suspensionDuration));
+                        Trace.hostPopState(vmName, "suspension");
+
+                        if (sgVMsOn.remove(vm.getName()) == null && sgVMsToSuspend.remove(vm.getName())== null){
+                            System.err.println("You are trying to suspend a VM which is not on... weird");
+                            System.exit(-1);
+                        }
+                        sgVMsOff.put(vm.getName(), vm);
+                        Trace.hostVariableSub(SimulatorManager.getInjectorNodeName(), "NB_VM", 1);
+                        break;
+
+                    case 1:
+                        Msg.info("Suspension of VM has been postponed" + vmName + " on " + hostName);
+
+                        Trace.hostSetState(vmName, "suspension", "postponed", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", vmName, hostName, suspensionDuration));
+                        Trace.hostPopState(vmName, "suspension");
+
+                        sgVMsOn.remove(vm.getName());
+                        sgVMsToSuspend.put(vm.getName(), vm);
+                        break;
+
+                    default:
+                        correctlyCompleted = false;
+                        System.err.println("Unexpected state from XHost.suspend()");
+                        System.exit(-1);
+                }
+            }
+
+        } else {
+            System.err.println("You are trying to suspend a non-existing VM");
+            System.exit(-1);
+        }
+        return correctlyCompleted;
+    }
+
+    public static boolean resumeVM(String vmName, String hostName){
+
+        boolean correctlyCompleted = true;
+
+        Msg.info("Resuming VM " + vmName + " on " + hostName);
+
+        if (vmName != null) {
+            XVM vm =  SimulatorManager.getXVMByName(vmName);
+            XHost host = SimulatorManager.getXHostByName(hostName);
+
+            if (vm != null) {
+                double timeStartingSuspension = Msg.getClock();
+                Trace.hostPushState(vmName, "SERVICE", "resume", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\"}", vmName, hostName));
+                boolean previouslyViable = host.isViable();
+                // 0 if success, -1 if failure, 1 if already running
+                int res = host.resumeVM(vm);
+                Msg.info(vm.getName() + " resume returned " + res);
+                Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", vmName, res));
+                double suspensionDuration = Msg.getClock() - timeStartingSuspension;
+
+                switch (res) {
+                    case 0:
+//                        Msg.info("End of operation resume of VM " + vmName + " on " + hostName);
+
+                        if (sgVMsOff.remove(vmName) == null)  { // If the VM is not marked off, there is an issue
+                            System.err.println("Unexpected state from XHost.resume()");
+                            System.exit(-1);
+                        }
+                        sgVMsOn.put(vm.getName(), vm);
+                        Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_VM", 1);
+
+                        if ((previouslyViable) && (!host.isViable())) {
+                            Msg.info("STARTING VIOLATION ON " + host.getName() + "\n");
+                            Trace.hostSetState(host.getName(), "PM", "violation");
+                        }
+
+                        Trace.hostSetState(vmName, "resume", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", vmName, hostName, suspensionDuration));
+                        Trace.hostPopState(vmName, "resume");
+
+                        break;
+
+                    case 1:
+                        if(sgVMsToSuspend.remove(vmName) == null) { // If the VM is not marked off, there is an issue
+                            System.err.println("Unexpected state from XHost.resume()");
+                            System.exit(-1);
+                        }
+                        sgVMsOn.put(vm.getName(), vm);
+
+                        /* Export that the suspension has finished */
+                        Trace.hostSetState(vmName, "resume", "cancelled", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", vmName, hostName, suspensionDuration));
+                        Trace.hostPopState(vmName, "resume");
+
+
+                        break;
+
+                    default:
+                        correctlyCompleted = false;
+                        System.err.println("Unexpected state from XHost.resume()");
+                        System.exit(-1);
+                }
+            }
+
+        } else {
+            System.err.println("You are trying to resume a non-existing VM");
+            System.exit(-1);
+        }
+        return correctlyCompleted;
+    }
+
+    /**
+     * Migrate a VM
+     * @param vmName
+     * @param sourceName
+     * @param destName
+     * @return true migration has been correctly performed, false migration cannot complete.
+     */
+
+
+    public static boolean migrateVM(String vmName, String sourceName, String destName) {
+
+        boolean completionOk = true;
+        double timeStartingMigration = Msg.getClock();
+        Trace.hostPushState(vmName, "SERVICE", "migrate", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", vmName, sourceName, destName));
+
+        XHost sourceHost = SimulatorManager.getXHostByName(sourceName);
+        XHost destHost = SimulatorManager.getXHostByName(destName);
+
+        int res = sourceHost.migrate(vmName, destHost);
+        // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
+        // To this aim, please extend the hostPopState API to add meta data information
+        Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", vmName, res));
+        double migrationDuration = Msg.getClock() - timeStartingMigration;
+
+        if (res == 0) {
+            Msg.info("End of migration of VM " + vmName + " from " + sourceName + " to " + destName);
+
+            if (!destHost.isViable()) {
+                Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
+                // If Trace.hostGetState(destHost.getName(), "PM").equals("normal")
+                Trace.hostSetState(destHost.getName(), "PM", "violation-out");
+            }
+            if (sourceHost.isViable()) {
+                Msg.info("END OF VIOLATION ON " + sourceHost.getName() + "\n");
+                Trace.hostSetState(sourceHost.getName(), "PM", "normal");
+            }
+
+                                    /* Export that the migration has finished */
+            Trace.hostSetState(vmName, "migration", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+            Trace.hostPopState(vmName, "migration");
+
+            // Patch to handle postponed supsend that may have been requested during the migration.
+            XVM suspendedVm = SimulatorManager.sgVMsToSuspend.remove(vmName);
+            if (suspendedVm != null) { // The VM has been marked to be suspended, so do it
+                Msg.info("The VM " + vmName + "has been marked to be suspended after migration");
+                SimulatorManager.sgVMsOn.put(vmName, suspendedVm);
+                SimulatorManager.suspendVM(vmName, destName);
+            }
+
+        } else {
+
+            Trace.hostSetState(vmName, "migration", "failed", String.format(Locale.US, "{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
+            Trace.hostPopState(vmName, "migration");
+
+            Msg.info("Something was wrong during the migration of  " + vmName + " from " + sourceName + " to " + destName);
+            Msg.info("Reconfiguration plan cannot be completely applied so abort it");
+            completionOk = false;
+        }
+        return completionOk;
+    }
+
 }

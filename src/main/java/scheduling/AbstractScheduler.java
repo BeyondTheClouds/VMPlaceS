@@ -161,6 +161,15 @@ public abstract class AbstractScheduler implements Scheduler {
                     SchedulerResult.State.RECONFIGURATION_PLAN_ABORTED : SchedulerResult.State.SUCCESS;
 
             Trace.hostPopState(Host.currentHost().getName(), "SERVICE"); //PoP reconfigure;
+
+
+            if(SimulatorProperties.getHostsTurnoff()) {
+                for (XHost host : SimulatorManager.getSGTurnOnHostingHosts()) {
+                    if (host.getRunnings().size() == 0)
+                        SimulatorManager.turnOff(host);
+                }
+            }
+
         } else {
             Msg.info("BtrPlace did not find any viable solution");
             enRes.state = SchedulerResult.State.NO_VIABLE_CONFIGURATION;
@@ -186,7 +195,7 @@ public abstract class AbstractScheduler implements Scheduler {
      * @param sourceName source configuration name
      * @param destName destination configuration name
      */
-	public void relocateVM(final String vmName, final String sourceName, final String destName) {
+    public void relocateVM(final String vmName, final String sourceName, final String destName) {
 
         Random rand = new Random(SimulatorProperties.getSeed());
 
@@ -218,41 +227,7 @@ public abstract class AbstractScheduler implements Scheduler {
                             if (!sourceHost.isOff()) {
                                 incOngoingMigrations();
                                 currentMigrations.add(SimulatorManager.getXVMByName(args[0]));
-
-                                double timeStartingMigration = Msg.getClock();
-                                Trace.hostPushState(vmName, "SERVICE", "migrate", String.format("{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\"}", vmName, sourceName, destName));
-                                int res = sourceHost.migrate(args[0], destHost);
-                                // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
-                                // To this aim, please extend the hostPopState API to add meta data information
-                                Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", vmName, res));
-                                double migrationDuration = Msg.getClock() - timeStartingMigration;
-
-                                if (res == 0) {
-                                    Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
-
-                                    if (!destHost.isViable()) {
-                                        Msg.info("ARTIFICIAL VIOLATION ON " + destHost.getName() + "\n");
-                                        // If Trace.hostGetState(destHost.getName(), "PM").equals("normal")
-                                        Trace.hostSetState(destHost.getName(), "PM", "violation-out");
-                                    }
-                                    if (sourceHost.isViable()) {
-                                        Msg.info("SOLVED VIOLATION ON " + sourceHost.getName() + "\n");
-                                        Trace.hostSetState(sourceHost.getName(), "PM", "normal");
-                                    }
-
-                                    /* Export that the migration has finished */
-                                    Trace.hostSetState(vmName, "migration", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
-                                    Trace.hostPopState(vmName, "migration");
-                                } else {
-
-                                    Trace.hostSetState(vmName, "migration", "failed", String.format(Locale.US, "{\"vm_name\": \"%s\", \"from\": \"%s\", \"to\": \"%s\", \"duration\": %f}", vmName, sourceName, destName, migrationDuration));
-                                    Trace.hostPopState(vmName, "migration");
-
-                                    Msg.info("Something was wrong during the migration of  " + args[0] + " from " + args[1] + " to " + args[2]);
-                                    Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                                    rpAborted = true;
-
-                                }
+                                rpAborted = SimulatorManager.migrateVM(args[0], args[1], args[2]);
                                 decOngoingMigrations();
                                 currentMigrations.remove(SimulatorManager.getXVMByName(args[0]));
                             }
@@ -271,6 +246,8 @@ public abstract class AbstractScheduler implements Scheduler {
         }
     }
 
+
+
     /**
      * Suspends a VM.
      * @param vmName vm name
@@ -278,72 +255,9 @@ public abstract class AbstractScheduler implements Scheduler {
      */
     public void suspendVM(final String vmName, final String hostName) {
 
-        Msg.info("Suspending VM " + vmName + " on " + hostName);
+        if(!SimulatorManager.suspendVM(vmName, hostName))
+            rpAborted=true;
 
-        if (vmName != null) {
-            Random rand = new Random(SimulatorProperties.getSeed());
-
-            String[] args = new String[2];
-            args[0] = vmName;
-            args[1] = hostName;
-
-            try {
-                new org.simgrid.msg.Process(Host.getByName(hostName), "Suspend-" + rand.nextDouble(), args) {
-
-                    @Override
-                    public void main(String[] args) throws MsgException {
-                        XVM vm =  SimulatorManager.getXVMByName(args[0]);
-                        XHost host = SimulatorManager.getXHostByName(args[1]);
-
-                        if (vm != null) {
-                            double timeStartingSuspension = Msg.getClock();
-                            Trace.hostPushState(args[0], "SERVICE", "suspend", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\"}", args[0], args[1]));
-                            int res = vm.suspend();
-                            Trace.hostPopState(args[0], "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", args[0], res));
-                            double suspensionDuration = Msg.getClock() - timeStartingSuspension;
-
-                            switch (res) {
-                                case 0:
-                                    Msg.info("End of migration of VM " + args[0] + " from " + args[1] + " to " + args[2]);
-
-                                    if (host.isViable()) {
-                                        Msg.info("SOLVED VIOLATION ON " + host.getName() + "\n");
-                                        Trace.hostSetState(host.getName(), "PM", "normal");
-                                    } else {
-                                        Msg.info("ARTIFICIAL VIOLATION ON " + host.getName() + "\n");
-                                        Trace.hostSetState(host.getName(), "PM", "violation-out");
-                                    }
-
-                                    /* Export that the suspension has finished */
-                                    Trace.hostSetState(args[0], "suspension", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
-                                    Trace.hostPopState(args[0], "suspension");
-                                case 1:
-                                    Trace.hostSetState(args[0], "suspension", "cancelled", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
-                                    Trace.hostPopState(args[0], "suspension");
-
-                                    Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
-                                    // Todo : no need to abort the ReconfigurationPlan here ?
-                                case -1:
-                                    Trace.hostSetState(args[0], "suspension", "failed", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], suspensionDuration));
-                                    Trace.hostPopState(args[0], "suspension");
-
-                                    Msg.info("Something went wrong during the suspension of  " + args[0] + " on " + args[1]);
-                                    Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                                    rpAborted = true;
-                                default:
-                                    System.err.println("Unexpected state from XVM.suspend()");
-                                    System.exit(-1);
-                            }
-                        }
-                    }
-                }.start();
-            } catch (HostNotFoundException e) {
-                Msg.critical("Host : " + hostName + " not found in Simgrid");
-            }
-        } else {
-            System.err.println("You are trying to suspend a non-existing VM");
-            System.exit(-1);
-        }
     }
 
     /**
@@ -352,71 +266,10 @@ public abstract class AbstractScheduler implements Scheduler {
      * @param hostName host name
      */
     public void resumeVM(final String vmName, final String hostName) {
-        Msg.info("Resuming VM " + vmName + " on " + hostName);
 
-        if (vmName != null) {
-            Random rand = new Random(SimulatorProperties.getSeed());
-
-            String[] args = new String[2];
-            args[0] = vmName;
-            args[1] = hostName;
-
-            try {
-                new org.simgrid.msg.Process(Host.getByName(hostName), "Resume-" + rand.nextDouble(), args) {
-
-                    @Override
-                    public void main(String[] args) throws MsgException {
-                        XVM vm =  SimulatorManager.getXVMByName(args[0]);
-                        XHost host = SimulatorManager.getXHostByName(args[1]);
-
-                        if (vm != null) {
-                            double timeStartingResumption = Msg.getClock();
-                            Trace.hostPushState(args[0], "SERVICE", "resume", String.format("{\"vm_name\": \"%s\", \"on\": \"%s\"}", args[0], args[1]));
-                            int res = vm.resume();
-                            Trace.hostPopState(args[0], "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", args[0], res));
-                            double resumptionDuration = Msg.getClock() - timeStartingResumption;
-
-                            switch (res) {
-                                case 0:
-                                    Msg.info("End of resumption of VM " + args[0] + " from " + args[1] + " to " + args[2]);
-
-                                    if (host.isViable()) {
-                                        Msg.info("SOLVED VIOLATION ON " + host.getName() + "\n");
-                                        Trace.hostSetState(host.getName(), "PM", "normal");
-                                    } else {
-                                        Msg.info("ARTIFICIAL VIOLATION ON " + host.getName() + "\n");
-                                        Trace.hostSetState(host.getName(), "PM", "violation-out");
-                                    }
-
-                                    /* Export that the suspension has finished */
-                                    Trace.hostSetState(args[0], "resumption", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
-                                    Trace.hostPopState(args[0], "resumption");
-                                case 1:
-                                    Trace.hostSetState(args[0], "resumption", "cancelled", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
-                                    Trace.hostPopState(args[0], "resumption");
-
-                                    Msg.info("The VM " + args[0] + " on " + args[1] + " is already suspended.");
-                                case -1:
-                                    Trace.hostSetState(args[0], "resumption", "failed", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", args[0], args[1], resumptionDuration));
-                                    Trace.hostPopState(args[0], "resumption");
-
-                                    Msg.info("Something went wrong during the resumption of  " + args[0] + " on " + args[1]);
-                                    Msg.info("Reconfiguration plan cannot be completely applied so abort it");
-                                    rpAborted = true;
-                                default:
-                                    System.err.println("Unexpected state from XVM.resume()");
-                                    System.exit(-1);
-                            }
-                        }
-                    }
-                }.start();
-            } catch (HostNotFoundException e) {
-                Msg.critical("Host : " + hostName + " not found in Simgrid");
-            }
-        } else {
-            System.err.println("You are trying to resume a non-existing VM");
-            System.exit(-1);
-        }
+        if (!SimulatorManager.resumeVM(vmName, hostName))
+            rpAborted = true;
     }
+
 
 }
