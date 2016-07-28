@@ -134,3 +134,15 @@ java -jar $VM_OPTIONS simulation.Main $PROGRAM_ARGUMENTS
 We developed some scripts to ease the conduction of experiments on grid'5000. These scripts are located on the Rennes site, in the folder /home/jpastor.
 
 Further documentation will arrive later: in case you plan to use it now, do not hesitate to contact us!
+
+### 5- Running energy comparison of centralized algorithms
+
+Run all the algorithms sequentially, turning off/not turning off the unused hosts:
+```
+$ rm -f energy.dat && sbt assembly && ./run_all.sh
+```
+
+Make the plots:
+```
+$ visu/energy_plot.py run_all.log energy.dat
+```
