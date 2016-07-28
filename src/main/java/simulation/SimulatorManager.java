@@ -37,7 +37,8 @@ import java.util.*;
  * To change this template use File | Settings | File Templates.
  */
 public class SimulatorManager {
-    public static int i = 0;
+    public static int iSuspend = 0;
+    public static int iResume = 0;
 
     /**
      * Stupid variable to monitor the duration of the simulation
@@ -741,6 +742,8 @@ public class SimulatorManager {
                             Trace.hostSetState(host.getName(), "PM", "normal");
                         }
 
+                        SimulatorManager.iSuspend++;
+
                         /* Export that the suspension has finished */
                         Trace.hostSetState(vmName, "suspension", "finished", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", vmName, hostName, suspensionDuration));
                         Trace.hostPopState(vmName, "suspension");
@@ -807,7 +810,7 @@ public class SimulatorManager {
                         }
                         sgVMsOn.put(vm.getName(), vm);
                         Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_VM", 1);
-                        SimulatorManager.i++;
+                        SimulatorManager.iResume++;
 
                         if ((previouslyViable) && (!host.isViable())) {
                             Msg.info("STARTING VIOLATION ON " + host.getName() + "\n");
@@ -825,6 +828,7 @@ public class SimulatorManager {
                             System.exit(-1);
                         }
                         sgVMsOn.put(vm.getName(), vm);
+                        //SimulatorManager.iResume++;
 
                         /* Export that the suspension has finished */
                         Trace.hostSetState(vmName, "resume", "cancelled", String.format(Locale.US, "{\"vm_name\": \"%s\", \"on\": \"%s\", \"duration\": %f}", vmName, hostName, suspensionDuration));

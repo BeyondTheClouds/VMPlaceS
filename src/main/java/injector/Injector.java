@@ -475,7 +475,8 @@ public class Injector extends Process {
         waitFor(EntropyProperties.getEntropyPlanTimeout());
         Msg.info("Done");
 
-        Msg.info("I: " + SimulatorManager.i);
+        Msg.info("iSuspend: " + SimulatorManager.iSuspend);
+        Msg.info("iResume: " + SimulatorManager.iResume);
     }
 
     private InjectorEvent nextEvent() {

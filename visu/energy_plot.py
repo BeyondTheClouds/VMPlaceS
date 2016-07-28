@@ -422,8 +422,10 @@ for alg in ORDER:
 	plots[alg], = ax1.plot(map(lambda t: t[0], n_vms_ordered[alg]),
 			map(lambda t: t[1], n_vms_ordered[alg]), '-', linewidth=linewidth, ms=8)
 	i += 1
+	
+	#for tick in scheduler_ticks[True][alg]:
+	#	ax1.plot((tick, tick), (0, 512), '-')
 
-#for scheduler_ticks[True][
 
 lgd = ax1.legend(plots.values(),
 		n_off.keys(),
