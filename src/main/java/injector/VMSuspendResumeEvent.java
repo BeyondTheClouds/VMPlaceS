@@ -2,8 +2,8 @@ package injector;
 
 import configuration.XVM;
 import org.simgrid.msg.*;
-import org.simgrid.trace.Trace;
 import simulation.SimulatorManager;
+import trace.Trace;
 
 public class VMSuspendResumeEvent implements InjectorEvent{
     private long id ;
@@ -35,13 +35,11 @@ public class VMSuspendResumeEvent implements InjectorEvent{
                 SimulatorManager.resumeVM(vm.getName(), vm.getLocation().getName());
 
                 Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_VM_TRUE", 1);
-                Msg.info("NB_VM_TRUE + 1");
 
             } else {
 
                 SimulatorManager.suspendVM(vm.getName(), vm.getLocation().getName());
                 Trace.hostVariableSub(SimulatorManager.getInjectorNodeName(), "NB_VM_TRUE", 1);
-                Msg.info("NB_VM_TRUE - 1");
             }
     }
 

@@ -37,6 +37,7 @@ import java.util.*;
  * To change this template use File | Settings | File Templates.
  */
 public class SimulatorManager {
+    public static int i = 0;
 
     /**
      * Stupid variable to monitor the duration of the simulation
@@ -806,6 +807,7 @@ public class SimulatorManager {
                         }
                         sgVMsOn.put(vm.getName(), vm);
                         Trace.hostVariableAdd(SimulatorManager.getInjectorNodeName(), "NB_VM", 1);
+                        SimulatorManager.i++;
 
                         if ((previouslyViable) && (!host.isViable())) {
                             Msg.info("STARTING VIOLATION ON " + host.getName() + "\n");
