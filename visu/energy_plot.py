@@ -375,34 +375,34 @@ pp(scheduler_ticks)
 ########################################
 # Make time_on plot
 ########################################
-time_on = {k: reduce(lambda a, b: a+b, v.values()) for k, v in time_on.items()}
-ordered_time_on = []
-
-for alg in ORDER:
-	ordered_time_on.append(time_on[alg])
-
-print("time_on:")
-pp(time_on)
-
-fig, ax1 = plt.subplots()
-
-color1 = '#888888'
-color2 = '#FFFFFF'
-linewidth = 1
-rects1 = ax1.bar(ind, ordered_time_on, width, color=color1, linewidth=linewidth)
-
-ax1.set_ylabel('Cumulative uptime of all servers (in seconds)')
-ax1.set_xticks(ind + width / 2)
-lim = ax1.get_ylim()
-ax1.set_ylim(lim[0], lim[1])
-
-ax1.set_xticklabels(ORDER)
-
-save_path = find_filename('time_on_%d_%d_%%d.pdf' % (load, std))
-plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
-print('Saved plot as ' + save_path)
-if os.system('which imgcat > /dev/null 2>&1') == 0:
-	os.system('imgcat ' + save_path)
+#time_on = {k: reduce(lambda a, b: a+b, v.values()) for k, v in time_on.items()}
+#ordered_time_on = []
+#
+#for alg in ORDER:
+#	ordered_time_on.append(time_on[alg])
+#
+#print("time_on:")
+#pp(time_on)
+#
+#fig, ax1 = plt.subplots()
+#
+#color1 = '#888888'
+#color2 = '#FFFFFF'
+#linewidth = 1
+#rects1 = ax1.bar(ind, ordered_time_on, width, color=color1, linewidth=linewidth)
+#
+#ax1.set_ylabel('Cumulative uptime of all servers (in seconds)')
+#ax1.set_xticks(ind + width / 2)
+#lim = ax1.get_ylim()
+#ax1.set_ylim(lim[0], lim[1])
+#
+#ax1.set_xticklabels(ORDER)
+#
+#save_path = find_filename('time_on_%d_%d_%%d.pdf' % (load, std))
+#plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
+#print('Saved plot as ' + save_path)
+#if os.system('which imgcat > /dev/null 2>&1') == 0:
+#	os.system('imgcat ' + save_path)
 
 ########################################
 # Make vm_on plot
@@ -445,6 +445,9 @@ n_vms_ordered_true = {}
 fig, ax1 = plt.subplots()
 
 linewidth = 1
+
+print("n_vms_true:")
+pp(n_vms[True].keys())
 
 i = 0
 for alg in ORDER:
