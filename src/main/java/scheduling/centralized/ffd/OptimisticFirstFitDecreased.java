@@ -23,10 +23,6 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
         TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true, useLoad));
         Map<XVM, XHost> sources = new HashMap<>();
 
-        // Store the load of each host
-        Map<XHost, Double> predictedCPUDemand = new HashMap<>();
-        Map<XHost, Integer> predictedMemDemand = new HashMap<>();
-
         for(XHost host: SimulatorManager.getSGHostingHosts()) {
             predictedCPUDemand.put(host, host.getCPUDemand());
             predictedMemDemand.put(host, host.getMemDemand());
@@ -48,7 +44,7 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
 
             // Try find a new host for the VMs
             for(XHost host: SimulatorManager.getSGHostingHosts()) {
-                if(host.getCPUCapacity() >= predictedCPUDemand.get(host) + vm.getCPUDemand() ||
+                if(host.getCPUCapacity() >= predictedCPUDemand.get(host) + vm.getCPUDemand() &&
                         host.getMemSize() >= predictedMemDemand.get(host) + vm.getMemSize()) {
                     dest = host;
                     break;
@@ -60,6 +56,8 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
                 return;
             }
 
+            if(predictedCPUDemand.get(dest) >= dest.getCPUCapacity())
+                System.out.println("!!");
             // Schedule the migration
             predictedCPUDemand.put(dest, predictedCPUDemand.get(dest) + vm.getCPUDemand());
             predictedMemDemand.put(dest, predictedMemDemand.get(dest) + vm.getMemSize());

@@ -22,8 +22,8 @@ def eprint(*args, **kwargs):
 	print(*args, file=sys.stderr, **kwargs)
 
 # Determines the order of the bars in the plots
-#ORDER = ['Entropy', 'BtrPlace', 'Lazy FFD', 'Optimistic FFD']
-ORDER = ['Lazy FFD', 'Optimistic FFD']
+ORDER = ['Entropy', 'Lazy FFD', 'Optimistic FFD']
+#ORDER = ['Lazy FFD', 'Optimistic FFD']
 
 # Check arguments
 if len(sys.argv) != 3:
@@ -45,7 +45,6 @@ def correct_name(name):
 	names = {
 		'LazyFirstFitDecreased': 'Lazy FFD',
 		'OptimisticFirstFitDecreased': 'Optimistic FFD',
-		'BtrPlaceRP': 'BtrPlace',
 		'Entropy2RP': 'Entropy'}
 
 	return names[name]
@@ -306,23 +305,22 @@ print("off_ordered:")
 pp(off_ordered)
 
 ax2 = ax1.twinx()
-off_plot, = ax2.plot(ind + width, off_ordered, 'k-o', linewidth=linewidth)
+#off_plot, = ax2.plot(ind + width, off_ordered, 'k-o', linewidth=linewidth)
 migration_plot, = ax2.plot(ind + width, migration_ordered, 'k--^', linewidth=linewidth)
 
 lim = ax2.get_ylim()
 ax2.set_ylim(lim[0], lim[1])
-ax2.set_yticks(range(0, int(math.ceil(max(migration_ordered))), 50))
+ax2.set_yticks(range(0, int(math.ceil(max(migration_ordered))), 500))
 
-for i,j in zip(ind + width, off_ordered):
-	ax2.annotate(str(j), xy=(i,j + .5), va='bottom', weight='bold', size='large')
+#for i,j in zip(ind + width, off_ordered):
+#	ax2.annotate(str(j), xy=(i,j + .5), va='bottom', weight='bold', size='large')
 
 for i,j in zip(ind + width, migration_ordered):
 	ax2.annotate(str(j), xy=(i,j + .5), va='bottom', weight='bold', size='large')
 
-lgd = ax1.legend((rects1[0], rects2[0], off_plot, migration_plot),
-		('Not turning off hosts', 'Turning off hosts', 'No. machines turned off', 'No. VM migrations'),
-		loc='upper left', bbox_to_anchor=(1.08, 1.02),
-		handlelength=2, framealpha=1.0, markerscale=.8)
+lgd = ax1.legend((rects1[0], rects2[0], migration_plot),
+		('Not turning off hosts', 'Turning off hosts', 'No. VM migrations'),
+		loc='lower right')
 
 def find_filename(format):
 	i = 0
@@ -357,52 +355,16 @@ for alg in ORDER:
 
 lgd = ax1.legend(plots.values(),
 		n_off.keys(),
-		loc='lower right')
+		loc='top right')
 
-ax1.set_ylim(0, n_hosts + 5)
+ax1.set_xlim(0, simulation_time)
+ax1.set_ylim(20, n_hosts)
 
 save_path = find_filename('n_on_%d_%d_%%d.pdf' % (load, std))
 plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
 print('Saved plot as ' + save_path)
 if os.system('which imgcat > /dev/null 2>&1') == 0:
 	os.system('imgcat ' + save_path)
-
-print("n_on:")
-pp(ordered_n_on)
-print("Scheduler:")
-pp(scheduler_ticks)
-
-########################################
-# Make time_on plot
-########################################
-#time_on = {k: reduce(lambda a, b: a+b, v.values()) for k, v in time_on.items()}
-#ordered_time_on = []
-#
-#for alg in ORDER:
-#	ordered_time_on.append(time_on[alg])
-#
-#print("time_on:")
-#pp(time_on)
-#
-#fig, ax1 = plt.subplots()
-#
-#color1 = '#888888'
-#color2 = '#FFFFFF'
-#linewidth = 1
-#rects1 = ax1.bar(ind, ordered_time_on, width, color=color1, linewidth=linewidth)
-#
-#ax1.set_ylabel('Cumulative uptime of all servers (in seconds)')
-#ax1.set_xticks(ind + width / 2)
-#lim = ax1.get_ylim()
-#ax1.set_ylim(lim[0], lim[1])
-#
-#ax1.set_xticklabels(ORDER)
-#
-#save_path = find_filename('time_on_%d_%d_%%d.pdf' % (load, std))
-#plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
-#print('Saved plot as ' + save_path)
-#if os.system('which imgcat > /dev/null 2>&1') == 0:
-#	os.system('imgcat ' + save_path)
 
 ########################################
 # Make vm_on plot
@@ -417,19 +379,22 @@ print("n_vms:")
 pp(n_vms[True].keys())
 
 i = 0
+colors = ['g', 'b', 'm', 'y']
 for alg in ORDER:
 	n_vms_ordered[alg] = sorted(n_vms[True][alg].items())
 	plots[alg], = ax1.plot(map(lambda t: t[0], n_vms_ordered[alg]),
-			map(lambda t: t[1], n_vms_ordered[alg]), '-', linewidth=linewidth, ms=8)
-	i += 1
+			map(lambda t: t[1], n_vms_ordered[alg]), colors[i] + '.-', linewidth=linewidth, ms=8)
 	
 	#for tick in scheduler_ticks[True][alg]:
-	#	ax1.plot((tick, tick), (0, 512), '-')
+	#	ax1.plot((tick, tick), (450, 512), colors[i] + '-')
 
+	i += 1
+
+ax1.set_xlim(0, simulation_time)
 
 lgd = ax1.legend(plots.values(),
 		n_off.keys(),
-		loc='upper right')
+		loc='lower right')
 
 save_path = find_filename('vms_on_%d_%d_%%d.pdf' % (load, std))
 plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
@@ -440,7 +405,7 @@ if os.system('which imgcat > /dev/null 2>&1') == 0:
 
 ###############################
 
-
+sys.exit(0)
 
 n_vms_ordered_true = {}
 

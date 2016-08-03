@@ -23,6 +23,11 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
     protected Queue<Migration> migrations;
 
+    // Store the expected load of each host
+    Map<XHost, Double> predictedCPUDemand = new HashMap<>();
+    Map<XHost, Integer> predictedMemDemand = new HashMap<>();
+
+
     public FirstFitDecreased(Collection<XHost> hosts) {
         this(hosts, new Random(SimulatorProperties.getSeed()).nextInt());
     }
@@ -54,6 +59,29 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             System.exit(5);
         }
 
+        // Log the new configuration
+        try {
+            File file = new File("logs/ffd/configuration-before/" + (iteration) + "-" + System.currentTimeMillis() + ".txt");
+            file.getParentFile().mkdirs();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+
+            for(XHost host: SimulatorManager.getSGHostingHosts()) {
+                writer.write(host.getName() + "(" + predictedCPUDemand.get(host) + "/" + host.getCPUCapacity() + "):");
+
+                for(XVM vm: host.getRunnings()) {
+                    writer.write(' ' + vm.getName() + "(" + vm.getLoad() + ")");
+                }
+                writer.write('\n');
+            }
+
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            System.err.println("Could not write FFD log");
+            e.printStackTrace();
+            System.exit(5);
+        }
+
         Migration m = null;
         while((m = migrations.poll()) != null) {
             if(m.dest.isOff())
@@ -61,6 +89,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
             relocateVM(m.vm.getName(), m.src.getName(), m.dest.getName());
         }
+
 
         // Wait for all the migrations to terminate
         int watchDog = 0;
@@ -87,15 +116,15 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
         // Log the new configuration
         try {
-            File file = new File("logs/ffd/configuration/" + (iteration) + "-" + System.currentTimeMillis() + ".txt");
+            File file = new File("logs/ffd/configuration-after/" + (iteration) + "-" + System.currentTimeMillis() + ".txt");
             file.getParentFile().mkdirs();
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
             for(XHost host: SimulatorManager.getSGHostingHosts()) {
-                writer.write(host.getName() + ':');
+                writer.write(host.getName() + "(" + host.getCPUDemand() + "/" + host.getCPUCapacity() + "):");
 
                 for(XVM vm: host.getRunnings()) {
-                    writer.write(' ' + vm.getName());
+                    writer.write(' ' + vm.getName() + "(" + vm.getLoad() + ")");
                 }
                 writer.write('\n');
             }

@@ -23,10 +23,6 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
         TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true, useLoad));
         Map<XVM, XHost> sources = new HashMap<>();
 
-        // Store the load of each host
-        Map<XHost, Double> predictedCPUDemand = new HashMap<>();
-        Map<XHost, Integer> predictedMemDemand = new HashMap<>();
-
         for(XHost host: SimulatorManager.getSGHostingHosts()) {
             predictedCPUDemand.put(host, host.getCPUDemand());
             predictedMemDemand.put(host, host.getMemDemand());
@@ -51,8 +47,8 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
 
             // Try find a new host for the VMs (saneHosts is not sorted)
             for(XHost host: SimulatorManager.getSGHostingHosts()) {
-                if(host.getCPUCapacity() >= predictedCPUDemand.get(host) + vm.getCPUDemand() ||
-                        host.getMemSize() >= predictedMemDemand.get(host) + vm.getMemSize()) {
+                if(host.getCPUCapacity() < predictedCPUDemand.get(host) + vm.getCPUDemand() &&
+                        host.getMemSize() < predictedMemDemand.get(host) + vm.getMemSize()) {
                     dest = host;
                     break;
                 }
