@@ -206,6 +206,9 @@ events = os.path.join('visu', 'events')
 for item in os.listdir(events):
         m = re.search(dir_pattern, item)
 
+        if m is None:
+            continue
+
         # look for dirs like 'centralized-algo-64'
         if m.group(1) == 'centralized' and int(m.group(3)) == n_hosts:
             algo = correct_name(m.group(2))
@@ -240,17 +243,17 @@ for item in os.listdir(events):
                             n_violations[turn_off][algo] += 1
 
                         if event['value'] == "normal":
-                            if event['origin'] in last_violations:
+                            if event['origin'] in last_violation:
                                 violation_time[turn_off][algo] += float(event['time']) - last_violation[event['origin']]
                             
-                            del last_violation[event['origin']]                             
+                                del last_violation[event['origin']]
                                 
                     except:
                         t, value, tb = sys.exc_info()
                         print(str(t) + " " + str(value))
                         print(line)
                         traceback.print_tb(tb)
-                        sys.exit(1)
+                        #sys.exit(1)
 
                     if event['value'] != 'NB_VNS_ON':
                         continue
@@ -371,7 +374,7 @@ for alg in ORDER:
 
 lgd = ax1.legend(plots.values(),
         n_off.keys(),
-        loc='top right')
+        loc='upper right')
 
 ax1.set_xlim(0, simulation_time)
 ax1.set_ylim(20, n_hosts)

@@ -128,6 +128,10 @@ public class Main {
             int lcsRatio = SimulatorProperties.getNbOfHostingNodes() / (SimulatorProperties.getNbOfServiceNodes() -1 );
             algorithmDetails = String.format("{\"assignmentAlgorithm\": \"%s\", \"lcsRatio\": %d}", AUX.assignmentAlg, lcsRatio);
         }
+
+        if(algorithmName.equals("centralized"))
+            algorithmName = SimulatorProperties.getImplementation().substring(SimulatorProperties.getImplementation().lastIndexOf('.') + 1);
+
         Trace.simulationDeclare(algorithmName, SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), algorithmDetails);
 
         /* Prepare TRACE variables */
