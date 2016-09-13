@@ -141,7 +141,6 @@ public abstract class AbstractScheduler implements Scheduler {
         } else if (computingResult.state.equals(ComputingResult.State.SUCCESS)) {
 
 			/* Tracing code */
-            // Note Adrian : it is difficult with BtrPlace to isolate the impacted XHosts
             for (XHost h : hostsToCheck)
                 Trace.hostSetState(h.getName(), "SERVICE", "reconfigure");
 
@@ -171,7 +170,7 @@ public abstract class AbstractScheduler implements Scheduler {
             }
 
         } else {
-            Msg.info("BtrPlace did not find any viable solution");
+            Msg.info(SimulatorProperties.getAlgo() + "-"+ SimulatorProperties.getImplementation() +" did not find any viable solution");
             enRes.state = SchedulerResult.State.NO_VIABLE_CONFIGURATION;
         }
 
