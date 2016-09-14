@@ -1,6 +1,5 @@
 package trace;
 
-import com.sun.javafx.binding.Logging;
 import scheduling.distributed.dvms2.dvms.dvms2.LoggingActor;
 
 /**

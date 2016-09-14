@@ -50,6 +50,7 @@ public abstract class AbstractScheduler implements Scheduler {
 	 */
 	protected AbstractScheduler() {
 		planGraphDepth = 0;
+        rpAborted = false;
         currentMigrations = new HashSet<XVM>();
 	}
 
@@ -226,12 +227,12 @@ public abstract class AbstractScheduler implements Scheduler {
                             if (!sourceHost.isOff()) {
                                 incOngoingMigrations();
                                 currentMigrations.add(SimulatorManager.getXVMByName(args[0]));
-                                rpAborted = SimulatorManager.migrateVM(args[0], args[1], args[2]);
+                                if(SimulatorManager.migrateVM(args[0], args[1], args[2]) == false) //If Migration is not correctly performed
+                                    rpAborted = true;
                                 decOngoingMigrations();
                                 currentMigrations.remove(SimulatorManager.getXVMByName(args[0]));
                             }
                         }
-
                     }
                 }.start();
 
@@ -252,23 +253,23 @@ public abstract class AbstractScheduler implements Scheduler {
      * @param vmName vm name
      * @param hostName host name
      */
-    public void suspendVM(final String vmName, final String hostName) {
+/*    public void suspendVM(final String vmName, final String hostName) {
 
         if(!SimulatorManager.suspendVM(vmName, hostName))
             rpAborted=true;
 
     }
-
+*/
     /**
      * Resumes a VM.
      * @param vmName vm name
      * @param hostName host name
      */
-    public void resumeVM(final String vmName, final String hostName) {
+/*    public void resumeVM(final String vmName, final String hostName) {
 
         if (!SimulatorManager.resumeVM(vmName, hostName))
             rpAborted = true;
     }
-
+*/
 
 }

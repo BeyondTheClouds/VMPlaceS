@@ -39,9 +39,10 @@ public class Injector extends Process {
         else
             faultQueue = generateFaultQueue(SimulatorManager.getSGHostsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getCrashPeriod());
 
-        if(SimulatorProperties.getSuspendVMs()) {
+        if(SimulatorProperties.getSuspendVMs())
             vmSuspendResumeQueue = generateVMFluctuationQueue(SimulatorManager.getSGVMsToArray(), SimulatorProperties.getDuration(), SimulatorProperties.getVMSuspendPeriod());
-        }
+        else // Create an empty list.
+            vmSuspendResumeQueue = new LinkedList<VMSuspendResumeEvent>();
         System.out.println(String.format("Size of event queues: load: %d, faults: %d, vm suspend: %d", loadQueue.size(), faultQueue.size(), vmSuspendResumeQueue.size()));
         evtQueue = mergeQueues(loadQueue,faultQueue, vmSuspendResumeQueue);
         // System.out.println("Size of event queue:"+evtQueue.size());

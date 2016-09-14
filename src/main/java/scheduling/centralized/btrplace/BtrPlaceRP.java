@@ -271,11 +271,14 @@ public class BtrPlaceRP extends AbstractScheduler {
 
                 @Override
                 public void committed(ResumeVM resumeVM) {
+                /*
+                    // Not available right now due to the rpAborted semantic that needs to be clarified
                     resumeVM(
+
                             vmMap.get(resumeVM.getVM().id()),
                             nodesMap.get(resumeVM.getSourceNode().id())
                     );
-
+                */
                 }
 
                 @Override
@@ -286,11 +289,14 @@ public class BtrPlaceRP extends AbstractScheduler {
 
                 @Override
                 public void committed(SuspendVM suspendVM) {
+                /*
+                    // Not available right now due to the rpAborted semantic that needs to be clarified
                     suspendVM(
+
                             vmMap.get(suspendVM.getVM().id()),
                             nodesMap.get(suspendVM.getSourceNode().id())
                     );
-
+                 */
                 }
             });
 
