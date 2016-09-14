@@ -114,11 +114,11 @@ public class Main {
         Msg.createEnvironment(args[0]);
         Msg.deployApplication(args[1]);
 
-
         /* Create all VM instances and assign them on the PMs */
         /* The initial deployment is based on a round robin fashion */
         System.out.println("Configure simulation" + new Date().toString());
         SimulatorManager.cleanLog();
+        // True means round robin placement.
         SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
         SimulatorManager.writeCurrentConfiguration();
 
