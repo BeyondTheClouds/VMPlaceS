@@ -43,12 +43,24 @@ public class CentralizedResolver extends Process {
 
         try{
 
+            int i = 0;
             while (!SimulatorManager.isEndOfInjection()) {
 
                 long wait = ((long) (period * 1000)) - previousDuration;
-                if (wait > 0)
+                if (wait > 0) {
+                    Msg.info("Resolver going to sleep for " + wait + " milliseconds");
                     Process.sleep(wait); // instead of waitFor that takes into account only seconds
+                    Msg.info("Resolver woke up");
+                }
 
+                if(SimulatorManager.isEndOfInjection()) {
+                    Msg.info("The simulation has ended while I was asleep");
+                    break;
+                }
+                else
+                    Msg.info("The simulation is not over!");
+
+                Msg.info("Centralized resolver. Pass " + (++i));
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGHostingHosts();
 
@@ -73,7 +85,7 @@ public class CentralizedResolver extends Process {
             System.exit(-1);
         }
         Msg.info(SimulatorProperties.getImplementation() + " has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
-
+        System.exit(0);
     }
 
 }

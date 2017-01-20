@@ -48,9 +48,9 @@ function run() {
 			;;
 	esac
 
-	n_vms=$(($n_nodes * 8))
+	n_vms=$(($n_nodes * 10))
 	mean=60
-	std=30
+	std=20
 
 	SIM_ARGS="-Dsimulator.algorithm=$algo $implem"
 	SIM_ARGS="$SIM_ARGS -Dhostingnodes.number=$n_nodes"
@@ -109,6 +109,7 @@ rm -rf logs/ffd
 		#run $n distributed false
 	done
 } 2>&1 | tee run_all.log
+
 
 if [ ! $error ]
 	then

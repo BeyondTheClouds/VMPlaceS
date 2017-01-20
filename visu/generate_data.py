@@ -88,7 +88,7 @@ algos = []
 for dirname, dirnames, filenames in os.walk('./events'):
     # print path to all subdirectories first.
     for filename in filenames:
-        if filename.endswith(".json"):
+        if filename.endswith(".json") and 'true' not in dirname:
             with open("%s/%s" % (dirname, filename), 'r') as f:
                 print("loading %s/%s" % (dirname, filename))
                 header_line = f.readline()

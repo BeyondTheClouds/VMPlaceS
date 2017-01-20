@@ -1,0 +1,6 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+<platform version="4">
+  <process host="node0" function="test.TestA"> </process>
+  <process host="node1" function="test.TestB"> </process>
+</platform>

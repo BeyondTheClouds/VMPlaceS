@@ -120,9 +120,11 @@ public class SimulatorManager {
         // Kill all VMs daemons in order to finalize the simulation correctly
         for (XVM vm : SimulatorManager.getSGVMs()) {
             Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges() + "/ migrated: "+vm.getNbOfMigrations());
-            //vm.getDaemon().kill();
+            vm.getDaemon().kill();
         }
         Msg.info("Duration of the simulation in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
+        Msg.info(Daemon.n_daemon + " daemons are still running");
+
     }
 
     /**
@@ -708,6 +710,7 @@ public class SimulatorManager {
                 message = String.format(Locale.US, "%d %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), SimulatorProperties.getHostsTurnoff(), energy);
 
             Files.write(Paths.get(logPath), message.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            Msg.info("Wrote " + Paths.get(logPath));
         } catch (IOException e) {
             e.printStackTrace();
         }

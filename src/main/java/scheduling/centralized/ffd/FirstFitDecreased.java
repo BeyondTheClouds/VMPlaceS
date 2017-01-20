@@ -160,6 +160,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             result.state = ComputingResult.State.NO_RECONFIGURATION_NEEDED;
 
         result.duration = System.currentTimeMillis() - start;
+        Msg.info(String.format("My duration: %d - %d = %d", System.currentTimeMillis(), start, System.currentTimeMillis() - start));
 
         return result;
     }

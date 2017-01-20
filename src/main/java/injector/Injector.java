@@ -464,20 +464,22 @@ public class Injector extends Process {
         waitFor(SimulatorProperties.getDuration() - Msg.getClock());
         Msg.info("End of Injection");
         SimulatorManager.setEndOfInjection();
-        if(SimulatorProperties.getEnergyLogFile() != null) {
-            Msg.info("Writing energy.dat");
+        if(SimulatorProperties.getEnergyLogFile() != null)
             SimulatorManager.writeEnergy(SimulatorProperties.getEnergyLogFile());
-            Msg.info("Written energy.dat");
-        }
 
         // Wait for termination of On going scheduling
         //TODO this timeout is not generic ...
-        Msg.info("Waiting for timeout");
-        waitFor(EntropyProperties.getEntropyPlanTimeout());
+        Msg.info(String.format("Waiting for timeout (%d seconds)", EntropyProperties.getEntropyPlanTimeout()));
+        try {
+            waitFor(EntropyProperties.getEntropyPlanTimeout());
+        } catch (Exception e) {
+            System.err.println(e);
+        }
         Msg.info("Done");
 
-        Msg.info("iSuspend: " + SimulatorManager.iSuspend);
-        Msg.info("iResume: " + SimulatorManager.iResume);
+        Msg.info("Suspended VMs: " + SimulatorManager.iSuspend);
+        Msg.info("Resumed VMs: " + SimulatorManager.iResume);
+        System.exit(0);
     }
 
     private InjectorEvent nextEvent() {

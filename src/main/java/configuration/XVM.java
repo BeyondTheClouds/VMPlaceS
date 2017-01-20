@@ -98,10 +98,11 @@ public class XVM {
      *                    The parameter is expressed has a percentage of the network bandwidth.
      *
      */
-     public XVM(XHost host, String name,
-            int nbCores, int ramsize, int netBW, String diskPath, int diskSize, int migNetBW, int dpIntensity){
+    public XVM(XHost host, String name,
+               int nbCores, int ramsize, int netBW, String diskPath, int diskSize, int migNetBW, int dpIntensity){
         // TODO, why should we reduce the migNetBW ? (i.e. interest of multiplying the value by 0.9)
-        this.vm = new VM (host.getSGHost(), name, nbCores, ramsize, netBW, diskPath, diskSize, (int)(migNetBW*0.9), dpIntensity);
+        this.vm = new VM (host.getSGHost(), name, ramsize, netBW, dpIntensity);
+        //this.vm = new VM (host.getSGHost(), name, nbCores, ramsize, netBW, diskPath, diskSize, (int)(migNetBW*0.9), dpIntensity);
         this.currentLoadDemand = 0;
         this.netBW = netBW ;
         this. dpIntensity = dpIntensity ;
@@ -109,10 +110,10 @@ public class XVM {
         this.daemon = new Daemon(this.vm, 100);
         this.host = host;
         this.NbOfLoadChanges = 0;
-         this.NbOfMigrations = 0;
+        this.NbOfMigrations = 0;
         this.isMigrating = false;
-         isSuspended = false;
-   }
+        isSuspended = false;
+    }
 
     /* Delegation method from MSG VM */
 
@@ -139,7 +140,7 @@ public class XVM {
             this.vm.setBound(this.vm.getSpeed()*expectedLoad/100);
             daemon.resume();
         }
-        else{
+        else if(NbOfLoadChanges > 0){
             daemon.suspend();
         }
         currentLoadDemand = expectedLoad ;
@@ -234,34 +235,34 @@ public class XVM {
      */
     public int suspend() {
         // Todo check if 0 means false & if CPU load should be 0 when vm is suspended
-        if (this.isMigrating() == true) {
+        if (this.isMigrating()) {
             Msg.info("VM " + vm.getName() + " is migrating");
             return 1;
         }
-        else {
-            Msg.info("VM " + vm.getName() + " is not migrating");
-            if (this.vm.isSuspended() == 0) {
-                try {
-               //     Msg.info("Start suspension of VM " + this.getName() + " on " + this.host.getName());
-                    //Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
-                    this.vm.suspend();
-                    // VM is suspended - we suspend the daemon simulating CPU demand
-                    this.daemon.suspend();
-                    //Msg.info("End of suspension of VM " + this.getName() + " on " + this.host.getName());
-                    isSuspended = true;
-                    return 0;
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    Msg.info("An error occurred during the suspension");
-                    // todo throw exc ?
-                    return -1;
-                }
-            } else {
-                Msg.info("You are trying to suspend "+ this.getName() +" that is an already suspended VM.");
-                System.exit(-1);
-                return -2;
+
+        Msg.info("VM " + vm.getName() + " is not migrating");
+        if (this.vm.isSuspended() == 0) {
+            try {
+                //     Msg.info("Start suspension of VM " + this.getName() + " on " + this.host.getName());
+                //Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
+                this.daemon.suspend();
+                this.vm.suspend();
+                // VM is suspended - we suspend the daemon simulating CPU demand
+                //Msg.info("End of suspension of VM " + this.getName() + " on " + this.host.getName());
+                isSuspended = true;
+                return 0;
+            } catch (Exception e) {
+                e.printStackTrace();
+                Msg.info("An error occurred during the suspension");
+                // todo throw exc ?
+                return -1;
             }
+        } else {
+            Msg.info("You are trying to suspend "+ this.getName() +" that is an already suspended VM.");
+            System.exit(-1);
+            return -2;
         }
+
     }
 
     /**
