@@ -19,6 +19,7 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.MsgException;
+import scheduling.Scheduler;
 import scheduling.hierarchical.snooze.LocalController;
 import scheduling.hierarchical.snooze.Logger;
 import trace.Trace;
@@ -105,11 +106,31 @@ public class SimulatorManager {
     private static Map<XHost, Double> lastEnergy = new HashMap<>();
 
     /**
+     * Reference toward the scheduler
+     */
+    private static boolean isSchedulerActive;
+
+
+    public static boolean isSchedulerActive() {
+        return isSchedulerActive;
+    }
+
+    public static void setSchedulerActive(boolean val) {
+        isSchedulerActive=val;
+    }
+
+    /**
+     * Set the scheduler
+     */
+
+    /**
      * When the injection is complete, we turn the endOfInjection boolean to true and kill the running daemon inside each VM
      */
-    public static void setEndOfInjection(){
+    public static void setEndOfInjection() {
         endTimeOfSimulation = System.currentTimeMillis();
+    }
 
+    public static void finalizeSimulation(){
         Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
         Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
 
@@ -875,6 +896,7 @@ public class SimulatorManager {
         int res = sourceHost.migrate(vmName, destHost);
         // TODO, we should record the res of the migration operation in order to count for instance how many times a migration crashes ?
         // To this aim, please extend the hostPopState API to add meta data information
+
         Trace.hostPopState(vmName, "SERVICE", String.format("{\"vm_name\": \"%s\", \"state\": %d}", vmName, res));
         double migrationDuration = Msg.getClock() - timeStartingMigration;
 
