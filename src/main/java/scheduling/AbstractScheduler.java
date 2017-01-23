@@ -127,13 +127,11 @@ public abstract class AbstractScheduler implements Scheduler {
         Trace.hostSetState(Host.currentHost().getName(), "SERVICE", "compute", String.format(Locale.US, "{\"duration\" : %f, \"state\" : \"%s\", \"migration_count\": %d, \"psize\": %d}", computationTimeAsDouble, computingResult.state, computingResult.nbMigrations, partitionSize));
 
 
-        /*
         try {
             org.simgrid.msg.Process.sleep(computingResult.duration); // instead of waitFor that takes into account only seconds
         } catch (HostFailureException e) {
             e.printStackTrace();
         }
-        */
 
         Msg.info("Computation time (in ms):" + computingResult.duration);
         enRes.duration = computingResult.duration;

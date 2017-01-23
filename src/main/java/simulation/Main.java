@@ -191,7 +191,6 @@ public class Main {
 
         Process.killAll(-1);
         Msg.info(String.format("There are still %d processes running", Process.getCount()));
-        System.exit(0);
     }
 
     private static void notify(String message) {

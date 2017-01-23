@@ -98,13 +98,12 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             try {
                 org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
-                if (watchDog%100==0){
+                if (watchDog%50000==0){
                     Msg.info(String.format("You're waiting for %d migrations to complete (already %d seconds)", getMigratingVMs().size(), watchDog));
                     for(XVM vm: getMigratingVMs())
                         Msg.info("\t- " + vm.getName());
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
-                        System.exit(42);
                     }
                 }
             } catch (HostFailureException e) {
@@ -222,10 +221,10 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             }
 
             if(h1.getMemSize() != h2.getMemSize())
-                return factor = (h1.getMemSize() - h2.getMemSize());
+                return factor * (h1.getMemSize() - h2.getMemSize());
 
 
-            return(h1.getName().compareTo(h2.getName()));
+            return h1.getName().compareTo(h2.getName());
         }
     }
 }

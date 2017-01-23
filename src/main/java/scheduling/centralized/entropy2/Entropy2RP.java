@@ -231,7 +231,7 @@ public class Entropy2RP extends AbstractScheduler {
             try {
                 org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
-                if (watchDog%100==0){
+                if (watchDog%500==0){
                     Msg.info(String.format("You've already been waiting for %d seconds for migrations to end:", watchDog, getMigratingVMs()));
                     for(XVM vm: getMigratingVMs()) {
                         Msg.info("\t- " + vm);
@@ -239,7 +239,6 @@ public class Entropy2RP extends AbstractScheduler {
 
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
-                        System.exit(131);
                     }
                 }
             } catch (HostFailureException e) {

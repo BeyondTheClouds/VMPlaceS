@@ -479,7 +479,6 @@ public class Injector extends Process {
 
         Msg.info("Suspended VMs: " + SimulatorManager.iSuspend);
         Msg.info("Resumed VMs: " + SimulatorManager.iResume);
-        System.exit(0);
     }
 
     private InjectorEvent nextEvent() {

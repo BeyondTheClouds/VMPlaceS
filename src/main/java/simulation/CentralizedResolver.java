@@ -85,7 +85,6 @@ public class CentralizedResolver extends Process {
             System.exit(-1);
         }
         Msg.info(SimulatorProperties.getImplementation() + " has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
-        System.exit(0);
     }
 
 }

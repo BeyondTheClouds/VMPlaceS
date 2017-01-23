@@ -12,7 +12,7 @@ import org.simgrid.msg.Process;
 public class Daemon extends Process {
 	private Task currentTask;
     public Daemon(VM vm, int load) {
-		super((Host)vm,"Daemon");
+		super((Host)vm,"Daemon-" + vm.getName());
        currentTask = new Task(this.getHost().getName()+"-daemon-0", this.getHost().getSpeed()*100, 0);
     }
     public void main(String[] args) throws MsgException {

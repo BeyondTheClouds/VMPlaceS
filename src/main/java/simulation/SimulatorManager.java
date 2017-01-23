@@ -110,8 +110,8 @@ public class SimulatorManager {
     public static void setEndOfInjection(){
         endTimeOfSimulation = System.currentTimeMillis();
 
-        Msg.info(sgHostsOn.size()+"/"+ getSGHosts().size()+"are up");
-        Msg.info(sgVMsOn.size()+"/"+getSGVMs().size()+" are up");
+        Msg.info(String.format("Hosts up: %d/%d", sgHostsOn.size(), getSGHosts().size()));
+        Msg.info(String.format("VMs up: %d/%d", sgVMsOn.size(), getSGVMs().size()));
 
         for (XHost host : SimulatorManager.getSGHosts()) {
             Msg.info(host.getName() + " has been turned off "+host.getTurnOffNb()+" times and violated "+host.getNbOfViolations());
@@ -120,7 +120,15 @@ public class SimulatorManager {
         // Kill all VMs daemons in order to finalize the simulation correctly
         for (XVM vm : SimulatorManager.getSGVMs()) {
             Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges() + "/ migrated: "+vm.getNbOfMigrations());
-            vm.getDaemon().kill();
+            if(vm.isRunning()) {
+                Msg.info("VM is running");
+                Msg.info("VM is migrating: " + vm.isMigrating());
+                Msg.info("Daemon is suspended: " + vm.getDaemon().isSuspended());
+                vm.getDaemon().kill();
+            }
+            else {
+                Msg.info("VM is suspended");
+            }
         }
         Msg.info("Duration of the simulation in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
         Msg.info(Daemon.n_daemon + " daemons are still running");
@@ -710,7 +718,7 @@ public class SimulatorManager {
                 message = String.format(Locale.US, "%d %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), SimulatorProperties.getHostsTurnoff(), energy);
 
             Files.write(Paths.get(logPath), message.getBytes(), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
-            Msg.info("Wrote " + Paths.get(logPath));
+
         } catch (IOException e) {
             e.printStackTrace();
         }

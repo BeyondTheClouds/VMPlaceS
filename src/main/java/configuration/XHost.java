@@ -246,6 +246,7 @@ public class XHost{
      *  @return 0 if success, 1 should be postponed, -1 if failure, -2 if already suspended
      */
     public int suspendVM(XVM vm) {
+        Msg.info("Suspending " + vm.getName());
         int res = vm.suspend();
         if (res == 0 ) {
             hostedVMs.remove(vm);

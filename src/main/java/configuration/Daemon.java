@@ -38,7 +38,7 @@ public class Daemon extends Process {
      * @param load the load
      */
     public Daemon(Host host, int load) {
-		super(host,"Daemon");
+		super(host,"Daemon-" + host.getName());
         id = iDaemon++;
         // Creation of the task
         //   The load is a dummy computation of the speed of VM * 100
@@ -69,8 +69,7 @@ public class Daemon extends Process {
 
     public static int n_daemon = 0;
 
-    public void kill() {
-        n_daemon--;
+    public void kill() {n_daemon--;
         super.kill();
     }
 }

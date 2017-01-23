@@ -13,7 +13,5 @@ public class Main {
         Msg.run();
 
         Msg.info("End of run");
-
-        System.exit(0);
     }
 }
