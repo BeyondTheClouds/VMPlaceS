@@ -28,6 +28,8 @@ public class DistributedResolver extends Process {
 
         try {
 
+            SimulatorManager.setSchedulerActive(true);
+
             TimeoutSnoozerProcess timeoutSnoozer = new TimeoutSnoozerProcess(this.getHost(), name, nodeId, port);
             timeoutSnoozer.start();
 
@@ -55,6 +57,7 @@ public class DistributedResolver extends Process {
 
             }
             waitFor(3);
+            SimulatorManager.setSchedulerActive(false);
 
         } catch (Exception e){
             e.printStackTrace();

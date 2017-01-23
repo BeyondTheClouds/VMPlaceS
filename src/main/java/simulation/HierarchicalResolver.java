@@ -23,6 +23,8 @@ public class HierarchicalResolver extends Process {
 
         Msg.info("Hierarchical algorithm variant: " + SnoozeProperties.getAlgVariant());
 
+        SimulatorManager.setSchedulerActive(true);
+
         // TODO what is the interest of the ep ?
         Msg.info("Start the entry point on " + Host.currentHost()+ "");
         new EntryPoint(Host.currentHost(), "entryPoint").start();
@@ -78,6 +80,8 @@ public class HierarchicalResolver extends Process {
             waitFor(3);
         }
         waitFor(3);
+        SimulatorManager.setSchedulerActive(false);
+
     }
 
 }
