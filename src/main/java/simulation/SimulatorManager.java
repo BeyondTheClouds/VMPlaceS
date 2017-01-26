@@ -15,6 +15,7 @@
 package simulation;
 
 import configuration.*;
+import org.apache.commons.io.FileUtils;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
@@ -423,13 +424,8 @@ public class SimulatorManager {
      */
     public static void cleanLog(){
         try {
-            Runtime.getRuntime().exec("rm -rf ./logs/simulatorManager");
-            Runtime.getRuntime().exec("rm -rf ./logs/entropy");
-            Runtime.getRuntime().exec("rm -rf ./logs/entropy.log");
-            Runtime.getRuntime().exec("rm -rf ./logs/btrplace");
-            Runtime.getRuntime().exec("rm -rf ./logs/btrplace.log");
-            Runtime.getRuntime().exec("rm -rf ./logs/ffd");
-        } catch (IOException e) {
+            FileUtils.deleteDirectory(new File("logs"));;
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

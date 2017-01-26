@@ -313,11 +313,11 @@ public class GroupManager extends Process {
                         Logger.imp("[GM.procScheduling] periodicScheduling: " + periodicScheduling);
 
                         while (!thisGMToBeStopped()) {
-                            long wait = period;
-                            long previousDuration = 0;
+                            double wait = period;
+                            double previousDuration = 0;
                             boolean anyViolation = false;
                             if (periodicScheduling) {
-                                if (wait > 0) Process.sleep(wait);
+                                if (wait > 0) waitFor(wait);
                             } else {
                                 Process.sleep(70); // This sleep simulates the communications between the GM and the LC to update the monitoring information (i.e. a pull model)
                             }
@@ -335,7 +335,7 @@ public class GroupManager extends Process {
                                 scheduling = true;
                                 previousDuration = scheduleVMs(); // previousDuration is in ms.
                                 previousCallScheduleVMs = Msg.getClock();
-                                wait = period - previousDuration;
+                                wait = period - previousDuration/1000;
                                 scheduling = false;
                             }
                         }
@@ -441,12 +441,12 @@ public class GroupManager extends Process {
 
     }
 
-    long scheduleVMs() {
+    double scheduleVMs() {
 
         /* Compute and apply the plan */
         Collection<XHost> hostsToCheck = this.getManagedXHosts();
         Scheduler scheduler;
-        long previousDuration = 0;
+        double previousDuration = 0;
         scheduler = SchedulerBuilder.getInstance().build(hostsToCheck);
         SchedulerResult schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
         previousDuration = schedulerResult.duration;

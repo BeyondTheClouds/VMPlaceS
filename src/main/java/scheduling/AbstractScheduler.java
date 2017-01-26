@@ -101,10 +101,10 @@ public abstract class AbstractScheduler implements Scheduler {
      * @return A SchedulerResult representing the success or failure of the algorithm loop
      */
     public SchedulerResult checkAndReconfigure(Collection<XHost> hostsToCheck) {
-        Msg.info("Launching scheduler (id = " + id + ") - start to compute");
+         Msg.info("Launching scheduler (id = " + id + ") - start to compute");
 
         ComputingResult computingResult;
-        long reconfigurationTime;
+        double reconfigurationTime;
         SchedulerResult enRes = new SchedulerResult();
 
 		/* Tracing code */
@@ -152,7 +152,7 @@ public abstract class AbstractScheduler implements Scheduler {
             double startReconfigurationTime = Msg.getClock();
             this.applyReconfigurationPlan();
             double endReconfigurationTime = Msg.getClock();
-            reconfigurationTime = ((long) (endReconfigurationTime - startReconfigurationTime) * 1000);
+            reconfigurationTime = (endReconfigurationTime - startReconfigurationTime);
             Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
             enRes.duration += reconfigurationTime;
             Msg.info("Number of nodes used: " + hostsToCheck.size());

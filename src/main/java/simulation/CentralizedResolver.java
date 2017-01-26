@@ -40,7 +40,7 @@ public class CentralizedResolver extends Process {
 
         Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
-        long previousDuration = 0;
+        double previousDuration = 0;
         Scheduler scheduler;
         SchedulerResult schedulerResult;
 
@@ -49,9 +49,10 @@ public class CentralizedResolver extends Process {
             SimulatorManager.setSchedulerActive(true);
             int i = 0;
 
-            long wait = ((long) (period * 1000)) - previousDuration;
+
+            double wait = period - previousDuration;
             if (wait > 0)
-                Process.sleep(wait); // instead of waitFor that takes into account only seconds
+                waitFor(wait);
 
             while (!SimulatorManager.isEndOfInjection()) {
                 Msg.info("Centralized resolver. Pass " + (++i));
@@ -94,9 +95,10 @@ public class CentralizedResolver extends Process {
                     numberOfSucess++;
                 }
 
-               wait = ((long) (period * 1000)) - previousDuration;
+
+               wait = period - previousDuration/1000;
                 if (wait > 0)
-                    Process.sleep(wait); // instead of waitFor that takes into account only seconds
+                    waitFor(wait);
 
             }
         } catch(HostFailureException e){

@@ -104,7 +104,7 @@ public interface Scheduler {
         /**
          * Duration in ms of the reconfiguration.
          */
-        public long duration;
+        public double duration;
 
     }
 

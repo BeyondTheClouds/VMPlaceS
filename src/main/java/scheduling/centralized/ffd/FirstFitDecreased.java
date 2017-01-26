@@ -14,8 +14,9 @@ import java.io.IOException;
 import java.util.*;
 
 public abstract class FirstFitDecreased extends AbstractScheduler {
-    public static int iteration = 0;
     protected int nMigrations = 0;
+
+    public static int iteration=0;
 
     protected boolean useLoad;
 
@@ -33,16 +34,18 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
     }
 
     public FirstFitDecreased(Collection<XHost> hosts, Integer id) {
-        hostsToCheck = hosts;
-        useLoad = SimulatorProperties.getUseLoad();
-        migrations = new ArrayDeque<>();
+        this.hostsToCheck = hosts;
+        this.useLoad = SimulatorProperties.getUseLoad();
+        this.migrations = new ArrayDeque<>();
+        this.id=id;
+        iteration=id;
     }
 
     @Override
     protected void applyReconfigurationPlan() {
         // Log the new configuration
         try {
-            File file = new File("logs/ffd/reconfiguration/" + (++iteration) + ".txt");
+            File file = new File("logs/ffd/reconfiguration/" + id + ".txt");
             file.getParentFile().mkdirs();
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
@@ -61,7 +64,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
         // Log the new configuration
         try {
-            File file = new File("logs/ffd/configuration-before/" + (iteration) + ".txt");
+            File file = new File("logs/ffd/configuration-before/" + id + ".txt");
             file.getParentFile().mkdirs();
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
@@ -116,7 +119,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
         // Log the new configuration
         try {
-            File file = new File("logs/ffd/configuration-after/" + (iteration) + "-" + System.currentTimeMillis() + ".txt");
+            File file = new File("logs/ffd/configuration-after/" + id + ".txt");
             file.getParentFile().mkdirs();
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
@@ -153,7 +156,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
         }
 
         try {
-            File file = new File("logs/ffd/overloaded/" + iteration + ".txt");
+            File file = new File("logs/ffd/overloaded/" + id + ".txt");
             file.getParentFile().mkdirs();
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
@@ -178,7 +181,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             result.state = ComputingResult.State.NO_RECONFIGURATION_NEEDED;
 
         result.duration = System.currentTimeMillis() - start;
-        Msg.info(String.format("My duration: %d - %d = %d", System.currentTimeMillis(), start, System.currentTimeMillis() - start));
+       // Msg.info(String.format("My duration: %d - %d = %d", System.currentTimeMillis(), start, System.currentTimeMillis() - start));
 
         return result;
     }
