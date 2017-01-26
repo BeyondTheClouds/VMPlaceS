@@ -12,15 +12,19 @@ public class TestA extends Process {
 
     @Override
     public void main(String[] strings) throws MsgException {
+        waitFor(5000);
+
+        /*
         for(int i = 0; i < ITERATIONS; i++) {
             Task t = new Task("task-" + i, getHost().getSpeed() * 100, 0);
-            System.out.println("A: about to execute");
+            Msg.info("A: about to execute");
             t.execute();
-            System.out.println("A: done");
+            Msg.info("A: done");
         }
+        */
 
-        System.out.println("A: about to sleep");
+        Msg.info("A: about to sleep");
         waitFor(400);
-        System.out.println("A: I'm dying...");
+        Msg.info("A: I'm dying...");
     }
 }

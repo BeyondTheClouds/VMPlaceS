@@ -16,8 +16,14 @@ package configuration;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
 import org.simgrid.trace.Trace;
+import scheduling.centralized.ffd.FirstFitDecreased;
 import simulation.SimulatorManager;
+import test.LastMigrations;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -162,7 +168,7 @@ public class XHost{
      */
     public double computeCPUDemand(){
         double cons=0;
-            for (XVM vm : this.getRunnings())
+            for (XVM vm : hostedVMs)
                 cons += vm.getCPUDemand();
         return cons;
     }
@@ -217,7 +223,43 @@ public class XHost{
         }
         // migrate the VM and reassign correctly to the corresponding host
         try {
+            double start = Msg.getClock();
             vm.migrate(dest);
+            double end = Msg.getClock();
+
+            try {
+                File file = new File("logs/ffd/migrations/" + FirstFitDecreased.iteration + ".txt");
+                if(!file.getParentFile().exists())
+                    file.getParentFile().mkdirs();
+                BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
+
+                writer.append(String.format("%s: %s -> %s (%f)", vm.getName(), getName(), dest.getName(), end-start));
+                writer.append('\n');
+
+                writer.flush();
+                writer.close();
+            } catch (IOException e) {
+                System.err.println("Could not write FFD log");
+                e.printStackTrace();
+                System.exit(5);
+            }
+
+            try {
+                double duration = end - start;
+                double diff = Math.abs(duration - LastMigrations.INSTANCE.get(FirstFitDecreased.iteration, vm.getName(), getName(), dest.getName()));
+                if(diff > 1.0) {
+                    Msg.info(String.format("Migration %s: %s -> %s took %f seconds more than before",
+                            vm.getName(), getName(), dest.getName(), diff));
+                }
+            } catch(NullPointerException npe) {
+                npe.printStackTrace();
+            } catch(IndexOutOfBoundsException ioobe) {
+                Msg.info("No previous iteration " + FirstFitDecreased.iteration);
+            } catch(Exception e) {
+                System.out.println(e);
+                e.printStackTrace();
+                System.exit(43);
+            }
         } catch (Exception e){
             Msg.info("Host failure exception");
             this.onGoingMigration = false;
@@ -366,5 +408,15 @@ public class XHost{
      */
     public void setOnGoingMigration(boolean onGoingMigration) {
         this.onGoingMigration = onGoingMigration;
+    }
+
+    public String toString() {
+        return String.format("XHost [name=%s, nCores=%d, memSize=%d, state=%s, #turned off=%d, CPU demand=%f]",
+                getName(),
+                ncores,
+                memSize,
+                (isOn()? "ON":"OFF"),
+                turnOffNb,
+                currentCPUDemand);
     }
 }

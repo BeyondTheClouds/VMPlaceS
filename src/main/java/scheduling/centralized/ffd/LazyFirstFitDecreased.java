@@ -33,7 +33,7 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
             Iterator<XVM> vms = host.getRunnings().iterator();
 
             while((host.getCPUCapacity() < predictedCPUDemand.get(host) ||
-                    host.getMemSize() < host.getMemDemand()) && vms.hasNext()) {
+                    host.getMemSize() < predictedMemDemand.get(host)) && vms.hasNext()) {
                 XVM vm = vms.next();
                 toSchedule.add(vm);
                 sources.put(vm, host);

@@ -18,6 +18,13 @@ import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.VM;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import static scheduling.centralized.ffd.FirstFitDecreased.iteration;
+
 public class XVM {
 
     /**
@@ -140,11 +147,30 @@ public class XVM {
             this.vm.setBound(this.vm.getSpeed()*expectedLoad/100);
             daemon.resume();
         }
-        else if (NbOfLoadChanges > 0){
+        else if(NbOfLoadChanges > 0){
             daemon.suspend();
         }
         currentLoadDemand = expectedLoad ;
         NbOfLoadChanges++;
+
+
+        try {
+            File file = new File("logs/xvm_set_load.txt");
+            file.getParentFile().mkdirs();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
+
+            writer.write(String.format("%.3f\t%s\t%f",
+                    Msg.getClock(),
+                    getName(),
+                    expectedLoad) + '\n');
+
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            System.err.println("Could not write log");
+            e.printStackTrace();
+            System.exit(5);
+        }
     }
 
     // TODO c'est crade
@@ -247,6 +273,7 @@ public class XVM {
                     //Msg.info("    currentLoadDemand:" + this.currentLoadDemand + "/ramSize:" + this.ramsize + "/dpIntensity:" + this.dpIntensity + "/remaining:" + this.daemon.getRemaining());
                     this.vm.suspend();
                     // VM is suspended - we suspend the daemon simulating CPU demand
+                    this.daemon.suspend();
                     //Msg.info("End of suspension of VM " + this.getName() + " on " + this.host.getName());
                     isSuspended = true;
                     return 0;
@@ -330,12 +357,20 @@ public class XVM {
     }
 
     public String toString() {
-        return String.format("XVM [name=%s, currentLoad=%.2f, dpIntensity=%d, isMigrating=%b, isRunning=%b]",
+        return String.format("XVM [name=%s, host=%s, currentLoad=%.2f, dpIntensity=%d, isMigrating=%b, isRunning=%b]",
                 getName(),
+                host.getName(),
                 currentLoadDemand,
                 dpIntensity,
                 isMigrating,
                 isRunning());
+    }
+
+    public boolean equals(Object o) {
+        if(!(o instanceof XVM))
+            return false;
+
+        return ((XVM) o).getName().equals(this.getName());
     }
 }
 

@@ -93,6 +93,7 @@ nodes='64'
 abort=0
 
 rm -rf logs/ffd
+rm -i energy.dat
 
 {
 	for n in $nodes; do

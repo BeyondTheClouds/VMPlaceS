@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.*;
 
 public abstract class FirstFitDecreased extends AbstractScheduler {
-    private static int iteration = 0;
+    public static int iteration = 0;
     protected int nMigrations = 0;
 
     protected boolean useLoad;
@@ -42,7 +42,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
     protected void applyReconfigurationPlan() {
         // Log the new configuration
         try {
-            File file = new File("logs/ffd/reconfiguration/" + (++iteration) + "-" + System.currentTimeMillis() + ".txt");
+            File file = new File("logs/ffd/reconfiguration/" + (++iteration) + ".txt");
             file.getParentFile().mkdirs();
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
@@ -61,7 +61,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
         // Log the new configuration
         try {
-            File file = new File("logs/ffd/configuration-before/" + (iteration) + "-" + System.currentTimeMillis() + ".txt");
+            File file = new File("logs/ffd/configuration-before/" + (iteration) + ".txt");
             file.getParentFile().mkdirs();
             BufferedWriter writer = new BufferedWriter(new FileWriter(file));
 
@@ -87,6 +87,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             if(m.dest.isOff())
                 SimulatorManager.turnOn(m.dest);
 
+
             relocateVM(m.vm.getName(), m.src.getName(), m.dest.getName());
         }
 
@@ -98,7 +99,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
             try {
                 org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
-                if (watchDog%50000==0){
+                if (watchDog%200==0){
                     Msg.info(String.format("You're waiting for %d migrations to complete (already %d seconds)", getMigratingVMs().size(), watchDog));
                     for(XVM vm: getMigratingVMs())
                         Msg.info("\t- " + vm.getName());
@@ -142,13 +143,31 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
         ComputingResult result = new ComputingResult();
         long start = System.currentTimeMillis();
 
-        List<XHost> overloaded = new ArrayList<>();
+        ArrayList<XHost> overloaded = new ArrayList<>();
 
         // Find the overloaded hosts
         for(XHost host : hostsToCheck) {
             double demand = host.computeCPUDemand();
             if(host.getCPUCapacity() < demand || host.getMemSize() < host.getMemDemand())
                 overloaded.add(host);
+        }
+
+        try {
+            File file = new File("logs/ffd/overloaded/" + iteration + ".txt");
+            file.getParentFile().mkdirs();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+
+            for(XHost h: overloaded) {
+                writer.write(h.toString());
+                writer.write('\n');
+            }
+
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            System.err.println("Could not write FFD log");
+            e.printStackTrace();
+            System.exit(5);
         }
 
         manageOverloadedHost(overloaded, result);

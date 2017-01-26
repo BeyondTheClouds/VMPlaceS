@@ -6,6 +6,10 @@ import configuration.XVM;
 import org.simgrid.msg.Msg;
 import simulation.SimulatorManager;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 
 public class OptimisticFirstFitDecreased extends FirstFitDecreased {
@@ -20,7 +24,9 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
 
     @Override
     protected void manageOverloadedHost(List<XHost> overloadedHosts, ComputingResult result) {
-        TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true, useLoad));
+        // TODO revert to TreeSet
+        //TreeSet<XVM> toSchedule = new TreeSet<>(new XVMComparator(true, useLoad));
+        ArrayList<XVM> toSchedule = new ArrayList<>();
         Map<XVM, XHost> sources = new HashMap<>();
 
         for(XHost host: SimulatorManager.getSGHostingHosts()) {
@@ -30,14 +36,42 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
 
         // Remove all VMs from the overloaded hosts
         for(XHost host: overloadedHosts) {
-            for(XVM vm: host.getRunnings()) {
-                toSchedule.add(vm);
-                sources.put(vm, host);
+            if((host.getCPUCapacity() < predictedCPUDemand.get(host) ||
+                    host.getMemSize() < predictedMemDemand.get(host))) {
+                for (XVM vm : host.getRunnings()) {
+                    toSchedule.add(vm);
+                    sources.put(vm, host);
+                }
+
+                predictedCPUDemand.put(host, 0D);
+                predictedMemDemand.put(host, 0);
+            }
+        }
+
+        /*
+        try {
+            File file = new File("logs/ffd/to_schedule/" + super.iteration + ".txt");
+            file.getParentFile().mkdirs();
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+
+            for(XHost h: overloadedHosts) {
+                writer.write(h.getName());
+                writer.write('\n');
             }
 
-            predictedCPUDemand.put(host, 0D);
-            predictedMemDemand.put(host, 0);
+            for(XVM vm: toSchedule) {
+                writer.write(vm.toString());
+                writer.write('\n');
+            }
+
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            System.err.println("Could not write FFD log");
+            e.printStackTrace();
+            System.exit(5);
         }
+        */
 
         for(XVM vm: toSchedule) {
             XHost dest = null;

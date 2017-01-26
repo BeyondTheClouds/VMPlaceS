@@ -17,14 +17,13 @@ public class Main {
         Msg.deployApplication("config/test_deploy.xml");
 
 	    /*  execute the simulation. */
-        System.out.println("Launcher: begin Msg.run()" + new Date().toString());
+        Msg.info("Launcher: begin Msg.run()" + new Date().toString());
 
         Msg.run();
 
-        System.out.println("Launcher: end of Msg.run()" + new Date().toString());
+        Msg.info("Launcher: end of Msg.run()" + new Date().toString());
         Msg.info("End of run");
 
         Process.killAll(-1);
-        System.exit(0);
     }
 }

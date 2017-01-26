@@ -141,15 +141,8 @@ public class SimulatorManager {
         // Kill all VMs daemons in order to finalize the simulation correctly
         for (XVM vm : SimulatorManager.getSGVMs()) {
             Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges() + "/ migrated: "+vm.getNbOfMigrations());
-            if(vm.isRunning()) {
-                Msg.info("VM is running");
-                Msg.info("VM is migrating: " + vm.isMigrating());
-                Msg.info("Daemon is suspended: " + vm.getDaemon().isSuspended());
+            if(vm.isRunning())
                 vm.getDaemon().kill();
-            }
-            else {
-                Msg.info("VM is suspended");
-            }
         }
         Msg.info("Duration of the simulation in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
         Msg.info(Daemon.n_daemon + " daemons are still running");
@@ -534,41 +527,34 @@ public class SimulatorManager {
 
         if(sgVM.isRunning()) {
 
-            XHost tmpHost = sgVM.getLocation();
-            boolean previouslyViable = tmpHost.isViable();
-
-            // A simple hack to avoid computing on-the-fly the CPUDemand of each host
-            double vmPreviousLoad = sgVM.getCPUDemand();
-            double hostPreviousLoad = tmpHost.getCPUDemand();
-            // Msg.info("Previous Load was" + hostPreviousLoad);
-
-            tmpHost.setCPUDemand(hostPreviousLoad - vmPreviousLoad + load);
-            //  Msg.info("New Load is "+ tmpHost.getCPUDemand());
+            XHost host = sgVM.getLocation();
+            boolean previouslyViable = host.isViable();
 
             sgVM.setLoad(load);
+            host.setCPUDemand(host.computeCPUDemand());
 
             // If the node is off, we change the VM load but we do not consider it for possible violation and do not update
             // neither the global load of the node nor the global load of the cluster.
             // Violations are detected only on running node
-            if (!tmpHost.isOff()) {
+            if (!host.isOff()) {
 
 
                 //    Msg.info("Current getCPUDemand "+SimulatorManager.getCPUDemand()+"\n");
 
 
-                if (previouslyViable && (!tmpHost.isViable())) {
-                    Msg.info("STARTING VIOLATION ON " + tmpHost.getName() + "\n");
-                    tmpHost.incViolation();
-                    Trace.hostSetState(tmpHost.getName(), "PM", "violation");
+                if (previouslyViable && (!host.isViable())) {
+                    Msg.info("STARTING VIOLATION ON " + host.getName() + "\n");
+                    host.incViolation();
+                    Trace.hostSetState(host.getName(), "PM", "violation");
 
-                } else if ((!previouslyViable) && (tmpHost.isViable())) {
-                    Msg.info("ENDING VIOLATION ON " + tmpHost.getName() + "\n");
-                    Trace.hostSetState(tmpHost.getName(), "PM", "normal");
+                } else if ((!previouslyViable) && (host.isViable())) {
+                    Msg.info("ENDING VIOLATION ON " + host.getName() + "\n");
+                    Trace.hostSetState(host.getName(), "PM", "normal");
                 }
                 // else Do nothing the state does not change.
 
                 // Update getCPUDemand of the host
-                Trace.hostVariableSet(tmpHost.getName(), "LOAD", tmpHost.getCPUDemand());
+                Trace.hostVariableSet(host.getName(), "LOAD", host.getCPUDemand());
 
                 // TODO this is costly O(HOST_NB) - SHOULD BE FIXED
                 //Update global getCPUDemand
@@ -576,12 +562,12 @@ public class SimulatorManager {
 
             }
 
-            double energy = tmpHost.getSGHost().getConsumedEnergy();
-            if (lastEnergy.containsKey(tmpHost))
-                energy -= lastEnergy.get(tmpHost);
+            double energy = host.getSGHost().getConsumedEnergy();
+            if (lastEnergy.containsKey(host))
+                energy -= lastEnergy.get(host);
 
-            Trace.hostVariableSet(tmpHost.getName(), "ENERGY", energy);
-            lastEnergy.put(tmpHost, tmpHost.getSGHost().getConsumedEnergy());
+            Trace.hostVariableSet(host.getName(), "ENERGY", energy);
+            lastEnergy.put(host, host.getSGHost().getConsumedEnergy());
         } else { // VM is suspended: just update the load for consistency reason (i.e. when the VM will be resumed, we should assign the expected load
             sgVM.setLoad(load);
         }

@@ -2,7 +2,9 @@ package simulation;
 
 import configuration.SimulatorProperties;
 import configuration.XHost;
+import configuration.XVM;
 import org.simgrid.msg.*;
+import org.simgrid.msg.File;
 import org.simgrid.msg.Process;
 import scheduling.SchedulerBuilder;
 import scheduling.centralized.CentralizedResolverProperties;
@@ -10,6 +12,7 @@ import scheduling.Scheduler;
 import scheduling.Scheduler.SchedulerResult;
 import trace.Trace;
 
+import java.io.*;
 import java.util.Collection;
 
 
@@ -47,18 +50,33 @@ public class CentralizedResolver extends Process {
             int i = 0;
 
             long wait = ((long) (period * 1000)) - previousDuration;
-            if (wait > 0) {
-                Msg.info("Resolver going to sleep for " + wait + " milliseconds");
+            if (wait > 0)
                 Process.sleep(wait); // instead of waitFor that takes into account only seconds
-                Msg.info("Resolver woke up");
-            }
 
             while (!SimulatorManager.isEndOfInjection()) {
-
                 Msg.info("Centralized resolver. Pass " + (++i));
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGHostingHosts();
 
+                try {
+                    java.io.File file = new java.io.File("logs/scheduler/to_check/" + i + ".txt");
+                    file.getParentFile().mkdirs();
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+
+                    for(XHost h: hostsToCheck) {
+                        writer.write(h.toString() + '\n');
+
+                        for(XVM vm: h.getRunnings())
+                            writer.write(vm.toString() + '\n');
+                    }
+
+                    writer.flush();
+                    writer.close();
+                } catch (IOException e) {
+                    System.err.println("Could not write FFD log");
+                    e.printStackTrace();
+                    System.exit(5);
+                }
 
                 scheduler = SchedulerBuilder.getInstance().build(hostsToCheck, ++loopID);
                 schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
@@ -77,11 +95,8 @@ public class CentralizedResolver extends Process {
                 }
 
                wait = ((long) (period * 1000)) - previousDuration;
-                if (wait > 0) {
-                    Msg.info("Resolver going to sleep for " + wait + " milliseconds");
+                if (wait > 0)
                     Process.sleep(wait); // instead of waitFor that takes into account only seconds
-                    Msg.info("Resolver woke up");
-                }
 
             }
         } catch(HostFailureException e){
