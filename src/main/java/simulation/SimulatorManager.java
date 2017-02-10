@@ -15,15 +15,16 @@
 package simulation;
 
 import configuration.*;
+import injector.Injector;
 import org.apache.commons.io.FileUtils;
-import org.simgrid.msg.Host;
-import org.simgrid.msg.HostNotFoundException;
-import org.simgrid.msg.Msg;
+import org.simgrid.msg.*;
+import org.simgrid.msg.Process;
 import scheduling.hierarchical.snooze.LocalController;
 import scheduling.hierarchical.snooze.Logger;
 import trace.Trace;
 
 import java.io.*;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -36,7 +37,7 @@ import java.util.*;
  * Time: 10:49
  * To change this template use File | Settings | File Templates.
  */
-public class SimulatorManager {
+public class SimulatorManager extends Process{
     public static int iSuspend = 0;
     public static int iResume = 0;
 
@@ -108,7 +109,6 @@ public class SimulatorManager {
      * Reference toward the scheduler
      */
     private static boolean isSchedulerActive;
-
 
     public static boolean isSchedulerActive() {
         return isSchedulerActive;
@@ -928,6 +928,66 @@ public class SimulatorManager {
             completionOk = false;
         }
         return completionOk;
+    }
+
+    public SimulatorManager(Host host, String name, String[] args){
+        super(host, name, args);
+
+    }
+    @Override
+    public void main(String[] strings) throws MsgException {
+        // True means round robin placement.
+        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
+        SimulatorManager.writeCurrentConfiguration();
+
+
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MIG", 0);
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MC", 0);
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VM", SimulatorManager.getSGVMsOn().size());
+        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VM_TRUE", SimulatorManager.getSGVMsOn().size());
+
+        // Start process,
+        // first the injector
+        Injector injector=new Injector(Host.getByName(SimulatorManager.getInjectorNodeName()),"Injector", null);
+        injector.start();
+
+        //Second the scheduler
+        if(SimulatorProperties.getAlgo().equals("centralized")){
+            CentralizedResolver centralizedResolver=new CentralizedResolver(Host.getByName("node"+SimulatorProperties.getNbOfHostingNodes()), "CentralizedResolver", null);
+            centralizedResolver.start();
+        } else if(SimulatorProperties.getAlgo().equals("hierarchical")){
+            // TODO Adrien for Anthony, Feb 10th 2017
+            Msg.info("Contact Anthony Simonet");
+        } else if(SimulatorProperties.getAlgo().equals("distributed")){
+            // TODO Adrien for Anthony, Feb 10th 2017
+            Msg.info("Contact Anthony Simonet");
+        }
+
+        // Wait for the end of the simulation.
+        waitFor(SimulatorProperties.getDuration() - Msg.getClock());
+
+        // Wait for termination of On going scheduling
+        while (SimulatorManager.isSchedulerActive()) {
+            //  Msg.info(String.format("Waiting for timeout (%d seconds)", 4));
+
+            try {
+                waitFor(1000);
+            } catch (Exception e) {
+                System.err.println(e);
+            }
+        }
+        if(SimulatorProperties.getEnergyLogFile() != null)
+            SimulatorManager.writeEnergy(SimulatorProperties.getEnergyLogFile());
+
+        Msg.info("Gonna finalize the simulation...");
+        SimulatorManager.finalizeSimulation();
+
+        Msg.info("Done");
+
+        Msg.info("Suspended VMs: " + SimulatorManager.iSuspend);
+        Msg.info("Resumed VMs: " + SimulatorManager.iResume);
+        //   System.exit(0);
+
     }
 
 }

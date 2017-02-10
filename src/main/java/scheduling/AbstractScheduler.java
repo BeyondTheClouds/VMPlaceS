@@ -211,7 +211,7 @@ public abstract class AbstractScheduler implements Scheduler {
             // Asynchronous migration
             // The process is launched on the source node
             try {
-                new org.simgrid.msg.Process(Host.getByName(sourceName), "Migrate-" + rand.nextDouble(), args) {
+                new org.simgrid.msg.Process(Host.getByName(sourceName), "Migrate-"+ vmName+"-"+ rand.nextDouble(), args) {
                     public void main(String[] args) {
                         XHost destHost = null;
                         XHost sourceHost = null;

@@ -79,7 +79,7 @@ public class Main {
 
         // Automatically generate deployment file that is mandatory for launching the simgrid simulation.
         // TODO - implement a more generic way to generate the deployment file
-        try {
+     /*   try {
             String[] cmd = null;
             if (SimulatorProperties.getAlgo().equals("distributed")) {
                 Msg.info("Distributed scheduling selected (generating deployment file)");
@@ -109,7 +109,7 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
+*/
         /* construct the platform and deploy the application */
         Msg.createEnvironment(args[0]);
         Msg.deployApplication(args[1]);
@@ -118,9 +118,7 @@ public class Main {
         /* The initial deployment is based on a round robin fashion */
         System.out.println("Configure simulation" + new Date().toString());
         SimulatorManager.cleanLog();
-        // True means round robin placement.
-        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
-        SimulatorManager.writeCurrentConfiguration();
+
 
         String algorithmName = SimulatorProperties.getAlgo();
         String algorithmDetails = "{}";
@@ -161,6 +159,10 @@ public class Main {
         Trace.hostVariableDeclare("NB_OFF"); //Nb of hosts turned off
         Trace.hostVariableDeclare("NB_ON"); //Nb of hosts turned on
 
+ /*       // True means round robin placement.
+        SimulatorManager.configureHostsAndVMs(SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfServiceNodes(), SimulatorProperties.getNbOfVMs(), true);
+        SimulatorManager.writeCurrentConfiguration();
+
         for(XHost host: SimulatorManager.getSGHosts()) {
             Trace.hostVariableSet(host.getName(), "NB_ON", 1);
             Trace.hostVariableSet(host.getName(), "NB_OFF", 0);
@@ -176,7 +178,7 @@ public class Main {
                 }
             Msg.info(String.format("Turned off unused %d nodes before starting", nOff));
         }
-
+*/
 	    /*  execute the simulation. */
         System.out.println("Launcher: begin Msg.run()" + new Date().toString());
         notify(String.format("Started %s with %d hosts and %d VMs", SimulatorProperties.getImplementation(), SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getNbOfVMs()));

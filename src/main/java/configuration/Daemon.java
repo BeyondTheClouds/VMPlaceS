@@ -50,9 +50,9 @@ public class Daemon extends Process {
 
         while(!SimulatorManager.isEndOfInjection()) {
             try {
-                Msg.info("I am computing");
+             //   Msg.info("I am computing");
                 currentTask.execute();
-                Msg.info("I am done");
+          //      Msg.info("I am done");
             } catch (HostFailureException e) {
                 e.printStackTrace();
             } catch (TaskCancelledException e) {

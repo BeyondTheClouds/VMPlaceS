@@ -28,8 +28,9 @@ public class Injector extends Process {
     private Deque<FaultEvent> faultQueue = null ;
     private Deque<VMSuspendResumeEvent> vmSuspendResumeQueue = null ;
 
-    Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
+    public Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
         super(host, name, args);
+
         // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
         //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
@@ -46,21 +47,6 @@ public class Injector extends Process {
         System.out.println(String.format("Size of event queues: load: %d, faults: %d, vm suspend: %d", loadQueue.size(), faultQueue.size(), vmSuspendResumeQueue.size()));
         evtQueue = mergeQueues(loadQueue,faultQueue, vmSuspendResumeQueue);
         // System.out.println("Size of event queue:"+evtQueue.size());
-
-        // Serialize eventqueue in a file.
-        File f = new File ("injector_queue.txt");
-        try
-        {
-            FileWriter fw = new FileWriter (f);
-
-            for (InjectorEvent evt: evtQueue)
-                fw.write (evt.toString()+"\n");
-            fw.close();
-        }
-        catch (IOException exception)
-        {
-            System.out.println ("Erreur lors de la lecture : " + exception.getMessage());
-        }
     }
 
 
@@ -425,36 +411,20 @@ public class Injector extends Process {
     public void main2(String[] args) throws MsgException {
 		/* Initialization is done in Main */
 
+        Msg.info("Start of Injection");
         if(!SimulatorManager.isViable()){
             System.err.println("Initial Configuration should be viable !");
             System.exit(1);
         }
 
 
-        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MIG", 0);
-        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_MC", 0);
-        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VM", SimulatorManager.getSGVMsOn().size());
-        Trace.hostVariableSet(SimulatorManager.getInjectorNodeName(), "NB_VM_TRUE", SimulatorManager.getSGVMsOn().size());
+        if(SimulatorProperties.goToStationaryStatus()) {
+            // Uggly but efficient to reach a kind of stationary state
+            for (XVM vm : SimulatorManager.getSGVMsOn())
+                SimulatorManager.updateVM(vm, SimulatorProperties.getMeanLoad());
+        }
 
         InjectorEvent evt = nextEvent();
-        /*
-        if(SimulatorProperties.goToStationaryStatus()){
-            do {
-                if ((evt instanceof LoadEvent) &&
-                        (!SimulatorManager.willItBeViableWith(((LoadEvent)evt).getVm(),((LoadEvent) evt).getCPULoad()))) {
-                    break;
-                } else {
-                    evt.play();
-                    evt=nextEvent();
-                }
-            } while (true);
-        }
-        */
-
-        // TODO uggly patch to reach a kind of stationary state
-        for(XVM vm: SimulatorManager.getSGVMsOn())
-            SimulatorManager.updateVM(vm, SimulatorProperties.getMeanLoad());
-
         while(evt!=null && evt.getTime() < SimulatorProperties.getDuration()){
             if(evt.getTime() - Msg.getClock()>0)
                 waitFor(evt.getTime() - Msg.getClock());
@@ -465,28 +435,6 @@ public class Injector extends Process {
         Msg.info("End of Injection");
         SimulatorManager.setEndOfInjection();
 
-        // Wait for termination of On going scheduling
-        while (SimulatorManager.isSchedulerActive()) {
-          //  Msg.info(String.format("Waiting for timeout (%d seconds)", 4));
-
-            try {
-                waitFor(100);
-            } catch (Exception e) {
-                System.err.println(e);
-            }
-        }
-
-        if(SimulatorProperties.getEnergyLogFile() != null)
-            SimulatorManager.writeEnergy(SimulatorProperties.getEnergyLogFile());
-
-        Msg.info("Gonna finalize the simulation...");
-        SimulatorManager.finalizeSimulation();
-
-        Msg.info("Done");
-
-        Msg.info("Suspended VMs: " + SimulatorManager.iSuspend);
-        Msg.info("Resumed VMs: " + SimulatorManager.iResume);
-     //   System.exit(0);
     }
 
     private InjectorEvent nextEvent() {
