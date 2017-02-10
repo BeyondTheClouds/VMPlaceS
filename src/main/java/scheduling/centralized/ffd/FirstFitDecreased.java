@@ -4,6 +4,7 @@ import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import org.simgrid.msg.*;
+import org.simgrid.msg.Process;
 import scheduling.AbstractScheduler;
 import simulation.SimulatorManager;
 
@@ -15,8 +16,6 @@ import java.util.*;
 
 public abstract class FirstFitDecreased extends AbstractScheduler {
     protected int nMigrations = 0;
-
-    public static int iteration=0;
 
     protected boolean useLoad;
 
@@ -38,7 +37,6 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
         this.useLoad = SimulatorProperties.getUseLoad();
         this.migrations = new ArrayDeque<>();
         this.id=id;
-        iteration=id;
     }
 
     @Override
@@ -51,29 +49,6 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
             for(Migration m: migrations) {
                 writer.write(m.toString());
-                writer.write('\n');
-            }
-
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            System.err.println("Could not write FFD log");
-            e.printStackTrace();
-            System.exit(5);
-        }
-
-        // Log the new configuration
-        try {
-            File file = new File("logs/ffd/configuration-before/" + id + ".txt");
-            file.getParentFile().mkdirs();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-
-            for(XHost host: SimulatorManager.getSGHostingHosts()) {
-                writer.write(host.getName() + "(" + predictedCPUDemand.get(host) + "/" + host.getCPUCapacity() + "):");
-
-                for(XVM vm: host.getRunnings()) {
-                    writer.write(' ' + vm.getName() + "(" + vm.getLoad() + ")");
-                }
                 writer.write('\n');
             }
 
@@ -100,14 +75,15 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
 
         while(this.ongoingMigrations()) {
             try {
-                org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
+                Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
-                if (watchDog%200==0){
+                if (watchDog%2000==0){
                     Msg.info(String.format("You're waiting for %d migrations to complete (already %d seconds)", getMigratingVMs().size(), watchDog));
                     for(XVM vm: getMigratingVMs())
                         Msg.info("\t- " + vm.getName());
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
+                        Process.getCurrentProcess().exit();
                     }
                 }
             } catch (HostFailureException e) {
@@ -116,29 +92,6 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
         }
 
         Msg.info("Reconfiguration done");
-
-        // Log the new configuration
-        try {
-            File file = new File("logs/ffd/configuration-after/" + id + ".txt");
-            file.getParentFile().mkdirs();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-
-            for(XHost host: SimulatorManager.getSGHostingHosts()) {
-                writer.write(host.getName() + "(" + host.getCPUDemand() + "/" + host.getCPUCapacity() + "):");
-
-                for(XVM vm: host.getRunnings()) {
-                    writer.write(' ' + vm.getName() + "(" + vm.getLoad() + ")");
-                }
-                writer.write('\n');
-            }
-
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            System.err.println("Could not write FFD log");
-            e.printStackTrace();
-            System.exit(5);
-        }
     }
 
     @Override
@@ -155,24 +108,6 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
                 overloaded.add(host);
         }
 
-        try {
-            File file = new File("logs/ffd/overloaded/" + id + ".txt");
-            file.getParentFile().mkdirs();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-
-            for(XHost h: overloaded) {
-                writer.write(h.toString());
-                writer.write('\n');
-            }
-
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            System.err.println("Could not write FFD log");
-            e.printStackTrace();
-            System.exit(5);
-        }
-
         manageOverloadedHost(overloaded, result);
 
         if(!migrations.isEmpty())
@@ -180,7 +115,7 @@ public abstract class FirstFitDecreased extends AbstractScheduler {
         else if(result.state != ComputingResult.State.RECONFIGURATION_FAILED)
             result.state = ComputingResult.State.NO_RECONFIGURATION_NEEDED;
 
-        result.duration = System.currentTimeMillis() - start;
+        result.duration = ((double) System.currentTimeMillis() - start);
        // Msg.info(String.format("My duration: %d - %d = %d", System.currentTimeMillis(), start, System.currentTimeMillis() - start));
 
         return result;

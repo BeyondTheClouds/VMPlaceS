@@ -189,7 +189,7 @@ public class Main {
 
         notify(String.format("End of simulation %s", SimulatorProperties.getImplementation()));
 
-        Process.killAll(-1);
+        //Process.killAll(-1);
         Msg.info(String.format("There are still %d processes running", Process.getCount()));
     }
 

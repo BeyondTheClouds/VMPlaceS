@@ -34,7 +34,7 @@ if len(sys.argv) != 3:
 def to_bool(string):
     if string in ['true', 'True']:
         return True
-    
+
     if string in ['false', 'False']:
         return False
 
@@ -63,20 +63,26 @@ def end_experiment(time, alg):
             node_off(node, time, alg)
 
 def node_on(name, time, alg):
+    if simulation_time is not None and time >= simulation_time:
+        return
+
     if name in last_on and last_on[name] is not None:
         eprint("Node %s was already on since %.2f" % (name, time))
         sys.exit(1)
-    
+
     last_on[name] = time
 
 def node_off(name, time, alg):
+    if simulation_time is not None and time >= simulation_time:
+        return
+
     if last_on[name] is None:
         eprint("None %s was not on" % name)
         sys.exit(1)
 
     if name not in time_on[alg]:
         time_on[alg][name] = 0
-    
+
     time_on[alg][name] += time - last_on[name]
     last_on[name] = None
 
@@ -117,16 +123,16 @@ with open(sys.argv[1], 'r') as f:
         if m:
             turn_off = to_bool(m.group(6))
             n_hosts = int(m.group(4))
-            
+
             if n_hosts not in n_turn_off:
                 n_turn_off[n_hosts] = {True: {}, False: {}}
-               
+
             if n_hosts not in n_migrations:
                 n_migrations[n_hosts] = {True: {}, False: {}}
-               
+
             if n_hosts not in scheduler_ticks:
                 scheduler_ticks[n_hosts] = {True: {}, False: {}}
-               
+
             if n_hosts not in n_on:
                 n_on[n_hosts] = {}
 
@@ -137,7 +143,7 @@ with open(sys.argv[1], 'r') as f:
 
             if turn_off:
                 n_on[n_hosts][algo] = {}
-                n_on[n_hosts][algo][0.0] = 0
+                n_on[n_hosts][algo][0] = 0
 
             n_turn_off[n_hosts][turn_off][algo] = 0
             n_migrations[n_hosts][turn_off][algo] = 0
@@ -149,6 +155,8 @@ with open(sys.argv[1], 'r') as f:
 
             new_experiment(algo)
 
+            print("Reading new experiment [algo=%s, computes=%d, turn_off=%s]" %
+                    (algo, n_hosts, turn_off))
 
             continue
 
@@ -159,7 +167,7 @@ with open(sys.argv[1], 'r') as f:
             end_experiment(time, algo)
             simulation_time = int(time)
             continue
-        
+
         # The scheduler is running
         m = re.search(scheduler_pattern, line)
         if m:
@@ -174,7 +182,7 @@ with open(sys.argv[1], 'r') as f:
             n_turn_off[n_hosts][curr][algo] += 1
 
             if turn_off:
-                n_on[n_hosts][algo][float(m.group(2))] = n_on[n_hosts][algo][n_on[n_hosts][algo].keys()[-1]] - 1
+                n_on[n_hosts][algo][int(float(m.group(2)))] = n_on[n_hosts][algo][n_on[n_hosts][algo].keys()[-1]] - 1
 
             node_off(m.group(3), float(m.group(2)), algo)
             continue
@@ -213,7 +221,7 @@ for item in os.listdir(events):
         algo = correct_name(m.group(2))
         turn_off = to_bool(m.group(4))
         n_hosts = int(m.group(3))
-        
+
         if n_hosts not in n_vms:
             n_vms[n_hosts] = { True: {}, False: {} }
 
@@ -237,7 +245,7 @@ for item in os.listdir(events):
                     print(str(t) + " " + str(value))
                     print(line)
                     traceback.print_tb(tb)
-                    sys.exit(1)
+                    #sys.exit(1)
 
                 if event['value'] != 'NB_VNS_ON':
                     continue
@@ -258,7 +266,7 @@ with open(sys.argv[2], 'r') as f:
         implem = correct_name(m.group(2))
         turn_off = to_bool(m.group(3))
         joules = float(m.group(4))
-        
+
         if n_hosts not in energy:
             energy[n_hosts] = { True: {}, False: {} }
 
@@ -277,11 +285,11 @@ migration_ordered = {}
 for n_hosts in energy.keys():
     if n_hosts not in ordered_energy:
         ordered_energy[n_hosts] = { True: [], False: [] }
-        
+
     for alg in ORDER:
         if alg not in energy[n_hosts][True]:
             continue
-    
+
         ordered_energy[n_hosts][True].append(energy[n_hosts][True][alg])
         ordered_energy[n_hosts][False].append(energy[n_hosts][False][alg])
 
@@ -312,13 +320,13 @@ for n_hosts in energy.keys():
     for alg in ORDER:
         if alg not in n_turn_off[n_hosts][True]:
             continue
-        
+
         off_ordered[n_hosts].append(n_turn_off[n_hosts][True][alg])
         migration_ordered[n_hosts].append(n_migrations[n_hosts][True][alg])
 
     print("off_ordered[%d]:" % n_hosts)
     pp(off_ordered[n_hosts])
-    
+
     print("migration_ordered[%d]:" % n_hosts)
     print(migration_ordered[n_hosts])
 
@@ -342,7 +350,7 @@ for n_hosts in energy.keys():
         while os.path.isfile(path):
             i += 1
             path = format % i
-        
+
         return path
 
     save_path = find_filename('energy_%d_%d_%d_%%d.pdf' % (n_hosts, load, std))
@@ -373,12 +381,12 @@ for n_hosts in n_on:
     for alg in ORDER:
         if alg not in n_on[n_hosts]:
             continue
-        
+
         ordered_n_on[n_hosts][alg] = sorted(n_on[n_hosts][alg].items())
         plots[n_hosts][alg], = ax1.plot(map(lambda t: t[0], ordered_n_on[n_hosts][alg]),
                 map(lambda t: t[1], ordered_n_on[n_hosts][alg]), styles[i], linewidth=linewidth, ms=8)
         i += 1
-     
+
     print("ordered_n_on[%d]" % n_hosts)
     pp(ordered_n_on[n_hosts])
 
@@ -387,7 +395,7 @@ for n_hosts in n_on:
             loc='upper right')
 
     ax1.set_xlim(0, simulation_time)
-    ax1.set_ylim(20, n_hosts)
+    ax1.set_ylim(20, n_hosts + 1)
 
     save_path = find_filename('n_on_%d_%d_%d_%%d.pdf' % (n_hosts, load, std))
     plt.savefig(save_path, transparent=True, bbox_extra_artists=(lgd,), bbox_inches='tight')
@@ -413,11 +421,11 @@ for n_hosts in n_vms:
     for alg in ORDER:
         if alg not in n_vms[n_hosts][True]:
             continue
-        
+
         n_vms_ordered[n_hosts][alg] = sorted(n_vms[n_hosts][True][alg].items())
         plots[n_hosts][alg], = ax1.plot(map(lambda t: t[0], n_vms_ordered[n_hosts][alg]),
                 map(lambda t: t[1], n_vms_ordered[n_hosts][alg]), colors[i] + '.-', linewidth=linewidth, ms=8)
-        
+
         #for tick in scheduler_ticks[n_hosts][True][alg]:
         #   ax1.plot((tick, tick), (450, 512), colors[i] + '-')
 

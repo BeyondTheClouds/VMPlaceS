@@ -40,7 +40,7 @@ public class CentralizedResolver extends Process {
 
         Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
-        double previousDuration = 0;
+        double previousDuration = 0.0D;
         Scheduler scheduler;
         SchedulerResult schedulerResult;
 
@@ -58,30 +58,9 @@ public class CentralizedResolver extends Process {
                 Msg.info("Centralized resolver. Pass " + (++i));
 			    /* Compute and apply the plan */
                 Collection<XHost> hostsToCheck = SimulatorManager.getSGHostingHosts();
-
-                try {
-                    java.io.File file = new java.io.File("logs/scheduler/to_check/" + i + ".txt");
-                    file.getParentFile().mkdirs();
-                    BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-
-                    for(XHost h: hostsToCheck) {
-                        writer.write(h.toString() + '\n');
-
-                        for(XVM vm: h.getRunnings())
-                            writer.write(vm.toString() + '\n');
-                    }
-
-                    writer.flush();
-                    writer.close();
-                } catch (IOException e) {
-                    System.err.println("Could not write FFD log");
-                    e.printStackTrace();
-                    System.exit(5);
-                }
-
                 scheduler = SchedulerBuilder.getInstance().build(hostsToCheck, ++loopID);
                 schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
-                previousDuration = schedulerResult.duration;
+                previousDuration = schedulerResult.duration / 1000;
                 if (schedulerResult.state == SchedulerResult.State.NO_RECONFIGURATION_NEEDED) {
                     Msg.info("No Reconfiguration needed (duration: " + previousDuration + ")");
                 } else if (schedulerResult.state== SchedulerResult.State.NO_VIABLE_CONFIGURATION) {
@@ -96,7 +75,7 @@ public class CentralizedResolver extends Process {
                 }
 
 
-               wait = period - previousDuration/1000;
+               wait = period - previousDuration;
                 if (wait > 0)
                     waitFor(wait);
 

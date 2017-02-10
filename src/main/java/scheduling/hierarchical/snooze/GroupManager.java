@@ -446,7 +446,7 @@ public class GroupManager extends Process {
         /* Compute and apply the plan */
         Collection<XHost> hostsToCheck = this.getManagedXHosts();
         Scheduler scheduler;
-        double previousDuration = 0;
+        double previousDuration = 0.0D;
         scheduler = SchedulerBuilder.getInstance().build(hostsToCheck);
         SchedulerResult schedulerResult = scheduler.checkAndReconfigure(hostsToCheck);
         previousDuration = schedulerResult.duration;

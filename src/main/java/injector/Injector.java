@@ -475,10 +475,12 @@ public class Injector extends Process {
                 System.err.println(e);
             }
         }
-        Msg.info("Gonna finalize the simulation...");
-        SimulatorManager.finalizeSimulation();
+
         if(SimulatorProperties.getEnergyLogFile() != null)
             SimulatorManager.writeEnergy(SimulatorProperties.getEnergyLogFile());
+
+        Msg.info("Gonna finalize the simulation...");
+        SimulatorManager.finalizeSimulation();
 
         Msg.info("Done");
 

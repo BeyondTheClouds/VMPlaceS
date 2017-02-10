@@ -13,7 +13,7 @@ public class Main {
         Msg.init(args);
 
         /* construct the platform and deploy the application */
-        Msg.createEnvironment("config/test_platform.xml");
+        Msg.createEnvironment("config/cluster_platform.xml");
         Msg.deployApplication("config/test_deploy.xml");
 
 	    /*  execute the simulation. */

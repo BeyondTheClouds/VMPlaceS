@@ -17,6 +17,7 @@ import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
 import org.simgrid.msg.HostFailureException;
 import org.simgrid.msg.Msg;
+import org.simgrid.msg.Process;
 import scheduling.AbstractScheduler;
 import simulation.SimulatorManager;
 
@@ -229,9 +230,9 @@ public class Entropy2RP extends AbstractScheduler {
         while(this.ongoingMigrations()){
             //while(this.ongoingMigrations() && !SimulatorManager.isEndOfInjection()){
             try {
-                org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
+                Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
-                if (watchDog%500==0){
+                if (watchDog%200==0){
                     Msg.info(String.format("You've already been waiting for %d seconds for migrations to end:", watchDog, getMigratingVMs()));
                     for(XVM vm: getMigratingVMs()) {
                         Msg.info("\t- " + vm);
@@ -239,6 +240,7 @@ public class Entropy2RP extends AbstractScheduler {
 
                     if(SimulatorManager.isEndOfInjection()){
                         Msg.info("Something wrong we are waiting too much, bye bye");
+                        Process.getCurrentProcess().exit();
                     }
                 }
             } catch (HostFailureException e) {

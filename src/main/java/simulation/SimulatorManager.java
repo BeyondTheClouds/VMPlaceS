@@ -19,8 +19,6 @@ import org.apache.commons.io.FileUtils;
 import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
-import org.simgrid.msg.MsgException;
-import scheduling.Scheduler;
 import scheduling.hierarchical.snooze.LocalController;
 import scheduling.hierarchical.snooze.Logger;
 import trace.Trace;
@@ -142,12 +140,11 @@ public class SimulatorManager {
         // Kill all VMs daemons in order to finalize the simulation correctly
         for (XVM vm : SimulatorManager.getSGVMs()) {
             Msg.info(vm.getName() + " load changes: "+vm.getNbOfLoadChanges() + "/ migrated: "+vm.getNbOfMigrations());
-            if(vm.isRunning())
+            if(vm.isRunning()) {
                 vm.getDaemon().kill();
+            }
         }
         Msg.info("Duration of the simulation in ms: "+(endTimeOfSimulation - beginTimeOfSimulation));
-        Msg.info(Daemon.n_daemon + " daemons are still running");
-
     }
 
     /**
@@ -715,7 +712,13 @@ public class SimulatorManager {
             if(SimulatorProperties.getAlgo().equals("centralized")) {
                 String implem = SimulatorProperties.getImplementation();
                 implem = implem.substring(implem.lastIndexOf('.') + 1, implem.length());
-                message = String.format(Locale.US, "%d %s %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), implem, SimulatorProperties.getHostsTurnoff(), energy);
+                message = String.format(Locale.US, "%d %s %s %b %d %f\n",
+                        SimulatorProperties.getNbOfHostingNodes(),
+                        SimulatorProperties.getAlgo(),
+                        implem,
+                        SimulatorProperties.getHostsTurnoff(),
+                        SimulatorProperties.getFfdThreshold(),
+                        energy);
             }
             else
                 message = String.format(Locale.US, "%d %s %b %f\n", SimulatorProperties.getNbOfHostingNodes(), SimulatorProperties.getAlgo(), SimulatorProperties.getHostsTurnoff(), energy);

@@ -44,14 +44,15 @@ public class Daemon extends Process {
         //   The load is a dummy computation of the speed of VM * 100
         // TODO please confirm whether getHost().getSpeed() returns the speed of one core or the speed of the sum of each core
         currentTask = new Task(this.getHost().getName()+"-daemon-0", this.getHost().getSpeed()*100.0, 0);
-        n_daemon++;
     }
     public void main(String[] args) throws MsgException {
         int i = 1;
 
         while(!SimulatorManager.isEndOfInjection()) {
             try {
+                Msg.info("I am computing");
                 currentTask.execute();
+                Msg.info("I am done");
             } catch (HostFailureException e) {
                 e.printStackTrace();
             } catch (TaskCancelledException e) {
@@ -65,11 +66,5 @@ public class Daemon extends Process {
 
     public double getRemaining(){
         return this.currentTask.getFlopsAmount();
-    }
-
-    public static int n_daemon = 0;
-
-    public void kill() {n_daemon--;
-        super.kill();
     }
 }

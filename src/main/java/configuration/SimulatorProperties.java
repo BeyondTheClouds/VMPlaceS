@@ -132,6 +132,8 @@ public class SimulatorProperties extends Properties {
 	public final static String VM_SUSPEND_PERIOD = "simulator.vm.suspendperiod";
 	public final static String VM_SUSPEND_DURATION = "simulator.vm.suspendduration";
 
+	public final static String FFD_THRESHOLD = "simulator.ffd.threshold";
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Property default values
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -186,6 +188,8 @@ public class SimulatorProperties extends Properties {
 	private static final boolean DEFAULT_VMS_SUSPEND = false;
 	public final static int DEFAULT_VM_SUSPEND_PERIOD = 3600;  // in sec => 1 hour
 	public final static int DEFAULT_VM_SUSPEND_DURATION = 3600;  // in sec => 1 hour
+
+	public final static int DEFAULT_FFD_THRESHOLD = 100;
 
 
 
@@ -390,6 +394,10 @@ public class SimulatorProperties extends Properties {
 
 	public static String getEnergyLogFile() {
 		return INSTANCE.getProperty(ENERGY_LOG_FILE, null);
+	}
+
+	public static int getFfdThreshold() {
+		return INSTANCE.getPropertyAsInt(FFD_THRESHOLD, DEFAULT_FFD_THRESHOLD);
 	}
 
 	public static String getVirtualNodesNamesFile(){

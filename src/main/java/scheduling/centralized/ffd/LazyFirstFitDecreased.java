@@ -8,6 +8,7 @@ import simulation.SimulatorManager;
 import java.util.*;
 
 public class LazyFirstFitDecreased extends FirstFitDecreased {
+    private float threshold = 1.0F;
 
     public LazyFirstFitDecreased(Collection<XHost> hosts) {
         this(hosts, new Random(SimulatorProperties.getSeed()).nextInt());
@@ -15,6 +16,7 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
 
     public LazyFirstFitDecreased(Collection<XHost> hosts, Integer id) {
         super(hosts, id);
+        this.threshold = SimulatorProperties.getFfdThreshold() / 100;
     }
 
     @Override
@@ -32,7 +34,7 @@ public class LazyFirstFitDecreased extends FirstFitDecreased {
         for(XHost host : overloadedHosts) {
             Iterator<XVM> vms = host.getRunnings().iterator();
 
-            while((host.getCPUCapacity() < predictedCPUDemand.get(host) ||
+            while((host.getCPUCapacity() * threshold < predictedCPUDemand.get(host) ||
                     host.getMemSize() < predictedMemDemand.get(host)) && vms.hasNext()) {
                 XVM vm = vms.next();
                 toSchedule.add(vm);

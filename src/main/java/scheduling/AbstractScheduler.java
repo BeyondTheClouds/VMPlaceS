@@ -4,6 +4,7 @@ import configuration.SimulatorProperties;
 import configuration.XHost;
 import configuration.XVM;
 import org.simgrid.msg.*;
+import org.simgrid.msg.Process;
 import simulation.SimulatorManager;
 import trace.Trace;
 
@@ -118,7 +119,7 @@ public abstract class AbstractScheduler implements Scheduler {
         computingResult = this.computeReconfigurationPlan();
 
         /* Tracing code */
-        double computationTimeAsDouble = ((double) computingResult.duration) / 1000;
+        double computationTimeAsDouble = computingResult.duration / 1000;
 
         int partitionSize = hostsToCheck.size();
 
@@ -128,7 +129,7 @@ public abstract class AbstractScheduler implements Scheduler {
 
 
         try {
-            org.simgrid.msg.Process.sleep(computingResult.duration); // instead of waitFor that takes into account only seconds
+            Process.getCurrentProcess().waitFor(computingResult.duration / 1000); // instead of waitFor that takes into account only seconds
         } catch (HostFailureException e) {
             e.printStackTrace();
         }
@@ -153,8 +154,8 @@ public abstract class AbstractScheduler implements Scheduler {
             this.applyReconfigurationPlan();
             double endReconfigurationTime = Msg.getClock();
             reconfigurationTime = (endReconfigurationTime - startReconfigurationTime);
-            Msg.info("Reconfiguration time (in ms): " + reconfigurationTime);
-            enRes.duration += reconfigurationTime;
+            Msg.info("Reconfiguration time (in ms): " + reconfigurationTime * 1000);
+            enRes.duration += reconfigurationTime * 1000;
             Msg.info("Number of nodes used: " + hostsToCheck.size());
 
             enRes.state = this.rpAborted ?

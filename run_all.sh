@@ -15,13 +15,14 @@ trap do_abort SIGINT
 
 error=0
 
-# run <nb nodes> <algo> <implem>
+# run <nb nodes> <algo> <implem> <turn off> <threshold>
 # Ex: run 128 centralized scheduling.centralized.entropy2.Entropy2RP
 function run() {
 	n_nodes=$1
 	algo=$2
 	implem=$3
 	turn_off=$4
+	threshold=100
 
 	if [ "$3" != "none" ]
 	then
@@ -33,6 +34,12 @@ function run() {
 	else
 		implem=''
 		name="${algo}-${n_nodes}-${turn_off}"
+	fi
+
+	if [ ! -z "$5" ]
+	then
+		threshold="$5"
+		name="${name}-${threshold}"
 	fi
 
 	n_service='1'
@@ -61,6 +68,7 @@ function run() {
 	SIM_ARGS="$SIM_ARGS -Dhosts.turn_off=$turn_off"
 	SIM_ARGS="$SIM_ARGS -Dload.mean=$mean"
 	SIM_ARGS="$SIM_ARGS -Dload.std=$std"
+	SIM_ARGS="$SIM_ARGS -Dsimulator.ffd.threshold=$threshold"
 
 	echo '----------------------------------------'
 	echo "Running $algo $implem with $n_nodes compute and $n_service service nodes turning off hosts: $turn_off, load.mean=$mean, load.std=$std"
@@ -90,6 +98,7 @@ function run() {
 
 # Number of hosting nodes
 nodes='64'
+thresholds='100 90 80 70 60 50'
 abort=0
 
 rm -rf logs/ffd
@@ -98,21 +107,20 @@ rm -i energy.dat
 {
 	for n in $nodes; do
 		run $n centralized scheduling.centralized.entropy2.Entropy2RP false
-		run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased false
-		run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased false
-
 		run $n centralized scheduling.centralized.entropy2.Entropy2RP true
-		run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased true
-		run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased true
 
-		#run $n hierarchical false
+#		run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased false
+#		run $n centralized scheduling.centralized.ffd.OptimisticFirstFitDecreased true
 
-		#run $n distributed false
+		for th in $thresholds; do
+			run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased false $th
+			run $n centralized scheduling.centralized.ffd.LazyFirstFitDecreased true $th
+		done
 	done
 } 2>&1 | tee run_all.log
 
 
 if [ ! $error ]
-	then
-		visu/energy_plot.py run_all.log energy.dat
-	fi
+then
+	visu/energy_plot.py run_all.log energy.dat
+fi

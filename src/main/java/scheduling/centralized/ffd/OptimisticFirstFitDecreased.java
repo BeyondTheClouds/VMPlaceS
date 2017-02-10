@@ -48,31 +48,6 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
             }
         }
 
-        /*
-        try {
-            File file = new File("logs/ffd/to_schedule/" + super.iteration + ".txt");
-            file.getParentFile().mkdirs();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-
-            for(XHost h: overloadedHosts) {
-                writer.write(h.getName());
-                writer.write('\n');
-            }
-
-            for(XVM vm: toSchedule) {
-                writer.write(vm.toString());
-                writer.write('\n');
-            }
-
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            System.err.println("Could not write FFD log");
-            e.printStackTrace();
-            System.exit(5);
-        }
-        */
-
         for(XVM vm: toSchedule) {
             XHost dest = null;
 
@@ -90,7 +65,7 @@ public class OptimisticFirstFitDecreased extends FirstFitDecreased {
                 return;
             }
 
-            if(predictedCPUDemand.get(dest) >= dest.getCPUCapacity())
+            if(predictedCPUDemand.get(dest) >dest.getCPUCapacity()) // FIXME remove
                 System.out.println("!!");
             // Schedule the migration
             predictedCPUDemand.put(dest, predictedCPUDemand.get(dest) + vm.getCPUDemand());

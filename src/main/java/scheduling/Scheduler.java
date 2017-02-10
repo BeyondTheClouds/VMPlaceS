@@ -44,9 +44,12 @@ public interface Scheduler {
         public int nbMigrations;
 
         /**
-         * Duration of the computing process
+         * Duration of the computing process in milliseconds
+         * This is double in order to avoid rounding errors when casting double to long.
+         * Instead, we cleanly cast long to double without loss of precision.
+         *
          */
-        public long duration;
+        public double duration;
 
         /**
          * 	The cost of the reconfiguration plan.
@@ -54,14 +57,22 @@ public interface Scheduler {
         protected int planCost;
 
         public ComputingResult(State state, long duration, int nbMigrations, int planCost) {
+            this(state, (double) duration, nbMigrations, planCost);
+        }
+
+        public ComputingResult(State state, double duration, int nbMigrations, int planCost) {
             this.state = state;
             this.duration = duration;
             this.nbMigrations = nbMigrations;
             this.planCost = planCost;
         }
 
-        public ComputingResult(State state, long duration) {
+        public ComputingResult(State state, double duration) {
             this(state, duration, 0, 0);
+        }
+
+        public ComputingResult(State state, long duration) {
+            this(state, (double) duration, 0, 0);
         }
 
         public ComputingResult() { this(State.SUCCESS, 0, 0, 0); }

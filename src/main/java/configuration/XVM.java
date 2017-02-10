@@ -23,8 +23,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static scheduling.centralized.ffd.FirstFitDecreased.iteration;
-
 public class XVM {
 
     /**
@@ -152,25 +150,6 @@ public class XVM {
         }
         currentLoadDemand = expectedLoad ;
         NbOfLoadChanges++;
-
-
-        try {
-            File file = new File("logs/xvm_set_load.txt");
-            file.getParentFile().mkdirs();
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file, true));
-
-            writer.write(String.format("%.3f\t%s\t%f",
-                    Msg.getClock(),
-                    getName(),
-                    expectedLoad) + '\n');
-
-            writer.flush();
-            writer.close();
-        } catch (IOException e) {
-            System.err.println("Could not write log");
-            e.printStackTrace();
-            System.exit(5);
-        }
     }
 
     // TODO c'est crade
