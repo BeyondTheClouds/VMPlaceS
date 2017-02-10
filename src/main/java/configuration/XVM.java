@@ -226,7 +226,7 @@ public class XVM {
                 // This value can be then use at highler level to check whether the reconfiguration plan has been aborted or not.
             }
         } else {
-            Msg.info("You are trying to migrate " + vm.getName() + " twice... it is impossible ! Byebye");
+            Msg.info("-----You are trying to migrate " + vm.getName() + " twice... it is impossible ! Byebye");
             //throw new DoubleMigrationException();
             System.exit(12);
         }
