@@ -948,12 +948,13 @@ public class SimulatorManager extends Process{
 
         // Start process,
         // first the injector
-        Injector injector=new Injector(Host.getByName(SimulatorManager.getInjectorNodeName()),"Injector", null);
+        Injector injector=new Injector(Host.getByName(SimulatorManager.getInjectorNodeName()),"Injector");
         injector.start();
 
         //Second the scheduler
+        SimulatorManager.setSchedulerActive(false);
         if(SimulatorProperties.getAlgo().equals("centralized")){
-            CentralizedResolver centralizedResolver=new CentralizedResolver(Host.getByName("node"+SimulatorProperties.getNbOfHostingNodes()), "CentralizedResolver", null);
+            CentralizedResolver centralizedResolver=new CentralizedResolver(Host.getByName("node"+SimulatorProperties.getNbOfHostingNodes()), "CentralizedResolver");
             centralizedResolver.start();
         } else if(SimulatorProperties.getAlgo().equals("hierarchical")){
             // TODO Adrien for Anthony, Feb 10th 2017
@@ -971,7 +972,7 @@ public class SimulatorManager extends Process{
             //  Msg.info(String.format("Waiting for timeout (%d seconds)", 4));
 
             try {
-                waitFor(1000);
+                waitFor(100);
             } catch (Exception e) {
                 System.err.println(e);
             }

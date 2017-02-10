@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Random;
 
 public class Migrator extends Process {
-    private static final int SIMULATION_TIME = 3600 * 1;
+    private static final int SIMULATION_TIME = 360000 * 1;
     private static final int N_HOSTS = 64;
     private static final int N_VMS = N_HOSTS * 10;
     private static final float MIG_RATE = 0.2F;
@@ -115,7 +115,7 @@ public class Migrator extends Process {
                 m.src.migrate(m.vm.getName(), m.dest);
             }
 
-            waitFor(50);
+            waitFor(10);
         }
 
         Msg.info("End of injection");

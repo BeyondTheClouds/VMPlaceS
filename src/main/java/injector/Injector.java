@@ -28,8 +28,8 @@ public class Injector extends Process {
     private Deque<FaultEvent> faultQueue = null ;
     private Deque<VMSuspendResumeEvent> vmSuspendResumeQueue = null ;
 
-    public Injector(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
-        super(host, name, args);
+    public Injector(Host host, String name) throws HostNotFoundException, NativeException  {
+        super(host, name);
 
         // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
@@ -47,6 +47,7 @@ public class Injector extends Process {
         System.out.println(String.format("Size of event queues: load: %d, faults: %d, vm suspend: %d", loadQueue.size(), faultQueue.size(), vmSuspendResumeQueue.size()));
         evtQueue = mergeQueues(loadQueue,faultQueue, vmSuspendResumeQueue);
         // System.out.println("Size of event queue:"+evtQueue.size());
+
     }
 
 
