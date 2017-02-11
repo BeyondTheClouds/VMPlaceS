@@ -1,9 +1,6 @@
 package test;
 
-import configuration.SimulatorProperties;
-import configuration.VMClasses;
-import configuration.XHost;
-import configuration.XVM;
+import configuration.*;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
 import simulation.SimulatorManager;
@@ -13,10 +10,14 @@ import java.util.List;
 import java.util.Random;
 
 public class Migrator extends Process {
-    private static final int SIMULATION_TIME = 360000 * 1;
+    private static final int SIMULATION_TIME = 3600 * 1;
     private static final int N_HOSTS = 64;
     private static final int N_VMS = N_HOSTS * 10;
-    private static final float MIG_RATE = 0.2F;
+    private static final float MIG_RATE = .8F;
+
+    public XHost hosts[] = new XHost[N_HOSTS];
+
+    private int nMigrations = 0;
 
     private Random r = new Random(42);
 
@@ -29,7 +30,6 @@ public class Migrator extends Process {
         // Get the hosts
         int nodeMemCons[] = new int[N_HOSTS];
         int nodeCpuCons[] = new int[N_HOSTS];
-        XHost hosts[] = new XHost[N_HOSTS];
 
         // Hosting hosts
         for(int i = 0 ; i < N_HOSTS; i ++){
@@ -48,6 +48,7 @@ public class Migrator extends Process {
         XVM vms[] = new XVM[N_VMS];
         int iVM = 0;
         int iHost = 0;
+        Random r = new Random(42);
 
         for(int i = 0; i < N_VMS; i++) {
             VMClasses.VMClass vmClass = VMClasses.CLASSES.get(r.nextInt(VMClasses.CLASSES.size()));
@@ -67,7 +68,7 @@ public class Migrator extends Process {
 
             // Creation of the VM
             XVM vm = new XVM(hosts[iHost], "vm-" + iVM, vmClass.getNbOfCPUs(), vmClass.getMemSize(),
-                vmClass.getNetBW(), null, -1, vmClass.getMigNetBW(), vmClass.getMemIntensity());
+                    vmClass.getNetBW(), null, -1, vmClass.getMigNetBW(), vmClass.getMemIntensity());
 
             vms[iVM] = vm;
             iVM++;
@@ -86,6 +87,7 @@ public class Migrator extends Process {
                 System.out.print(vm.getName() + ' ');
             System.out.println();
         }
+
 
         // Start the big loop
         int round = 0;
@@ -112,10 +114,38 @@ public class Migrator extends Process {
 
             // Perform the migrations
             for(Migration m: migrations) {
-                m.src.migrate(m.vm.getName(), m.dest);
+                try {
+                    String[] args = new String[] {
+                        m.vm.getName(),
+                        m.src.getName(),
+                        m.dest.getName()
+                    };
+
+                    new org.simgrid.msg.Process(m.src.getSGHost(), "Migrate-"+ m.vm.getName() + "-" + r.nextInt(), args) {
+                        public void main(String[] args) {
+
+                            try {
+                                Msg.info(String.format("Migrating %s from %s to %s", m.vm.getName(), m.src.getName(), m.dest.getName()));
+                                nMigrations++;
+                                m.vm.migrate(m.dest);
+                                nMigrations--;
+                            } catch (HostFailureException e) {
+                                e.printStackTrace();
+                            } catch (DoubleMigrationException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    }.start();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
-            waitFor(10);
+            while(nMigrations > 0) {
+                waitFor(10);
+            }
+            waitFor(50);
         }
 
         Msg.info("End of injection");

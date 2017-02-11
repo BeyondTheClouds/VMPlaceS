@@ -405,7 +405,7 @@ public class Injector extends Process {
     }
 
     public void main(String[] args) throws MsgException{
-        main2(args);
+        //main2(args);
     }
 
     /* Args : nbPMs nbVMs eventFile */
