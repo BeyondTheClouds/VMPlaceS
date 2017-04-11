@@ -22,19 +22,12 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.util.StatusPrinter;
 import configuration.SimulatorProperties;
 import configuration.XHost;
-import org.simgrid.msg.Host;
 import org.simgrid.msg.Msg;
-import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Date;
-import java.util.Locale;
 
 import scheduling.hierarchical.snooze.AUX;
 import trace.Trace;
@@ -46,9 +39,8 @@ public class Main {
      * The Simulator launcher
      *
      * @param args
-     * @throws NativeException
      */
-    public static void main(String[] args) throws NativeException {
+    public static void main(String[] args) {
 
 
         /*

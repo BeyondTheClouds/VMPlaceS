@@ -6,12 +6,10 @@ import org.simgrid.msg.Host;
 import org.simgrid.msg.HostNotFoundException;
 import org.simgrid.msg.Msg;
 import org.simgrid.msg.MsgException;
-import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
 import scheduling.hierarchical.snooze.SnoozeProperties;
 import trace.Trace;
 
-import scheduling.centralized.entropy2.EntropyProperties;
 import simulation.*;
 
 import java.io.BufferedWriter;
@@ -28,9 +26,8 @@ public class Injector extends Process {
     private Deque<FaultEvent> faultQueue = null ;
     private Deque<VMSuspendResumeEvent> vmSuspendResumeQueue = null ;
 
-    public Injector(Host host, String name) throws HostNotFoundException, NativeException  {
+    public Injector(Host host, String name) throws HostNotFoundException {
         super(host, name);
-
         // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
         //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());

@@ -24,7 +24,7 @@ public class LocalController extends Process {
     private String lcCharge; // GM mbox
     private boolean joining = true;
 
-    public LocalController (Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
+    public LocalController (Host host, String name, String[] args) throws HostNotFoundException {
         super(host, name, args);
     }
 
