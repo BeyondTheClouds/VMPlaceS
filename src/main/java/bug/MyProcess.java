@@ -4,10 +4,9 @@ import configuration.XHost;
 import configuration.XVM;
 import org.simgrid.msg.*;
 import org.simgrid.msg.Process;
-import simulation.SimulatorManager;
 
 public class MyProcess extends Process {
-    public MyProcess(Host host, String name, String[] args) throws NativeException, HostNotFoundException {
+    public MyProcess(Host host, String name, String[] args) throws HostNotFoundException {
         super(host, name, args);
     }
 

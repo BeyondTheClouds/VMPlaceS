@@ -1,14 +1,13 @@
 package test;
 
 import org.simgrid.msg.Msg;
-import org.simgrid.msg.NativeException;
 import org.simgrid.msg.Process;
 
 import java.util.Date;
 
 
 public class Main {
-    public static void main(String[] args) throws NativeException {
+    public static void main(String[] args) {
         Msg.energyInit();
         Msg.init(args);
 

@@ -14,7 +14,7 @@ public class DistributedResolver extends Process {
 
     private String name;
 
-    DistributedResolver(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
+    DistributedResolver(Host host, String name, String[] args) throws HostNotFoundException {
         super(host, name, args);
         this.name = name;
     }

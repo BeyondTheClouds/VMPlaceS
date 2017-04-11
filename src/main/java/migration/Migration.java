@@ -33,9 +33,8 @@ public class Migration {
      * The Simulator launcher
      *
      * @param args
-     * @throws NativeException
      */
-    public static void main(String[] args) throws NativeException {
+    public static void main(String[] args) {
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         StatusPrinter.print(lc);
 

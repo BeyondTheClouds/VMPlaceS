@@ -59,7 +59,7 @@ public class Test extends Process {
 
     void procAddGMs() throws HostNotFoundException {
         new Process(host, host.getName() + "-addGMs") {
-            public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
+            public void main(String[] args) throws HostFailureException, HostNotFoundException {
                 try {
                     int lcNo = SimulatorProperties.getNbOfHostingNodes(); // no. of statically allocated LCs
                     int gmNo = SimulatorProperties.getNbOfServiceNodes(); // no. of statically allocated GMs
@@ -83,7 +83,7 @@ public class Test extends Process {
 
     void procAddLCs() throws HostNotFoundException {
         new Process(host, host.getName() + "-addLCs") {
-            public void main(String[] args) throws HostFailureException, HostNotFoundException, NativeException {
+            public void main(String[] args) throws HostFailureException, HostNotFoundException {
                 try {
                     sleep(6000);
                     int lcNo = 0; // no. of statically allocated LCs

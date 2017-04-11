@@ -12,7 +12,7 @@ import scheduling.hierarchical.snooze.*;
 public class HierarchicalResolver extends Process {
 
 
-    HierarchicalResolver(Host host, String name, String[] args) throws HostNotFoundException, NativeException {
+    HierarchicalResolver(Host host, String name, String[] args) throws HostNotFoundException {
         super(host, name, args);
     }
 

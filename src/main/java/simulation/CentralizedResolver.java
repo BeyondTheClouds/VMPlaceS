@@ -18,7 +18,7 @@ public class CentralizedResolver extends Process {
 
     static int loopID = 0 ;
 
-    CentralizedResolver(Host host, String name, String[] args) throws HostNotFoundException, NativeException  {
+    CentralizedResolver(Host host, String name, String[] args) throws HostNotFoundException {
 		super(host, name, args);
 	}
 
