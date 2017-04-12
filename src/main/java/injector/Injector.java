@@ -10,13 +10,16 @@ import org.simgrid.msg.Process;
 import scheduling.hierarchical.snooze.SnoozeProperties;
 import trace.Trace;
 
+import scheduling.centralized.entropy2.EntropyProperties;
 import simulation.*;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class Injector extends Process {
@@ -26,8 +29,54 @@ public class Injector extends Process {
     private Deque<FaultEvent> faultQueue = null ;
     private Deque<VMSuspendResumeEvent> vmSuspendResumeQueue = null ;
 
+    private Set<Period> loadPeriods = null;
+    private Period defaultPeriod = null;
+
     public Injector(Host host, String name) throws HostNotFoundException {
         super(host, name);
+
+        // if there is a period file for load
+        if(SimulatorProperties.getLoadFile() != null) {
+            try {
+                loadPeriods = new HashSet<Period>();
+                BufferedReader reader = new BufferedReader(new FileReader(SimulatorProperties.getLoadFile()));
+                String line = null;
+                Pattern p = Pattern.compile("\\[(\\w+)\\s+begin:\\s*(\\d{2}:\\d{2}|\\d+),\\s*end:\\s*(\\d{2}:\\d{2}|\\d+),\\s*mean:\\s*(\\d+),\\s*stddev:\\s*(\\d+)\\]");
+
+                while((line = reader.readLine()) != null) {
+                    Matcher m = p.matcher(line);
+                    if(!m.matches())
+                        throw new IllegalArgumentException("Could not parse this line:\n" + line);
+
+                    Period period = new Period();
+                    period.name = m.group(1);
+                    period.begin = timeToSeconds(m.group(2));
+                    period.end = timeToSeconds(m.group(3));
+                    period.mean = Double.parseDouble(m.group(4));
+                    period.stddev = Double.parseDouble(m.group(5));
+                    loadPeriods.add(period);
+                }
+            } catch (Exception e) {
+                Msg.error("Injector error while reading load periods");
+                Msg.error(e.toString());
+                e.printStackTrace();
+                System.exit(1);
+            }
+
+            if(loadPeriods.size() == 0)
+                Msg.warn("The load periods file you provided does not contain any value");
+            else {
+                Msg.info("Loaded " + loadPeriods.size() + " periods from " + SimulatorProperties.getLoadFile());
+                for(Period p: loadPeriods)
+                    Msg.info(p.toString());
+            }
+        }
+
+        defaultPeriod = new Period();
+        defaultPeriod.name = "default";
+        defaultPeriod.mean = SimulatorProperties.getMeanLoad();
+        defaultPeriod.stddev = SimulatorProperties.getStandardDeviationLoad();
+
         // System.out.println("Create the event queues");
         loadQueue = generateLoadQueue(SimulatorManager.getSGVMs().toArray(new XVM[SimulatorManager.getSGVMs().size()]), SimulatorProperties.getDuration(), SimulatorProperties.getLoadPeriod());
         //System.out.println("Size of getCPUDemand queue:"+loadQueue.size());
@@ -55,7 +104,7 @@ public class Injector extends Process {
      * @param injectionPeriod int,  frequency of event occurrence in seconds
      * @return the queue of the VM changes
      */
-    public static Deque<LoadEvent> generateLoadQueue(XVM[] vms, long duration, int injectionPeriod) {
+    public Deque<LoadEvent> generateLoadQueue(XVM[] vms, long duration, int injectionPeriod) {
 
         LinkedList<LoadEvent> eventQueue = new LinkedList<LoadEvent>();
         Random randExpDis=new Random(SimulatorProperties.getSeed());
@@ -63,9 +112,6 @@ public class Injector extends Process {
         double lambdaPerVM=1.0/injectionPeriod ; // Nb Evt per VM (average)
 
         Random randGaussian=new Random(SimulatorProperties.getSeed());
-
-        double mean = SimulatorProperties.getMeanLoad();
-        double sigma = SimulatorProperties.getStandardDeviationLoad();
 
         double gLoad = 0;
 
@@ -83,37 +129,87 @@ public class Injector extends Process {
         Random randVMPicker = new Random(SimulatorProperties.getSeed());
         int nbOfVMs = vms.length;
 
+        // DEBUG
+        try {
+            Files.deleteIfExists(Paths.get("logs/load-events.txt"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        // END DEBUG
+
+        try(BufferedWriter writer = new BufferedWriter(new FileWriter("logs/load-events.txt", true)))
+        {
+
         while(currentTime < duration){
-            //   if( !skipOverlappingEvent || ((int)currentTime) % EntropyProperties.getEntropyPeriodicity() != 0){
+            Period p = getPeriodAt(currentTime);
             // select a VM
             tempVM = vms[randVMPicker.nextInt(nbOfVMs)];
-            // and change its state
 
             int cpuConsumptionSlot = maxCPUDemand/nbOfCPUDemandSlots;
 
             /* Gaussian law for the getCPUDemand assignment */
-            gLoad = Math.max((randGaussian.nextGaussian()*sigma)+mean, 0);
+            gLoad = Math.max((randGaussian.nextGaussian() * p.stddev) + p.mean, 0);
             int slot= (int) Math.round(Math.min(100,gLoad)*nbOfCPUDemandSlots/100);
 
             vmCPUDemand = slot*cpuConsumptionSlot*(int)tempVM.getCoreNumber();
 
-            // Add a new event queue
-            eventQueue.add(new LoadEvent(id++, currentTime,tempVM, vmCPUDemand));
-            //  }
+            // Add a new event to the queue
+            LoadEvent le = new LoadEvent(id++, currentTime,tempVM, vmCPUDemand);
+            eventQueue.add(le);
+
+            // DEBUG
+            writer.write(le.toString() + " (" + p.name + ")\n");
+            // END DEBUG
+
             currentTime+=exponentialDis(randExpDis, lambda);
-            //        System.err.println(eventQueue.size());
         }
+        } catch (IOException ioe) {
+            ioe.printStackTrace();
+            System.exit(34);
+        }
+
         Msg.info("Number of events:"+eventQueue.size());
         return eventQueue;
     }
 
+    /**
+     * Returns a time in seconds from two possible formats:
+     * <ul>
+     *     <li>A number of seconds from the beginning of the simulation</li>
+     *     <li>A string of in the 'hh:mm' format</li>
+     * </ul>
+     * @param str either a number of seconds or 'hh:mm'
+     * @return the time as a number of seconds
+     */
+    private double timeToSeconds(String str) {
+        try {
+            return Double.parseDouble(str);
+        } catch(NumberFormatException nfe) {
+            String[] ar = str.split(":");
+            return Integer.parseInt(ar[0]) * 3600 + Integer.parseInt(ar[1]) * 60;
+        }
+    }
+
+    private Period getPeriodAt(double time) {
+        Period current = null;
+
+        for(Period p: loadPeriods) {
+            if(time >= p.begin && time < p.end) {
+                current = p;
+                break;
+            }
+        }
+
+        return (current != null)? current:defaultPeriod;
+    }
+
     /* Compute the next exponential value for rand */
-    private static double exponentialDis(Random rand, double lambda) {
+    private double exponentialDis(Random rand, double lambda) {
         return -Math.log(1 - rand.nextDouble()) / lambda;
     }
 
 
-    public static Deque<FaultEvent> generateSnoozeFaultQueue(XHost[] xhosts,  long duration) {
+    public Deque<FaultEvent> generateSnoozeFaultQueue(XHost[] xhosts,  long duration) {
         LinkedList<FaultEvent> faultQueue = new LinkedList<FaultEvent>();
         long id=0;
         XHost tempHost;
@@ -196,7 +292,7 @@ public class Injector extends Process {
 
     }
 
-    public static Deque<FaultEvent> generateFaultQueue(XHost[] xhosts,  long duration, int faultPeriod){
+    public Deque<FaultEvent> generateFaultQueue(XHost[] xhosts,  long duration, int faultPeriod){
         LinkedList<FaultEvent> faultQueue = new LinkedList<FaultEvent>();
         Random randExpDis=new Random(SimulatorProperties.getSeed());
         double currentTime = 0 ;
@@ -254,7 +350,7 @@ public class Injector extends Process {
     }
 
 
-    public static Deque<VMSuspendResumeEvent> generateVMFluctuationQueue(XVM[] xvms,  long duration, int faultPeriod){
+    public Deque<VMSuspendResumeEvent> generateVMFluctuationQueue(XVM[] xvms,  long duration, int faultPeriod){
         LinkedList<VMSuspendResumeEvent> vmQueue = new LinkedList<VMSuspendResumeEvent>();
         Random randExpDis=new Random(SimulatorProperties.getSeed());
         double currentTime = 0 ;
@@ -305,7 +401,7 @@ public class Injector extends Process {
     }
 
 
-    public static boolean isStillOff(XHost tmp, LinkedList<FaultEvent> queue, double currentTime, double crashDuration){
+    public boolean isStillOff(XHost tmp, LinkedList<FaultEvent> queue, double currentTime, double crashDuration){
         ListIterator<FaultEvent> iterator = queue.listIterator(queue.size());
         while(iterator.hasPrevious()){
             FaultEvent evt = iterator.previous();
@@ -323,7 +419,7 @@ public class Injector extends Process {
 
     // if the node is off, we should remove the next On event and postpone it at currenttime +crashDuration
     // Note that the update is performed in the upper function.
-    private static boolean ifStillOffUpdate(XHost tmp, LinkedList<FaultEvent> queue, double currentTime){
+    private boolean ifStillOffUpdate(XHost tmp, LinkedList<FaultEvent> queue, double currentTime){
         ListIterator<FaultEvent> iterator = queue.listIterator(queue.size());
         while(iterator.hasPrevious()){
             FaultEvent evt = iterator.previous();
@@ -343,7 +439,7 @@ public class Injector extends Process {
 
     // If the VM is suspended, we should remove the next resume event and postpone it at currenttime +crashDuration
     // Note that the update is performed in the upper function.
-    private static boolean ifStillSuspendedUpdate(XVM tmp, LinkedList<VMSuspendResumeEvent> queue, double currentTime){
+    private boolean ifStillSuspendedUpdate(XVM tmp, LinkedList<VMSuspendResumeEvent> queue, double currentTime){
         ListIterator<VMSuspendResumeEvent> iterator = queue.listIterator(queue.size());
 
         while(iterator.hasPrevious()) {
@@ -363,7 +459,7 @@ public class Injector extends Process {
         return false;
     }
 
-    public static Deque<InjectorEvent> mergeQueues(Deque<LoadEvent> loadQueue,
+    public Deque<InjectorEvent> mergeQueues(Deque<LoadEvent> loadQueue,
                                                    Deque<FaultEvent> faultQueue,
                                                    Deque<VMSuspendResumeEvent> vmEvents) {
         LinkedList<InjectorEvent> queue = new LinkedList<InjectorEvent>();
@@ -383,7 +479,7 @@ public class Injector extends Process {
         return queue;
     }
 
-    private static void writeEventQueue(LinkedList<InjectorEvent> queue) {
+    private void writeEventQueue(LinkedList<InjectorEvent> queue) {
 
         try {
             File file = new File("logs/events-queue.txt");
@@ -437,5 +533,27 @@ public class Injector extends Process {
 
     private InjectorEvent nextEvent() {
         return this.evtQueue.pollFirst();
+    }
+}
+
+class Period {
+    String name = null;
+    double begin = 0.0D;
+    double end = 0.0D;
+    double mean = 0.0D;
+    double stddev = 0.0D;
+
+    public int hashCode() {
+        return name.hashCode();
+    }
+
+    public String toString() {
+        return String.format("[period name: %s, begin: %.0f, end: %.0f, mean: %.2f, stddev: %.2f]",
+                name,
+                begin,
+                end,
+                mean,
+                stddev
+        );
     }
 }

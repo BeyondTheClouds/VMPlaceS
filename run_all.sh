@@ -55,7 +55,7 @@ function run() {
 			;;
 	esac
 
-	n_vms=$(($n_nodes * 10))
+	n_vms=$(($n_nodes * 8))
 	mean=60
 	std=20
 
@@ -64,11 +64,14 @@ function run() {
 	SIM_ARGS="$SIM_ARGS -Dservicenodes.number=$n_service"
 	SIM_ARGS="$SIM_ARGS -Dvm.number=$n_vms"
 	SIM_ARGS="$SIM_ARGS -Dhostingnodes.cpunumber=8"
+	SIM_ARGS="$SIM_ARGS -Dhostingnodes.cpucapacity=800"
 	SIM_ARGS="$SIM_ARGS -Dhostingnodes.memorytotal=32768"
 	SIM_ARGS="$SIM_ARGS -Dhosts.turn_off=$turn_off"
 	SIM_ARGS="$SIM_ARGS -Dload.mean=$mean"
 	SIM_ARGS="$SIM_ARGS -Dload.std=$std"
 	SIM_ARGS="$SIM_ARGS -Dsimulator.ffd.threshold=$threshold"
+	SIM_ARGS="$SIM_ARGS -Dload.file=config/5_hours.txt"
+	SIM_ARGS="$SIM_ARGS -Dimulator.duration=18000"
 
 	echo '----------------------------------------'
 	echo "Running $algo $implem with $n_nodes compute and $n_service service nodes turning off hosts: $turn_off, load.mean=$mean, load.std=$std"

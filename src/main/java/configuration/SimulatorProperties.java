@@ -100,7 +100,8 @@ public class SimulatorProperties extends Properties {
 
 	public final static String MEAN_LOAD = "load.mean";
 	public final static String STD_LOAD = "load.std";
-	
+	public final static String LOAD_FILE = "load.file";
+
 	
 	public final static String SIMULATION = "simulation";
 	public final static String MONITORING = "monitoring";
@@ -372,6 +373,10 @@ public class SimulatorProperties extends Properties {
 	
 	public static double getStandardDeviationLoad(){
 		return Double.parseDouble(INSTANCE.getProperty(STD_LOAD, DEFAULT_STD_LOAD));
+	}
+
+	public static String getLoadFile() {
+		return INSTANCE.getProperty(LOAD_FILE, null);
 	}
 
 	public static boolean getSuspendVMs() {
