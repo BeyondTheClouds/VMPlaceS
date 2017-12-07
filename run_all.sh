@@ -65,6 +65,9 @@ function run() {
 	echo '----------------------------------------'
 	echo "Running $algo $implem with $n_nodes compute and $n_service service nodes turning off hosts: $turn_off, load.mean=$mean, load.std=$std"
 	echo "Command: java $VM_OPTIONS $SIM_ARGS simulation.Main $PROGRAM_ARGUMENTS"
+	echo "Command: VM_OPTIONS $VM_OPTIONS"
+	echo "Command: SIM_ARGS $SIM_ARGS"
+	echo "Command: PROGRAM_ARGUMENTS $PROGRAM_ARGUMENTS"
 	echo '----------------------------------------'
 	java $VM_OPTIONS $SIM_ARGS simulation.Main $PROGRAM_ARGUMENTS &
 	pid=$!

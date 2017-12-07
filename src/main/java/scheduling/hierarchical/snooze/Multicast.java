@@ -197,7 +197,7 @@ public class Multicast extends Process {
             GroupLeader gl = new GroupLeader(Host.currentHost(), "groupLeader");
             try {
                 gl.start();
-            } catch (HostNotFoundException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             Test.gl = gl;

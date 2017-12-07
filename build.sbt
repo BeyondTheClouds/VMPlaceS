@@ -13,6 +13,8 @@ crossPaths := false
 
 retrieveManaged := true
 
+javacOptions += "-Xlint:unchecked"
+
 libraryDependencies ++= Seq(
   "org.btrplace" % "scheduler-api" % "0.42",
   "org.btrplace" % "scheduler-choco" % "0.42",

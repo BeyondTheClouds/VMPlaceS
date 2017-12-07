@@ -29,7 +29,7 @@ public class ThreadPool {
                 w.start();
                 Logger.debug("[ThreadPool] Worker created: " + i + ", " + Host.currentHost()
                         + ", " + owner.getClass().getSimpleName() + ", " + runClass);
-            } catch (HostNotFoundException e) {
+            } catch (Exception e) {
                 Logger.exc("[ThreadPool] HostNoFound");
 //                e.printStackTrace();
             }

@@ -181,7 +181,7 @@ public class XVM {
         this.vm.start();
         try {
             daemon.start();
-        } catch (HostNotFoundException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         this.setLoad(currentLoadDemand);

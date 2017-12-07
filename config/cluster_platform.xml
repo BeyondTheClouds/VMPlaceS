@@ -6,9 +6,9 @@
 <AS  id="AS0"  routing="Full">
   <cluster id="my_cluster_1" prefix="node" suffix=""
   		radical="0-65"	speed="1000000000flops"    bw="10Gbps"     lat="5E-5s"
-        bb_bw="10Gbps" bb_lat="5E-4s">
+        bb_bw="10Gbps" bb_lat="5E-4s" core="8">
       <prop id="ramsize"  value="32768"/>
-      <prop id="watt_per_state" value="100.0:120.0:200.0" />
+      <prop id="watt_per_state" value="100.0:110.0:200.0" />
 		<prop id="watt_off" value="10" />
    </cluster>
 </AS>
