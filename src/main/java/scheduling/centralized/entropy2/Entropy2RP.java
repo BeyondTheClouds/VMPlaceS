@@ -48,12 +48,6 @@ public class Entropy2RP extends AbstractScheduler {
         //Log the current Configuration
         try {
             String fileName = "logs/entropy/configuration/" + id + "-"+ System.currentTimeMillis() + ".txt";
-            /*File file = new File("logs/entropy/configuration/" + id + "-"+ System.currentTimeMillis() + ".txt");
-            file.getParentFile().mkdirs();
-            PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-            pw.write(source.toString());
-            pw.flush();
-            pw.close();*/
             FileConfigurationSerializerFactory.getInstance().write(source, fileName);
         } catch (IOException e) {
             e.printStackTrace();
@@ -66,15 +60,7 @@ public class Entropy2RP extends AbstractScheduler {
         // All VMs are encapsulated into the same vjob for the moment - Adrien, Nov 18 2011
         List<VJob> vjobs = new ArrayList<>();
         VJob v = new DefaultVJob("v1");//Entropy2.1
-//		VJob v = new BasicVJob("v1");//Entropy2.0
-		/*for(VirtualMachine vm : source.getRunnings()){
-			v.addVirtualMachine(vm);
-		}
-		
-		for(Node n : source.getAllNodes()){
-			n.setPowerBase(100);
-			n.setPowerMax(200);
-		}*///Entropy2.0 Power
+
         v.addVirtualMachines(source.getRunnings());//Entropy2.1
         vjobs.add(v);
         long timeToComputeVMRP = System.currentTimeMillis();
@@ -162,12 +148,11 @@ public class Entropy2RP extends AbstractScheduler {
                 }
             });
 
-
             try {
                 File file = new File("logs/entropy/reconfigurationplan/" + id + "-" + System.currentTimeMillis() + ".txt");
                 file.getParentFile().mkdirs();
                 PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(file)));
-                //pw.write(reconfigurationPlan.toString());
+
                 for (Action a : sortedActions) {
                     pw.write(a.toString()+"\n");
                 }
@@ -187,7 +172,7 @@ public class Entropy2RP extends AbstractScheduler {
 
 
     //Apply the reconfiguration plan logically (i.e. create/delete Java objects)
-    private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException{
+    private void applyReconfigurationPlanLogically(LinkedList<Action> sortedActions) throws InterruptedException {
         Map<Action, List<Dependencies>> revDependencies = new HashMap<>();
         TimedExecutionGraph g = reconfigurationPlan.extractExecutionGraph();
 
@@ -227,7 +212,6 @@ public class Entropy2RP extends AbstractScheduler {
         int watchDog = 0;
 
         while(this.ongoingMigrations()){
-            //while(this.ongoingMigrations() && !SimulatorManager.isEndOfInjection()){
             try {
                 org.simgrid.msg.Process.getCurrentProcess().waitFor(1);
                 watchDog ++;
@@ -281,7 +265,6 @@ public class Entropy2RP extends AbstractScheduler {
                         tmpENode
                 );
             }
-
         }
 
         return currConf;

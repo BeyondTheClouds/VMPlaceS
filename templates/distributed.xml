@@ -1,0 +1,28 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+    <platform version="4">
+    <process host="node{{ nb_hosts + 1 }}" function="injector.Injector"> </process>
+
+    {% for i in node_range %}
+    <process host="node{{ i }}" function="simulation.DistributedResolver">
+        <argument value="node{{ i }}" />
+        <argument value="{{ nb_cpus }}" />
+        <argument value="{{ cpu_capacity }}" />
+        <argument value="{{ ram_capacity }}" />
+        <argument value="{{ port + i }}" />
+        <argument value="node{{ i +  1 }}" />
+        <argument value="{{ port + (i + 1) % (nb_hosts) }}" />
+    </process>
+    {% endfor %}
+
+    <!--<process host="node{{ nb_hosts - 1 }}" function="simulation.DistributedResolver">-->
+        <!--<argument value="node{{ nb_hosts - 1 }}" />-->
+        <!--<argument value="{{ nb_cpus }}" />-->
+        <!--<argument value="{{ cpu_capacity }}" />-->
+        <!--<argument value="{{ ram_capacity }}" />-->
+        <!--<argument value="{{ port + nb_hosts }}" />-->
+        <!--<argument value="node{{ 0 }}" />-->
+        <!--<argument value="{{ port + node_range[0] }}" />-->
+    <!--</process>-->
+
+</platform>

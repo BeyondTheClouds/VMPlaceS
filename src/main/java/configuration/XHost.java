@@ -114,6 +114,14 @@ public class XHost{
     public Host getSGHost(){
         return this.sgHost;
     }
+
+    /**
+     * @return the VMs hosted by the current node
+     */
+    public Collection<XVM> getVMs(){
+        return this.hostedVMs;
+    }
+
     /**
      * @return the size of the memory in MBytes (rigid value)
      */

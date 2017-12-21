@@ -35,7 +35,11 @@ public class SimulatorProperties extends Properties {
     /**
      * Singleton
      */
-    public final static SimulatorProperties INSTANCE = new SimulatorProperties();
+    public static SimulatorProperties INSTANCE = new SimulatorProperties();
+
+    public static void setInstance(SimulatorProperties newInstance) {
+    	INSTANCE = newInstance;
+	}
 	
 	
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -437,7 +441,7 @@ public class SimulatorProperties extends Properties {
         return INSTANCE.getProperty(SIMU_IMPL, DEFAULT_SIMU_IMPL);
     }
 	
-	public static void main(String[] args){
+	public static void display_config() {
 		System.out.println(SimulatorProperties.INSTANCE);
 		System.out.println("configuration file: " + SimulatorProperties.getConfigurationFile());
 		System.out.println("number of nodes: " + SimulatorProperties.getNbOfHostingNodes());
@@ -445,15 +449,15 @@ public class SimulatorProperties extends Properties {
 		System.out.println("cpu capacity: " + SimulatorProperties.getCPUCapacity());
 		System.out.println("memory total: " + SimulatorProperties.getMemoryTotal());
 		System.out.println("nb of vms: " + SimulatorProperties.getNbOfVMs());
-        System.out.println("number of service nodes: " + SimulatorProperties.getNbOfServiceNodes());
+		System.out.println("number of service nodes: " + SimulatorProperties.getNbOfServiceNodes());
 
-        System.out.println("min percentage of active vms: " + SimulatorProperties.getMinPercentageOfActiveVMs());
+		System.out.println("min percentage of active vms: " + SimulatorProperties.getMinPercentageOfActiveVMs());
 
 		System.out.println("cpu consumption: " + SimulatorProperties.getVMMAXCPUConsumption());
 
-		System.out.println("Simuation duration: " + SimulatorProperties.getDuration());
+		System.out.println("Simulation duration: " + SimulatorProperties.getDuration());
 		System.out.println("Load period: " + SimulatorProperties.getLoadPeriod());
-        System.out.println("Crash period: " + SimulatorProperties.getCrashPeriod());
+		System.out.println("Crash period: " + SimulatorProperties.getCrashPeriod());
 		System.out.println("seed: " + SimulatorProperties.getSeed());
 		System.out.println("nb slots: " + SimulatorProperties.getNbOfCPUConsumptionSlots());
 		System.out.println("step by step: " + SimulatorProperties.getStepByStep());
@@ -464,6 +468,10 @@ public class SimulatorProperties extends Properties {
 		System.out.println("worker nodes file: " + SimulatorProperties.getWorkerNodesFile());
 		System.out.println("script to create vms: " + SimulatorProperties.getScriptCreateVMs());
 		System.out.println("script to inject getCPUDemand: " + SimulatorProperties.getScriptInjectLoad());
+	}
+
+	public static void main(String[] args){
+		display_config();
 	}
 
 }

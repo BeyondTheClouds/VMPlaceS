@@ -22,18 +22,14 @@ public class CentralizedResolver extends Process {
 		super(host, name, args);
 	}
 
-	/**
-	 * @param args
-     * A stupid main to easily comment main2 ;)
-	 */
+    /**
+     * @param args
+     */
     public void main(String[] args) throws MsgException{
-       main2(args);
-    }
-    public void main2(String[] args) throws MsgException {
         double period = CentralizedResolverProperties.getSchedulingPeriodicity();
         int numberOfCrash = 0;
         int numberOfBrokenPlan = 0;
-        int numberOfSucess = 0;
+        int numberOfSuccess = 0;
 
         Trace.hostSetState(SimulatorManager.getInjectorNodeName(), "SERVICE", "free");
 
@@ -73,7 +69,7 @@ public class CentralizedResolver extends Process {
                     numberOfBrokenPlan++;
                 } else {
                     Msg.info("Reconfiguration OK (duration: " + previousDuration + ")");
-                    numberOfSucess++;
+                    numberOfSuccess++;
                 }
 
                wait = ((long) (period * 1000)) - previousDuration;
@@ -88,7 +84,7 @@ public class CentralizedResolver extends Process {
             System.err.println(e);
             System.exit(-1);
         }
-        Msg.info(SimulatorProperties.getImplementation() + " has been invoked "+loopID+" times (success:"+ numberOfSucess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
+        Msg.info(SimulatorProperties.getImplementation() + " has been invoked "+loopID+" times (success:"+ numberOfSuccess+", failed: "+numberOfCrash+", brokenplan:"+numberOfBrokenPlan+")");
         SimulatorManager.setSchedulerActive(false);
     }
 

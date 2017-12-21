@@ -20,6 +20,15 @@ if (sys.argv[1] == 'centralized'):
     "  <process host=\"node%d\" function=\"simulation.CentralizedResolver\"> </process>\n"
     "</platform>" % (nb_nodes +1, nb_nodes));
 
+elif (sys.argv[1] == 'example'):
+    sys.stderr.write("generate deployment file for the simple example");
+    sys.stdout.write("<?xml version='1.0'?>\n"
+                     "<!DOCTYPE platform SYSTEM \"http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd\">\n"
+                     "<platform version=\"4\">\n"
+                     "  <process host=\"node%d\" function=\"injector.Injector\"> </process>\n"
+                     "  <process host=\"node%d\" function=\"simulation.ExampleResolver\"> </process>\n"
+                     "</platform>" % (nb_nodes +1, nb_nodes));
+
 elif (sys.argv[1] == 'without'):
     sys.stderr.write("generate deployment file for entropy");
     sys.stdout.write("<?xml version='1.0'?>\n"

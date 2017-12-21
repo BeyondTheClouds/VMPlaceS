@@ -22,6 +22,8 @@ libraryDependencies ++= Seq(
   "org.btrplace" % "bench" % "0.42"
 )
 
+libraryDependencies += "com.hubspot.jinjava" % "jinjava" % "1.0.5"
+
 // Excluding the following directories for compilation: scheduling/dvms
 excludeFilter in unmanagedSources := new sbt.FileFilter{
   //def accept(f: File): Boolean = "(?s).*scheduling/dvms/.*|.*scheduling/hubis/.*".r.pattern.matcher(f.getAbsolutePath).matches

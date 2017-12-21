@@ -1,0 +1,44 @@
+body {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  background-color: rgb(242, 242, 242);
+}
+
+h3 {
+  margin-top: 2rem;
+}
+
+.row {
+  margin-bottom: 1rem;
+}
+.row .row {
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+[class*="col-"] {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.main-content {
+    background-color: rgb(252, 252, 252);
+    border-radius: 0.8rem;
+}
+
+hr {
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.CodeMirror {
+    height: auto;
+}
+
+.CodeMirror-scroll {
+    height: auto;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}

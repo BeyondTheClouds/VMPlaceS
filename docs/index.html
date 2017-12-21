@@ -1,0 +1,167 @@
+
+<html>
+    <head>
+        <meta charset="ISO-8859-1">
+        <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+              integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+        <!--<link rel="stylesheet" href="https://bootswatch.com/cerulean/bootstrap.min.css">-->
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+                integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+                crossorigin="anonymous"></script>
+
+        <link rel=stylesheet href="css/codemirror.css">
+        <!--<link rel=stylesheet href="http://codemirror.net/doc/docs.css">-->
+        <script src="js/codemirror.js"></script>
+        <script src="js/xml.js"></script>
+        <script src="js/javascript.js"></script>
+        <script src="js/css.js"></script>
+        <script src="js/python.js"></script>
+        <script src="js/htmlmixed.js"></script>
+        <script src="js/matchbrackets.js"></script>
+
+        <style>
+         body {
+             padding-top: 2rem;
+             padding-bottom: 2rem;
+         }
+
+         h3 {
+             margin-top: 2rem;
+         }
+
+         .row {
+             margin-bottom: 1rem;
+         }
+         .row .row {
+             margin-top: 1rem;
+             margin-bottom: 0;
+         }
+
+         hr {
+             margin-top: 2rem;
+             margin-bottom: 2rem;
+         }
+
+         .CodeMirror {
+             height: auto;
+         }
+
+         .CodeMirror-scroll {
+             height: auto;
+         }
+
+         p {
+             margin-top: 0;
+             margin-bottom: 1rem;
+         }
+
+        </style>
+    </head>
+    <body>
+        <div class="container">
+
+            <div class="row row-offcanvas row-offcanvas-right">
+
+                <div class="col-12 col-md-12">
+                    <div class="jumbotron">
+                        <h1>VMPlaceS</h1>
+                        <p>A dedicated framework to evaluate and compare VM placement  algorithms</p>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 col-lg-4">
+                            <h2>Getting Started</h2>
+                            <p>Learning how to implement an scheduling algorithm with VMPlaceS, and how include it in a simulation.</p>
+                            <p><a class="btn btn-secondary" href="getting_started.html" role="button">View details &raquo;</a></p>
+                        </div><!--/span-->
+                        <div class="col-6 col-lg-4">
+                            <h2>Javadoc</h2>
+                            <p>Javadoc of the VMPlaceS project.</p>
+                            <p><a class="btn btn-secondary" href="javadoc/index.html" role="button">View details &raquo;</a></p>
+                        </div><!--/span-->
+
+                    </div><!--/row-->
+
+                    <hr/>
+                    <div class="row">
+                        <div class="col-12 col-lg-12">
+                            <h2>Overview</h2>
+                            <p>A dedicated framework to evaluate and compare VM placement algorithms. At coarse-grained, the framework is composed of two major components: the injector and the VM placement algorithm. The injector is the generic part of the framework (i.e. the one you can directly use) while the VM placement algorithm is the part you want to study (or compare with available algorithms). Currently, the VMPlaceS is released with three algorithms:</p>
+                            <ul>
+
+                               <li><p>Entropy [VEE09], a centralized approach using a constraint programming approach to solve the placement/reconfiguration VM problem</p></li>
+                            <li><p>Snooze [CCGRID12], a hierarchical approach where each manager of a group invokes Entropy to solve the placement/reconfiguration VM problem. Note that in the CCGRID'12 paper, Snooze is using a specific heuristic to solve the placement/reconfiguration VM problem. As the sake of simplicity, we have simply reused the entropy scheduling code.</p></li>
+                            <li><p>DVMS [SCALE12], a distributed approach that dynamically partitions the system and invokes Entropy on each partition.</p></ul>
+                                <p>VMPlaceS has been presented at the Europar 2015 conference, the preprint version of the article is available <a href="http://people.rennes.inria.fr/Adrien.Lebre/PREPRINT/Europar-VMPlaceS.pdf">here</a>! A longer version of the article is currently under review.</p>
+                        </div><!--/span-->
+                    </div><!--/row-->
+
+                    <div class="row">
+                        <div class="col-12 col-lg-12">
+                            <h2>Description of the Injector</h2>
+                            <p>The injector executes different kind of events:</p>
+                            <ul>
+
+                                <li><p>Load events: every t seconds, the injector selects one VM and changes its CPU load according to a Gaussian distribution. t is a random variable that follows an exponential distribution with rate parameter lambda declared in the simulator.properties file. The Gaussian distribution is defined by a mean as (i.e mu) well as a standard deviation (i.e. sigma) that are given at the beginning of each simulation. The parameters of the simulation are defined in the ''simulator.properties'' file available in the ''config'' directory. By default, the duration of each experiment is set to 3600 seconds. The parameters are lambda=Nb_VMs/300 and mu=70, sigma=30. Concretely, the load of each VM starts from 0% and varies on average every 5 minutes in steps of 10 (with a significant part between 40% and 100% of CPU usage). For more information, please give a look at the injector packages and the corresponding Injector (mainly the generateLoadQueue method), the InjectorEvent interface and the LoadEvent class</p></li>
+
+                                <li><p>Fault events: Similarly to the load events, the injector turn off/on physical hosts following an exponential distribution with a rate parameter lambda declared in the simulator.properties file. This enables to simulate node crashes.</p></li>
+                            </ul>
+
+                            <p>To modify the injector parameters, please edit config/simulator.properties</p>
+
+                            <p>At the beginning, the simulation create n VMs, each of which is based on one of predefined VM classes. A VM class is a template of the specification of a VM and its workload. It is described as nb_cpu:ramsize:net_bw:mig_speed:mem_speed. VMs are launched on PMs in a round-robin manner, i.e., each PM has almost the same number of VMs. According to the investigated algorithm, VMs are relocated through the different PMs during the whole execution of the simulation.</p>
+
+                            <p>The ultimate objective of the VMPlaceS framework is to deliver a building block that will enable to compare fairly different VM placement algorithms.</p>
+                        </div><!--/span-->
+                    </div><!--/row-->
+
+                    <div class="row">
+                        <div class="col-12 col-lg-12">
+                            <h2>Installing and Running the simulator</h2>
+                            <p>Please follow the steps described in the <a href="file:///Users/jonathan/Documents/workspace/VMPlaceS/docs/getting_started.html">Getting Started section</a>.</p>
+                        </div><!--/span-->
+                    </div><!--/row-->
+
+                    <div class="row">
+                        <div class="col-12 col-lg-12">
+                            <h2>Topology of the simulated infrastructure</h2>
+                            <p>Please note that the Simulator injector is currently released with a default platform xml file (see config/cluster_platform.xml) allowing to run a simulation up to 5K hosts in a one-site cluster scenario. That means that nodes are homogeneous. They have the same capabilities in terms of nb of cores, cpu/ram capacitity and network bandwidth. You can if you want change the network topology as well as the network capability of each node by modifying the platform file or by using your own one (for more information, please refer to the SimGrid documentation, section Platform description) WARNING: please keep in mind that due to the fact the capability in terms of cores number/cpu/ramsize is defined in the simulator.properties files, nodes will stay homogeneous.</p>
+                            <p>The injector runs on node((nb_node)+1) and the node0 is reserved to run specific services. For instance, if you have configured the simulation in order to simulate the centralized approach with 10 nodes. Node 0 will run the event injector, Node[1-10] will host the VMs and the scheduler will be launched on node 11. This is important as the crash injector only consider nodes between 0 (inclusive) and nb_nodes. In other words, the injector node can never crash.</p>
+                        </div><!--/span-->
+                    </div><!--/row-->
+
+                    <div class="row">
+                        <div class="col-12 col-lg-12">
+                            <h2>Implement/evaluate a new algorithm</h2>
+                            <p>We chose to implement centralized, hierarchical and distributed scheduling approaches in order to illustrate the different possibilites to implement scheduling policies. Hence, according to the scheduling you want to evaluate and the software architecture you want to rely on, you can simply give a look to the corresponding launcher available in the simulation package (CentralizedResolver, HierarchichalResolver and DistributedResolver). The work consists in forking such a launcher in order to replace the scheduling strategy invoked by the proposal you want to investigate. We highlight, however, that while VMPlaceS has been developped with the objective of facilitating the evaluations of different scheduling policies, we strongly encourage new users to start by evaluating their scheduling policy in a centralized manner (See CentralizedResolver launcher). A complete example, should be available on the website soon.</p>
+                        </div><!--/span-->
+                    </div><!--/row-->
+
+                    <div class="row">
+                        <div class="col-12 col-lg-12">
+                            <h2>Contributors</h2>
+                            <p>
+
+                                <ul> 
+                                    <li>Adrian Fraisse - <a href="mailto:adrian.fraisse@gmail.com">adrian.fraisse@gmail.com</a> - France -  Implementation of the centralized resolver based on the BtrPlace algorithm</li>
+                                    <li>Adrien Lebre - <a href="mailto:adrien.lebre@inria.fr">adrien.lebre@inria.fr</a> - France - Project founder, principal maintainer</li>
+                                    <li>Jonathan Pastor - <a href="mailto:jonathan.pastor@inria.fr">jonathan.pastor@inria.fr</a> - France - Implementation of the distributed resolver (based on the DVMS proposal)</li>
+                                    <li>Flavien Quesnel - <a href="mailto:flavien.quesnel@irt-systemx.fr">flavien.quesnel@irt-systemx.fr</a>- France - Contributor (simulator properties, bug fixes, distributed resolver)</li>
+                                    <li>Killian Saint Cricq - <a href="mailto:killian.saintcricq@gmail.com">killian.saintcricq@gmail.com</a> - France -  Implementation of the centralized resolver based on the BtrPlace algorithm</li>
+                                    <li>José Simao - <a href="mailto:jsimao@cc.isel.ipl.pt">jsimao@cc.isel.ipl.pt</a> - Portugal - First beta tester - few bug fixes</li>
+                                    <li>Mario Sudholt - <a href="mailto:mario.sudholt@inria.fr">mario.sudholt@inria.fr</a> - Implementation of the hierarchical resolver (based on the Snooze proposal)</li>
+
+                                </ul>
+
+                            </p>
+                        </div><!--/span-->
+                    </div><!--/row-->
+                    <hr>
+
+                    <footer>
+                        <p>&copy; STACK 2017</p>
+            </footer>
+
+        </div><!--/.container-->
+    </body>
+</html>

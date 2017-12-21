@@ -25,7 +25,6 @@ public class HierarchicalResolver extends Process {
 
         SimulatorManager.setSchedulerActive(true);
 
-        // TODO what is the interest of the ep ?
         Msg.info("Start the entry point on " + Host.currentHost()+ "");
         new EntryPoint(Host.currentHost(), "entryPoint").start();
 
@@ -52,29 +51,6 @@ public class HierarchicalResolver extends Process {
             lcNo++;
 //            sleep(5);
         }
-
-
-//        Start the group leadear (by default it is started on the first node of the infrastructure
-//        ne¡w GroupLeader(Host.getByName("node1"), "groupLeader").start();
-
-        // Start as many GMs as expected and assign them randomly (please note that for reproductibility reasons, we are
-        // leveraging a specific seed (see SimulatorProperties class file)
-        /*
-        Random randHostPicker = new Random(SimulatorProperties.getSeed());
-        int hostIndex;
-        ArrayList<Integer> initialGMs = new ArrayList<Integer>();
-        for (int i=0; i< SnoozeProperties.getGMNumber() ; i++){
-            // Select the next hosting node for the GM and prevent to get one that has been already selected
-            do {
-                hostIndex = randHostPicker.nextInt(SimulatorProperties.getNbOfNodes());
-            } while (initialGMs.contains(new Integer(hostIndex)));
-
-            GroupManager gm = new GroupManager(Host.getByName("node"+hostIndex), "gm"+hostIndex);
-            gm.start();
-            Msg.info("GM "+i+" has been created");
-            initialGMs.add(i);
-        }
-        */
 
         while (!SimulatorManager.isEndOfInjection()) {
             waitFor(3);

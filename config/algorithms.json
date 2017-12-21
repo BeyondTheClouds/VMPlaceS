@@ -1,0 +1,50 @@
+{
+  "algorithms": {
+    "centralized": {
+      "resolver": "simulation.ExampleResolver",
+      "scheduling_algorithm": [
+        "scheduling.centralized.entropy2.Entropy2RP",
+        "scheduling.centralized.ffd.LazyFirstFitDecreased",
+        "scheduling.centralized.ffd.OptimisticFirstFitDecreased",
+        "scheduling.example.ExampleReconfigurationPlanner",
+        "scheduling.centralized.btrplace.BtrPlaceRP"
+      ],
+      "can_select_scheduling_algorithm": true,
+      "deploy_xml_template": "templates/centralized.xml"
+    },
+    "distributed": {
+      "resolver": "simulation.DistributedResolver",
+      "scheduling_algorithm": [
+        "scheduling.centralized.entropy2.Entropy2RP"
+      ],
+      "can_select_scheduling_algorithm": false,
+      "deploy_xml_template": "templates/distributed.xml"
+    },
+    "hierarchical": {
+      "resolver": "simulation.HierarchicalResolver",
+      "scheduling_algorithm": [
+        "scheduling.centralized.entropy2.Entropy2RP",
+        "scheduling.centralized.ffd.LazyFirstFitDecreased",
+        "scheduling.centralized.ffd.OptimisticFirstFitDecreased",
+        "scheduling.example.ExampleReconfigurationPlanner",
+        "scheduling.centralized.btrplace.BtrPlaceRP"
+      ],
+      "can_select_scheduling_algorithm": true,
+      "deploy_xml_template": "templates/hierarchical.xml"
+    },
+    "example": {
+      "resolver": "simulation.ExampleResolver",
+      "scheduling_algorithm": [
+        "scheduling.example.ExampleReconfigurationPlanner"
+      ],
+      "can_select_scheduling_algorithm": false,
+      "deploy_xml_template": "templates/example.xml"
+    },
+    "without": {
+      "resolver": null,
+      "scheduling_algorithm": [],
+      "can_select_scheduling_algorithm": false,
+      "deploy_xml_template": "templates/without.xml"
+    }
+  }
+}

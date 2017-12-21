@@ -1,0 +1,6 @@
+<?xml version='1.0'?>
+<!DOCTYPE platform SYSTEM "http://simgrid.gforge.inria.fr/simgrid/simgrid.dtd">
+    <platform version="4">
+    <process host="node{{ nb_hosts + 1 }}" function="injector.Injector"> </process>
+    <process host="node{{ nb_hosts }}" function="simulation.ExampleResolver"> </process>
+</platform>

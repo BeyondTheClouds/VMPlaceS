@@ -42,20 +42,6 @@ public class Main {
      */
     public static void main(String[] args) {
 
-
-        /*
-        // Just a way to get the compilation time (useful to differentiate experiments)
-        JarFile jf = null;
-        try {
-            jf = new JarFile("sg-injector.jar");
-        } catch (IOException e) {
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
-        }
-        ZipEntry manifest = jf.getEntry("META-INF/MANIFEST.MF");
-        long manifestTime = manifest.getTime();  //in standard millis
-        System.out.println("Compilation time: "+new Date(manifestTime));
-        */
-
         // Historical fix to get the internal logs of Entropy correctly
         // assume SLF4J is bound to logback in the current environment
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -64,10 +50,6 @@ public class Main {
 
         // Save the begining time
         SimulatorManager.setBeginTimeOfSimulation(System.currentTimeMillis());
-
-        // Init. internal values
-        Msg.energyInit();
-        Msg.init(args);
 
         // Automatically generate deployment file that is mandatory for launching the simgrid simulation.
         // TODO - implement a more generic way to generate the deployment file
@@ -86,6 +68,11 @@ public class Main {
 
                 //"Usage: python generate.py nb_nodes
                 cmd = new String[] {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " " + SimulatorProperties.getNbOfServiceNodes() + " > config/generated_deploy.xml"};
+            } else if (SimulatorProperties.getAlgo().equals("example")) {
+                Msg.info("Simple scheduling selected (generating deployment file for simple approach)");
+
+                //"Usage: python generate.py nb_nodes
+                cmd = new String[] {"/bin/sh", "-c", "python generate.py " + SimulatorProperties.getAlgo() + " " + SimulatorProperties.getNbOfHostingNodes() + " " + SimulatorProperties.getNbOfServiceNodes() + " > config/generated_deploy.xml"};
             } else { //(SimulatorProperties.getAlgo().equals("centralized"))
                 Msg.info("Default selected (generating deployment file for centralized approach)");
 
@@ -101,6 +88,11 @@ public class Main {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+
+        // Init. internal values
+        Msg.energyInit();
+        Msg.init(args);
 
         /* construct the platform and deploy the application */
         Msg.createEnvironment(args[0]);
