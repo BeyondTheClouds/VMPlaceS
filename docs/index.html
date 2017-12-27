@@ -56,6 +56,35 @@
              margin-bottom: 1rem;
          }
 
+         .beyondtheclouds_logo {
+             height: 50px;
+             margin: auto;
+         }
+
+         .beyondtheclouds_logo_container {
+             text-align: left;
+         }
+
+         body {
+             padding: 0px;
+         }
+
+         .muted {
+             color: #999999;
+             font-size: 24.5px;
+             line-height: 40px;
+             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+             font-weight: 700;
+         }
+
+         .beyondthecloud_link {
+             text-decoration: none;
+         }
+
+         .beyondthecloud_link:hover {
+             text-decoration: none;
+         }
+
         </style>
     </head>
     <body>
@@ -64,10 +93,21 @@
             <div class="row row-offcanvas row-offcanvas-right">
 
                 <div class="col-12 col-md-12">
+
+                    <div class="row">
+                        <a class="beyondthecloud_link" href="https://beyondtheclouds.github.io/index.html">
+                            <div class="beyondtheclouds_logo_container" style="width: 100%;">
+                                <img class="beyondtheclouds_logo" src="assets/img/beyondtheclouds.png" /> <span class="muted">Beyond the Clouds</span>
+                            </div>
+                        </a>
+                    </div>
+                    <hr>
+
                     <div class="jumbotron">
                         <h1>VMPlaceS</h1>
                         <p>A dedicated framework to evaluate and compare VM placement  algorithms</p>
                     </div>
+
                     <div class="row">
                         <div class="col-6 col-lg-4">
                             <h2>Getting Started</h2>
@@ -89,10 +129,10 @@
                             <p>A dedicated framework to evaluate and compare VM placement algorithms. At coarse-grained, the framework is composed of two major components: the injector and the VM placement algorithm. The injector is the generic part of the framework (i.e. the one you can directly use) while the VM placement algorithm is the part you want to study (or compare with available algorithms). Currently, the VMPlaceS is released with three algorithms:</p>
                             <ul>
 
-                               <li><p>Entropy [VEE09], a centralized approach using a constraint programming approach to solve the placement/reconfiguration VM problem</p></li>
-                            <li><p>Snooze [CCGRID12], a hierarchical approach where each manager of a group invokes Entropy to solve the placement/reconfiguration VM problem. Note that in the CCGRID'12 paper, Snooze is using a specific heuristic to solve the placement/reconfiguration VM problem. As the sake of simplicity, we have simply reused the entropy scheduling code.</p></li>
-                            <li><p>DVMS [SCALE12], a distributed approach that dynamically partitions the system and invokes Entropy on each partition.</p></ul>
-                                <p>VMPlaceS has been presented at the Europar 2015 conference, the preprint version of the article is available <a href="http://people.rennes.inria.fr/Adrien.Lebre/PREPRINT/Europar-VMPlaceS.pdf">here</a>! A longer version of the article is currently under review.</p>
+                                <li><p>Entropy [VEE09], a centralized approach using a constraint programming approach to solve the placement/reconfiguration VM problem</p></li>
+                                <li><p>Snooze [CCGRID12], a hierarchical approach where each manager of a group invokes Entropy to solve the placement/reconfiguration VM problem. Note that in the CCGRID'12 paper, Snooze is using a specific heuristic to solve the placement/reconfiguration VM problem. As the sake of simplicity, we have simply reused the entropy scheduling code.</p></li>
+                                <li><p>DVMS [SCALE12], a distributed approach that dynamically partitions the system and invokes Entropy on each partition.</p></ul>
+                                    <p>VMPlaceS has been presented at the Europar 2015 conference, the preprint version of the article is available <a href="http://people.rennes.inria.fr/Adrien.Lebre/PREPRINT/Europar-VMPlaceS.pdf">here</a>! A longer version of the article is currently under review.</p>
                         </div><!--/span-->
                     </div><!--/row-->
 
@@ -139,18 +179,30 @@
 
                     <div class="row">
                         <div class="col-12 col-lg-12">
-                            <h2>Contributors</h2>
+                            <h2>Active Contributors</h2>
                             <p>
 
-                                <ul> 
-                                    <li>Adrian Fraisse - <a href="mailto:adrian.fraisse@gmail.com">adrian.fraisse@gmail.com</a> - France -  Implementation of the centralized resolver based on the BtrPlace algorithm</li>
+                                <ul>
                                     <li>Adrien Lebre - <a href="mailto:adrien.lebre@inria.fr">adrien.lebre@inria.fr</a> - France - Project founder, principal maintainer</li>
                                     <li>Jonathan Pastor - <a href="mailto:jonathan.pastor@inria.fr">jonathan.pastor@inria.fr</a> - France - Implementation of the distributed resolver (based on the DVMS proposal)</li>
+                                    <li>Mario Sudholt - <a href="mailto:mario.sudholt@inria.fr">mario.sudholt@inria.fr</a> - Implementation of the hierarchical resolver (based on the Snooze proposal)</li>
+                                    <li>Anthony Simonet - <a href="mailto:anthony.simonet@rutgers.edu">anthony.simonet@rutgers.edu</a> - Add the support of energy consumption </li>
+                                </ul>
+
+                            </p>
+                        </div><!--/span-->
+                    </div><!--/row-->
+
+                    <div class="row">
+                        <div class="col-12 col-lg-12">
+                            <h2>Past Contributors</h2>
+                            <p>
+
+                                <ul>
                                     <li>Flavien Quesnel - <a href="mailto:flavien.quesnel@irt-systemx.fr">flavien.quesnel@irt-systemx.fr</a>- France - Contributor (simulator properties, bug fixes, distributed resolver)</li>
+                                    <li>Adrian Fraisse - <a href="mailto:adrian.fraisse@gmail.com">adrian.fraisse@gmail.com</a> - France -  Implementation of the centralized resolver based on the BtrPlace algorithm</li>
                                     <li>Killian Saint Cricq - <a href="mailto:killian.saintcricq@gmail.com">killian.saintcricq@gmail.com</a> - France -  Implementation of the centralized resolver based on the BtrPlace algorithm</li>
                                     <li>José Simao - <a href="mailto:jsimao@cc.isel.ipl.pt">jsimao@cc.isel.ipl.pt</a> - Portugal - First beta tester - few bug fixes</li>
-                                    <li>Mario Sudholt - <a href="mailto:mario.sudholt@inria.fr">mario.sudholt@inria.fr</a> - Implementation of the hierarchical resolver (based on the Snooze proposal)</li>
-
                                 </ul>
 
                             </p>
@@ -159,7 +211,7 @@
                     <hr>
 
                     <footer>
-                        <p>&copy; STACK 2017</p>
+                        <p>&copy; <a href="http://stack.inria.fr/">stack.inria.fr</a> 2017</p>
             </footer>
 
         </div><!--/.container-->
