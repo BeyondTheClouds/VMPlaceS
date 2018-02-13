@@ -19,7 +19,8 @@ libraryDependencies ++= Seq(
   "org.btrplace" % "scheduler-api" % "0.42",
   "org.btrplace" % "scheduler-choco" % "0.42",
   "org.btrplace" % "scheduler" % "0.42",
-  "org.btrplace" % "bench" % "0.42"
+  "org.btrplace" % "bench" % "0.42",
+  "org.scala-lang" % "scala-library" % "2.10.1"
 )
 
 libraryDependencies += "com.hubspot.jinjava" % "jinjava" % "1.0.5"
