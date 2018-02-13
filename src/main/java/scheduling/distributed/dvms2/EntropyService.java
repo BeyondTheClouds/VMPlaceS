@@ -32,7 +32,7 @@ import entropy.plan.choco.ChocoCustomRP;
 import entropy.plan.durationEvaluator.MockDurationEvaluator;
 import entropy.vjob.DefaultVJob;
 import entropy.vjob.VJob;
-import org.discovery.DiscoveryModel.model.ReconfigurationModel.*;
+import scheduling.distributed.dvms2.ReconfigurationModel.*;
 import scheduling.Scheduler.*;
 import scheduling.distributed.dvms2.dvms.dvms2.DvmsModel.*;
 import java.util.*;

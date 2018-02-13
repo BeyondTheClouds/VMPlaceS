@@ -25,7 +25,7 @@ import org.discovery.dvms.entropy.EntropyMessage
 import scheduling.distributed.dvms2.{DvmsProperties, DVMSProcess, SGNodeRef, SGActor}
 import configuration.XVM
 import simulation.SimulatorManager
-import org.discovery.DiscoveryModel.model.ReconfigurationModel._
+import scheduling.distributed.dvms2.ReconfigurationModel._
 import scheduling.distributed.dvms2.overlay.SimpleOverlay
 import scala.collection.JavaConversions._
 import scheduling.distributed.dvms2.dvms.dvms2.DvmsModel._

@@ -19,7 +19,8 @@ package scheduling.distributed.dvms2.dvms.dvms3
 * limitations under the License.
 * ============================================================ */
 
-import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationResult, ReconfigurationlNoSolution}
+
+import scheduling.distributed.dvms2.ReconfigurationModel.{ReconfigurationResult, ReconfigurationlNoSolution}
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
 import org.simgrid.msg.{Host, Msg}
 import scheduling.distributed.dvms2.dvms.dvms2.LoggingProtocol

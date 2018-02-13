@@ -22,7 +22,7 @@ package org.discovery.dvms.entropy
 import entropy.plan.choco.ChocoCustomRP
 import entropy.plan.durationEvaluator.MockDurationEvaluator
 import org.discovery.dvms.entropy.EntropyProtocol.ComputeAndApplyPlan
-import org.discovery.DiscoveryModel.model.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
+import scheduling.distributed.dvms2.ReconfigurationModel.{ReconfigurationAction, ReconfigurationSolution, ReconfigurationlNoSolution, ReconfigurationResult}
 import scheduling.{SchedulerBuilder, Scheduler}
 import scheduling.Scheduler.SchedulerResult
 import scheduling.distributed.dvms2.{SGActor, SGNodeRef}
