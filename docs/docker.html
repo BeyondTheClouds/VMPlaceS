@@ -1,0 +1,168 @@
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css"
+          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js"
+            integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn"
+            crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="css/codemirror.css">
+    <link rel="stylesheet" href="css/solarized.css">
+    <!--<link rel=stylesheet href="http://codemirror.net/doc/docs.css">-->
+    <script src="js/codemirror.js"></script>
+    <script src="js/xml.js"></script>
+    <script src="js/javascript.js"></script>
+    <script src="js/yaml.js"></script>
+    <script src="js/css.js"></script>
+    <script src="js/python.js"></script>
+    <script src="js/htmlmixed.js"></script>
+    <script src="js/matchbrackets.js"></script>
+    <script src="js/shell.js"></script>
+    <script src="js/clike.js"></script>
+
+    <link rel="stylesheet" href="css/course.css">
+</head>
+<body>
+
+<div id="container">
+
+    <div class="row">
+        <div class="col">
+        </div>
+        <div class="col-10 main-content">
+
+            <h1>Running VMPlaceS in a Docker container</h1>
+            <p>This guide will cover the following points:</p>
+            <ul>
+                <li>Installation of Docker</li>
+                <li>Creating a VMPlaceS image</li>
+                <li>Running a simulation</li>
+            </ul>
+
+            <h3> I- Installation of Docker</h3>
+
+            <p>Download Docker community edition at the following URL:
+            <ul>
+            <li><a href="https://www.docker.com/community-edition">Docker Community edition (Linux, MacOS, Windows)</a></li>
+        </ul></p>
+
+
+            <h3> II- Installation of VMPlaceS </h3>
+
+            <p>First, clone the git repository of VMPlaceS:</p>
+            <textarea class="code_no_line_numbers">git clone https://github.com/BeyondTheClouds/VMPlaceS.git</textarea>
+            <p></p>
+
+            <p>Then, browse in the VMPlaceS folder and run the following command in order to build an image that will be used for containers that will host VMPlaceS simulations:</p>
+
+            <textarea class="code_no_line_numbers">docker build -t vmplaces .</textarea>
+            <p></p>
+
+            <p>It should take 5 to 10 minutes to prepare the docker image.</p>
+
+	    <p>To validate the image creation process, check that the following command</p>
+            <textarea class="code_no_line_numbers">docker images</textarea>
+            <p></p>
+
+            <p>produces an output similar to this:</p>
+	    <textarea class="code_no_line_numbers">REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+vmplaces            latest              31c12e5cb918        About an hour ago   1.36GB</textarea>
+            <p></p>
+
+            <h3> III- Running a simulation </h3>
+	    
+	    <p>Instantiate a container based on the previously created image:</p>
+            <textarea class="code_no_line_numbers">docker run -it --rm vmplaces bash</textarea>
+            <p></p>
+
+            <p>and run VMPlaceS:</p>
+	    <textarea class="code_no_line_numbers">java -Xmx4G -d64 -cp target/simulation.jar simulation.SimpleMain --algo=example --duration 1800 --nb_hosts=10 --nb_vms=93 --load_mean=60.0</textarea>
+            <p></p>
+
+        </div>
+        <div class="col">
+        </div>
+    </div>
+</div>
+
+<script>
+    let tags_to_editor_map = {};
+
+    $.map($(".code"), function (code_tag) {
+        var editor = CodeMirror.fromTextArea(code_tag, {
+            mode: {
+                name: "shell",
+                version: 3,
+                singleLineStringErrors: false
+            },
+            lineNumbers: true,
+            indentUnit: 4,
+            matchBrackets: true,
+            readOnly: true,
+            theme: "solarized dark"
+        });
+        if (code_tag.id != "") {
+            tags_to_editor_map[code_tag.id] = editor
+        }
+    });
+
+    $.map($(".code_java"), function (code_tag) {
+        var editor = CodeMirror.fromTextArea(code_tag, {
+            mode: {
+                name: "text/x-java",
+                version: 3,
+                singleLineStringErrors: false
+            },
+            lineNumbers: true,
+            indentUnit: 4,
+            matchBrackets: true,
+            readOnly: true,
+            theme: "solarized dark"
+        });
+        if (code_tag.id != "") {
+            tags_to_editor_map[code_tag.id] = editor
+        }
+    });
+
+    $.map($(".code_no_line_numbers"), function (code_tag) {
+        var editor = CodeMirror.fromTextArea(code_tag, {
+            mode: {
+                name: "shell",
+                version: 3,
+                singleLineStringErrors: false
+            },
+            lineNumbers: false,
+            indentUnit: 4,
+            matchBrackets: true,
+            readOnly: true,
+            theme: "solarized dark"
+        });
+        if (code_tag.id != "") {
+            tags_to_editor_map[code_tag.id] = editor
+        }
+    });
+
+    $.map($(".code_java_no_line_numbers"), function (code_tag) {
+        var editor = CodeMirror.fromTextArea(code_tag, {
+            mode: {
+                name: "text/x-java",
+                version: 3,
+                singleLineStringErrors: false
+            },
+            lineNumbers: false,
+            indentUnit: 4,
+            matchBrackets: true,
+            readOnly: true,
+            theme: "solarized dark"
+        });
+        if (code_tag.id != "") {
+            tags_to_editor_map[code_tag.id] = editor
+        }
+    });
+
+
+</script>
+</body>
+</html>
