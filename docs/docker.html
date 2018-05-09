@@ -81,6 +81,21 @@ vmplaces            latest              31c12e5cb918        About an hour ago   
 	    <textarea class="code_no_line_numbers">java -Xmx4G -d64 -cp target/simulation.jar simulation.SimpleMain --algo=example --duration 1800 --nb_hosts=10 --nb_vms=93 --load_mean=60.0</textarea>
             <p></p>
 
+            <h3> IV- Tips </h3>
+            <h4> Setup a shared folder between the host and the containers </h4>
+	    
+	    <p>It is possible to use a shared folder between docker containers and the physcial host. It may help to extract from containers the <b>events.json</b> file. To do, do the following:</p>
+            <textarea class="code_no_line_numbers">docker run -v /Users/jonathan/Documents/workspace/VMPlaceS/events:/VMPlaceS/events -it vmplaces bash</textarea>
+            <p></p>
+
+            <p>Docker will create a volume, mount it on the physical node. Each modification made by the container or the host, will be visible by the other computer. Thus to enable the host to access <b>events.json</b> files, just copy it from the container to the mounted volume.</p>
+            
+            <h4> Rebuild the VMPlaceS image (to take into code changes) </h4>
+	    
+	    <p>Add the <b>--no-cache</b> to the <i>docker build</i> command, as in the following command:</p>
+            <textarea class="code_no_line_numbers">docker build --no-cache -t vmplaces .</textarea>
+            <p></p>
+
         </div>
         <div class="col">
         </div>
