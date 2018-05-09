@@ -4,6 +4,7 @@ This folder contains a set of tools that helps to generate beautiful diagrams, i
 
 ## Requirements
 * Python
+* R language
 * easy_install
 * Jinja (template engine for python)
 
