@@ -27,7 +27,7 @@ RUN apt-get install -y sbt
 # Clone projects
 #   VMPlaceS
 RUN apt-get install -y git
-RUN git clone -b docker https://github.com/BeyondTheClouds/VMPlaceS.git
+RUN git clone -b master https://github.com/BeyondTheClouds/VMPlaceS.git
 
 # Change the working directory
 WORKDIR /VMPlaceS
