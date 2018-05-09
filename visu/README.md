@@ -29,7 +29,7 @@ When a simulation is performed, an ***events.json*** file is generated, containi
 
 Just put this file in a folder (with the simulation name) inside the ***events*** folder, as illustrated in the following screenshot:
 
-![image](http://dropbox.jonathanpastor.fr/screen_generate_graph.png)
+![image](https://raw.githubusercontent.com/BeyondTheClouds/VMPlaceS/master/docs/assets/img/screenshot_events.png)
 
 Once it is done, just run the following command:
 
