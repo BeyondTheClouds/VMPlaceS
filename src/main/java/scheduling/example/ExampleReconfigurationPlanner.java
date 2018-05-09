@@ -16,12 +16,12 @@ public class ExampleReconfigurationPlanner extends AbstractScheduler {
     private List<MigrationPlan> migrationsPlans = new ArrayList<MigrationPlan>();
 
     public ComputingResult computeReconfigurationPlan(){
-        ComputingResult result = new ComputingResult();
-        lastComputingResult = result;
 
         Collection<XHost> hosts = SimulatorManager.getSGHostingHosts();
         List<XHost> overloadedHosts = new ArrayList<>();
         List<XHost> underloadedHosts = new ArrayList<>();
+
+        long computationStart = System.currentTimeMillis();
 
         // Find the overloaded hosts
         for(XHost host : hosts) {
@@ -51,6 +51,11 @@ public class ExampleReconfigurationPlanner extends AbstractScheduler {
                 index += 1;
             }
         }
+
+        // Log the functioning of the algorithm
+        long computationDuration = System.currentTimeMillis() - computationStart;
+        ComputingResult result = new ComputingResult(ComputingResult.State.SUCCESS, computationDuration);
+        lastComputingResult = result;
 
         return result;
     }
