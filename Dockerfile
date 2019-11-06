@@ -1,4 +1,4 @@
-FROM ubuntu:17.10
+FROM ubuntu:19.04
 MAINTAINER Badock
 
 # Enable the APT via HTTP
