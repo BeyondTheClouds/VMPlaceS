@@ -1,5 +1,7 @@
 # VMPlaceS
 
+[![Build Status](https://travis-ci.org/BeyondTheClouds/VMPlaceS.svg?branch=master)](https://travis-ci.org/BeyondTheClouds/VMPlaceS)
+
 This repository contains the source of a dedicated framework to evaluate and compare VM placement algorithms.
 
 For more details, a deeper scientific description of the project can be found [here](http://beyondtheclouds.github.io/VMPlaceS).
