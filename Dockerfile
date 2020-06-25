@@ -1,32 +1,34 @@
-FROM ubuntu:19.04
+FROM ubuntu:20.04
 MAINTAINER Badock
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 # Enable the APT via HTTP
-RUN apt-get update
-RUN apt-get install -y apt-transport-https
+RUN apt update
+RUN apt install -y apt-transport-https
 
 # Download dependencies
 # RUN echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list
 # RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
-RUN apt-get update
-RUN apt-get install -y simgrid wget
+RUN apt update
+RUN apt install -y simgrid wget
 
 # Install openjdk
-RUN apt-get install -y openjdk-8-jdk
+RUN apt install -y openjdk-8-jdk
 
 # # Install scala
-# RUN apt-get install -y scala
+# RUN apt install -y scala
 
 # Install sbt
 #RUN curl -L -o sbt.deb http://dl.bintray.com/sbt/debian/sbt-0.13.15.deb
 RUN wget http://dl.bintray.com/sbt/debian/sbt-0.13.15.deb --no-check-certificate -O sbt.deb
 RUN dpkg -i sbt.deb
-RUN apt-get update
-RUN apt-get install -y sbt
+RUN apt update
+RUN apt install -y sbt
 
 # Clone projects
 #   VMPlaceS
-RUN apt-get install -y git
+RUN apt install -y git
 RUN git clone -b master https://github.com/BeyondTheClouds/VMPlaceS.git
 
 # Change the working directory
