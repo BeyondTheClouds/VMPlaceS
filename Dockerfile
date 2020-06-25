@@ -43,4 +43,4 @@ RUN sbt update
 RUN sbt assembly
 
 # Run the example
-RUN java -Xmx4G -d64 -cp target/simulation.jar simulation.SimpleMain --algo=example --duration 1800 --nb_hosts=10 --nb_vms=93 --load_mean=60.0
+RUN java -Xmx4G -d64 -cp target/simulation.jar simulation.SimpleMain --algo=example --duration 1800 --nb_hosts=10 --nb_vms=93 --load_mean=60.0 2>&1 | grep "MSG_main finished; Terminating the simulation..."
